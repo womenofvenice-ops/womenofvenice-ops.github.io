@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<!-- Women of Venice — Booking v1.2 (site copy) · session requests straight to the connector -->
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Book a Venice Portrait — Women of Venice</title>
+<style>
+  :root{ --cream:#F4ECDE; --ink:#1C2B2C; --inkS:#5A6667; --red:#A8492E; --peach:#E09A73; }
+  *{ box-sizing:border-box; margin:0; }
+  body{ font-family:Georgia,'Times New Roman',serif; background:var(--cream); color:var(--ink); min-height:100vh; }
+  .wrap{ max-width:560px; margin:0 auto; padding:26px 16px 60px; }
+  h1{ font-size:22px; text-align:center; letter-spacing:.04em; margin-bottom:4px; }
+  .sub{ font-family:Arial,sans-serif; font-size:10.5px; text-transform:uppercase; letter-spacing:.26em; color:var(--peach); text-align:center; margin-bottom:8px; }
+  .lang{ text-align:center; margin-bottom:18px; }
+  .lang button{ font-family:Arial,sans-serif; font-size:12px; padding:6px 14px; border-radius:12px; border:1.5px solid rgba(28,43,44,.3); background:transparent; color:var(--ink); cursor:pointer; }
+  .lang button.on{ border-color:var(--red); color:var(--red); font-weight:700; }
+  .lbl{ font-family:Arial,sans-serif; font-size:11px; text-transform:uppercase; letter-spacing:.14em; color:var(--inkS); margin:16px 0 6px; }
+  input, textarea{ width:100%; padding:13px 15px; border:1.5px solid rgba(28,43,44,.32); border-radius:14px; font-size:16px; font-family:Arial,sans-serif; color:var(--ink); background:#fff; outline:none; }
+  textarea{ font-family:Georgia,serif; }
+  .pkg{ display:block; border:1.5px solid rgba(28,43,44,.25); border-radius:16px; padding:14px 15px; margin-bottom:10px; cursor:pointer; background:#fff; }
+  .pkg input{ width:auto; margin-right:10px; }
+  .pkg.on{ border-color:var(--red); box-shadow:0 0 0 1px var(--red); }
+  .pkg b{ font-family:Georgia,serif; }
+  .pkg .d{ font-family:Arial,sans-serif; font-size:12.5px; color:var(--inkS); margin-top:3px; }
+  .btn{ display:block; width:100%; margin-top:24px; padding:16px; border:none; border-radius:18px;
+    font-family:Arial,sans-serif; font-size:16px; font-weight:700; color:var(--ink); cursor:pointer;
+    background:linear-gradient(135deg,#F6CDAB 0%,#EFB98F 45%,#E09A73 100%); box-shadow:inset 0 1px 0 rgba(255,255,255,.45); }
+  .done{ text-align:center; padding:60px 20px; }
+  .done .big{ font-size:44px; margin-bottom:14px; }
+  .motto{ font-style:italic; text-align:center; color:var(--red); margin-top:26px; font-size:14.5px; }
+  .note{ font-family:Arial,sans-serif; font-size:12.5px; color:var(--inkS); text-align:center; margin-top:10px; line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="wrap"><a href="index.html" style="font-family:Arial,sans-serif;font-size:13px;color:var(--red);text-decoration:none;font-weight:600">← Women of Venice</a></div>
+<div class="wrap" id="app" style="padding-top:0"></div>
+<script>
+(function(){
+  var EXEC = "https://script.google.com/macros/s/AKfycbw8oG_NW-pYFDE9Tb9BkTUKGacfhW0lILsxfjvQ8qx-QZJGIYet99GkIyrSHZhcRxM/exec";
+  var Q = new URLSearchParams(location.search);
+  var lang = (Q.get("lang")==="en")?"en":( (navigator.language||"").indexOf("it")===0 ? "it" : "en" );
+  var T = {
+    it:{ t:"Prenota un ritratto a Venezia", h:"Dimmi quando sei a Venezia e quale sessione ti piacerebbe \u2014 ti rispondo entro 24 ore.",
+      n:"Nome", e:"Email", p:"Telefono / WhatsApp (opzionale)", d:"Quando sei a Venezia? (date)", m:"Raccontami qualcosa (opzionale)",
+      pk:"Scegli la sessione",
+      p1:"Mini \u2014 \u20ac90", p1d:"30 minuti \u00b7 1 location \u00b7 5 foto editate",
+      p2:"The Venice Portrait \u2014 \u20ac180 \u2b50", p2d:"60 minuti \u00b7 2\u20133 location \u00b7 12 foto editate",
+      p3:"Golden Hour \u2014 \u20ac280", p3d:"90 minuti al tramonto \u00b7 20 foto \u00b7 coppie +\u20ac50",
+      p0:"Non sono ancora sicura/o", p0d:"nessun problema \u2014 ne parliamo",
+      send:"Invia la richiesta \u2192", req:"Servono almeno nome, email e le date.",
+      ty:"Richiesta inviata!", ty2:"Ti rispondo entro 24 ore all'indirizzo che hai lasciato. A prestissimo \u2728",
+      dep:"Per confermare una data si versa un piccolo acconto di \u20ac40 \u2014 il resto il giorno stesso." },
+    en:{ t:"Book a Venice portrait", h:"Tell me when you're in Venice and which session you'd love \u2014 I reply within 24 hours.",
+      n:"Name", e:"Email", p:"Phone / WhatsApp (optional)", d:"When are you in Venice? (dates)", m:"Tell me something (optional)",
+      pk:"Choose your session",
+      p1:"Mini \u2014 \u20ac90", p1d:"30 minutes \u00b7 1 location \u00b7 5 edited photos",
+      p2:"The Venice Portrait \u2014 \u20ac180 \u2b50", p2d:"60 minutes \u00b7 2\u20133 locations \u00b7 12 edited photos",
+      p3:"Golden Hour \u2014 \u20ac280", p3d:"90 sunset minutes \u00b7 20 photos \u00b7 couples +\u20ac50",
+      p0:"Not sure yet", p0d:"no problem \u2014 let's talk",
+      send:"Send my request \u2192", req:"Name, email and dates are needed.",
+      ty:"Request sent!", ty2:"I'll reply within 24 hours to the address you left. See you very soon \u2728",
+      dep:"A small \u20ac40 deposit confirms your date \u2014 the rest on the day." }
+  };
+  var pkgSel = "";
+  var app = document.getElementById("app");
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+  function render(){
+    var L = T[lang];
+    app.innerHTML =
+      '<h1>'+L.t+'</h1><div class="sub">Women of Venice \u00b7 Portraits &amp; stories</div>'+
+      '<div class="lang"><button id="l-it" class="'+(lang==="it"?"on":"")+'">Italiano</button> <button id="l-en" class="'+(lang==="en"?"on":"")+'">English</button></div>'+
+      '<div class="note" style="margin-bottom:6px">'+L.h+'</div>'+
+      '<div class="lbl">'+L.n+'</div><input id="b-n" type="text">'+
+      '<div class="lbl">'+L.e+'</div><input id="b-e" type="email">'+
+      '<div class="lbl">'+L.p+'</div><input id="b-p" type="tel">'+
+      '<div class="lbl">'+L.d+'</div><input id="b-d" type="text" placeholder="es. 3\u20136 agosto / Aug 3\u20136">'+
+      '<div class="lbl">'+L.pk+'</div>'+
+      [["p1",L.p1,L.p1d],["p2",L.p2,L.p2d],["p3",L.p3,L.p3d],["p0",L.p0,L.p0d]].map(function(x){
+        return '<label class="pkg'+(pkgSel===x[1]?" on":"")+'" data-v="'+esc(x[1])+'"><input type="radio" name="pkg" '+(pkgSel===x[1]?"checked":"")+'><b>'+x[1]+'</b><div class="d">'+x[2]+'</div></label>';
+      }).join("")+
+      '<div class="lbl">'+L.m+'</div><textarea id="b-m" rows="3"></textarea>'+
+      '<button class="btn" id="b-send">'+L.send+'</button>'+
+      '<div class="note">'+L.dep+'</div>'+
+      '<div class="motto">\u2726 I\u2019ll steal you from Chronos \u2014 and give you Kairos.</div>';
+    document.getElementById("l-it").onclick=function(){ lang="it"; render(); };
+    document.getElementById("l-en").onclick=function(){ lang="en"; render(); };
+    Array.prototype.forEach.call(document.querySelectorAll(".pkg"), function(el){
+      el.onclick=function(){ pkgSel = el.getAttribute("data-v"); render(); };
+    });
+    document.getElementById("b-send").onclick=function(){
+      var L2=T[lang];
+      var rec={ action:"booking", record:{
+        name:document.getElementById("b-n").value.trim(),
+        email:document.getElementById("b-e").value.trim(),
+        phone:document.getElementById("b-p").value.trim(),
+        dates:document.getElementById("b-d").value.trim(),
+        pkg:pkgSel||"(not chosen)",
+        msg:document.getElementById("b-m").value.trim(),
+        lang:lang } };
+      if(!rec.record.name || !rec.record.email || !rec.record.dates){ alert(L2.req); return; }
+      fetch(EXEC, { method:"POST", mode:"no-cors",
+        headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: JSON.stringify(rec) });
+      app.innerHTML='<div class="done"><div class="big">\ud83d\udcf8</div><h1>'+L2.ty+'</h1>'+
+        '<div class="note" style="margin-top:10px">'+L2.ty2+'</div>'+
+        '<div class="motto">\u2726 I\u2019ll steal you from Chronos \u2014 and give you Kairos.</div></div>';
+    };
+  }
+  render();
+})();
+</script>
+</body>
+</html>
