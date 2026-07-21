@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Women of Venice — Booking v1.3 (site copy) · session requests straight to the connector -->
+<!-- Women of Venice — Booking v1.4 (site copy) · session requests straight to the connector -->
 <html lang="it">
 <head>
 <meta charset="utf-8">
@@ -83,10 +83,24 @@
       '<button class="btn" id="b-send">'+L.send+'</button>'+
       '<div class="note">'+L.dep+'</div>'+
       '<div class="motto">\u2726 I\u2019ll steal you from Chronos \u2014 and give you Kairos.</div>';
-    document.getElementById("l-it").onclick=function(){ lang="it"; render(); };
-    document.getElementById("l-en").onclick=function(){ lang="en"; render(); };
+    function keep(id){ var e=document.getElementById(id); return e?e.value:""; }
+    function relang(l){
+      var saved={n:keep("b-n"),e:keep("b-e"),p:keep("b-p"),d:keep("b-d"),m:keep("b-m")};
+      lang=l; render();
+      document.getElementById("b-n").value=saved.n; document.getElementById("b-e").value=saved.e;
+      document.getElementById("b-p").value=saved.p; document.getElementById("b-d").value=saved.d;
+      document.getElementById("b-m").value=saved.m;
+    }
+    document.getElementById("l-it").onclick=function(){ relang("it"); };
+    document.getElementById("l-en").onclick=function(){ relang("en"); };
     Array.prototype.forEach.call(document.querySelectorAll(".pkg"), function(el){
-      el.onclick=function(){ pkgSel = el.getAttribute("data-v"); render(); };
+      el.onclick=function(){
+        pkgSel = el.getAttribute("data-v");
+        Array.prototype.forEach.call(document.querySelectorAll(".pkg"), function(p){
+          p.classList.toggle("on", p === el);
+          var r = p.querySelector("input[type=radio]"); if (r) r.checked = (p === el);
+        });
+      };
     });
     document.getElementById("b-send").onclick=function(){
       var L2=T[lang];
