@@ -99,4 +99,19 @@
       document.addEventListener("keydown", function(ev){
         if (!lb.classList.contains("on")) return;
         if (ev.key === "ArrowLeft") show(cur-1);
-        else if (ev.key === "ArrowRight") 
+        else if (ev.key === "ArrowRight") show(cur+1);
+        else if (ev.key === "Escape") hide();
+      });
+      var tx = null;
+      lb.addEventListener("touchstart", function(ev){ tx = ev.changedTouches[0].clientX; }, {passive:true});
+      lb.addEventListener("touchend", function(ev){
+        if (tx === null) return;
+        var dx = ev.changedTouches[0].clientX - tx; tx = null;
+        if (dx > 45) show(cur-1); else if (dx < -45) show(cur+1);
+      }, {passive:true});
+    })
+    .catch(function(e){ if (e !== "empty") g.innerHTML = '<div class="load">Loading error — please retry.</div>'; });
+})();
+</script>
+</body>
+</html>
