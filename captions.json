@@ -1,6 +1,14 @@
 {
-  "01_venezia.jpg": {
-    "title": "Golden hour on the water",
-    "story": "Add a short story here — where this was taken, or what it means to the project."
+  "venice_1.jpg": {
+    "title": "Streets of Water",
+    "story": "Floating smoothly down the stream on a quiet day of July"
+  },
+  "venice_2.jpg": {
+    "title": "Carlo Goldoni",
+    "story": "La Commedia dell'arte."
+  },
+  "venice_3.jpg": {
+    "title": "Architectural Details",
+    "story": "Ogee arch window."
   }
 }
