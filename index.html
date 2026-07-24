@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Women of Venice — Site v2.1 (portfolio homepage · real logo from /logo.png) · self-feeding from THIS repo's /portfolio folder · lives in repo womenofvenice-ops.github.io -->
+<!-- Women of Venice — Site v2.2 (portfolio homepage · captions/stories via captions.json) · self-feeding from THIS repo's /portfolio folder · lives in repo womenofvenice-ops.github.io -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -34,6 +34,9 @@
   .lb .pv{ left:2px; top:50%; transform:translateY(-50%); }
   .lb .nx{ right:2px; top:50%; transform:translateY(-50%); }
   .lb .cnt{ position:absolute; bottom:12px; left:0; right:0; text-align:center; color:#E09A73; font-family:'Inter',Arial,sans-serif; font-size:12px; letter-spacing:.2em; }
+  .lb .cap{ position:absolute; bottom:38px; left:0; right:0; text-align:center; max-width:640px; margin:0 auto; padding:0 24px; }
+  .lb .cap .t{ font-family:'Playfair Display',Georgia,serif; font-style:italic; color:#F4ECDE; font-size:17px; margin-bottom:4px; }
+  .lb .cap .s{ font-family:'Inter',Arial,sans-serif; color:#C9BFA8; font-size:12.5px; line-height:1.5; }
   .foot{ text-align:center; font-family:'Inter',Arial,sans-serif; font-size:12px; color:var(--inkS); margin-top:34px; line-height:1.7; }
   .foot a{ color:var(--red); }
 </style>
@@ -55,6 +58,7 @@
     <button class="pv" id="lb-pv">‹</button>
     <img id="lb-img" alt="Women of Venice">
     <button class="nx" id="lb-nx">›</button>
+    <div class="cap" id="lb-cap"></div>
     <div class="cnt" id="lb-cnt"></div>
   </div>
   <div class="foot">
@@ -75,6 +79,9 @@
       files.sort(function(a,b){ return a.name < b.name ? -1 : 1; });
       if (!files.length) { born(); return; }
       var urls = files.map(function(f){ return f.download_url; });
+      var names = files.map(function(f){ return f.name; });
+      var CAP = {};
+      fetch("captions.json").then(function(r){ return r.ok ? r.json() : {}; }).catch(function(){ return {}; }).then(function(c){ CAP = c || {}; });
       g.innerHTML = files.map(function(f, i){
         return '<a href="'+f.download_url+'" data-i="'+i+'">'+
                '<img loading="lazy" src="'+f.download_url+'" alt="Women of Venice portrait"></a>';
@@ -86,8 +93,12 @@
       // ---- lightbox ----
       var lb = document.getElementById("lb"), lbImg = document.getElementById("lb-img"),
           cnt = document.getElementById("lb-cnt"), cur = 0;
+      var capEl = document.getElementById("lb-cap");
       function show(i){ cur = (i + urls.length) % urls.length; lbImg.src = urls[cur];
-        cnt.textContent = (cur+1) + " / " + urls.length; lb.classList.add("on"); }
+        cnt.textContent = (cur+1) + " / " + urls.length; lb.classList.add("on");
+        var c = CAP[names[cur]];
+        capEl.innerHTML = c ? ('<div class="t">'+(c.title||"")+'</div><div class="s">'+(c.story||"")+'</div>') : "";
+      }
       function hide(){ lb.classList.remove("on"); lbImg.src = ""; }
       Array.prototype.forEach.call(g.querySelectorAll("a"), function(a){
         a.onclick = function(ev){ ev.preventDefault(); show(+a.getAttribute("data-i")); };
