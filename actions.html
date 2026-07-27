@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Women of Venice — Manual Actions v1 · fires proofs/deliver/status straight to the connector, no local storage needed -->
+<!-- Women of Venice — Manual Actions v1.1 (adds email field — required for send-to-work) · fires proofs/deliver/status straight to the connector, no local storage needed -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -27,13 +27,16 @@
   <h1>Manual Actions</h1>
   <div class="sub">Women of Venice · works from any device, no saved encounter needed</div>
 
-  <div class="lbl">Encounter ID (from the Sheet's "ID" column — leave blank if unknown, name+date usually enough)</div>
+  <div class="lbl">Encounter ID (optional — from the Sheet's "ID" column, helps keep her Status row in sync)</div>
   <input id="eid" type="text" placeholder="e.g. E1234567890">
 
   <div class="row">
     <div><div class="lbl">Model's first name</div><input id="name" type="text"></div>
     <div><div class="lbl">Language</div><select id="lang"><option value="it">Italiano</option><option value="en">English</option></select></div>
   </div>
+
+  <div class="lbl">Her email address (REQUIRED — this is who receives the message)</div>
+  <input id="email" type="email" placeholder="her@email.com">
 
   <div class="lbl">Drive folder link (paste the "Incontri/date_Name" folder share link)</div>
   <input id="folder" type="text" placeholder="https://drive.google.com/drive/folders/...">
@@ -79,12 +82,13 @@ document.getElementById("go").onclick = function(){
   var action = document.getElementById("action").value;
   var fid = folderIdFromUrl(folderUrl);
 
-  if (!name || (!fid && action !== "status")) {
-    res.innerHTML = '<div class="note err">Need at least the model\'s name, and a folder link for proofs/deliver actions.</div>';
+  var email = document.getElementById("email").value.trim();
+  if (!name || !email || (!fid && action !== "status")) {
+    res.innerHTML = '<div class="note err">Need at least the model\'s name, her email, and a folder link for proofs/deliver actions.</div>';
     return;
   }
 
-  var record = { id: eid, name: name, lang: lang, fid: fid };
+  var record = { id: eid, name: name, lang: lang, fid: fid, email: email };
   if (action === "status") record.status = document.getElementById("statusVal").value;
 
   res.innerHTML = '<div class="note">Sending…</div>';
