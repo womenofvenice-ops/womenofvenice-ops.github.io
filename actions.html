@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<!-- Women of Venice — Manual Actions v1 · fires proofs/deliver/status straight to the connector, no local storage needed -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WoV — Manual Actions</title>
+<style>
+  :root{ --cream:#F4ECDE; --ink:#1C2B2C; --inkS:#5A6667; --red:#A8492E; --peach:#E09A73; }
+  *{ box-sizing:border-box; margin:0; }
+  body{ font-family:'Inter',Arial,sans-serif; background:var(--cream); color:var(--ink); min-height:100vh; }
+  .wrap{ max-width:480px; margin:0 auto; padding:24px 16px 60px; }
+  h1{ font-family:Georgia,serif; font-size:20px; text-align:center; margin-bottom:4px; }
+  .sub{ font-size:11px; text-transform:uppercase; letter-spacing:.2em; color:var(--peach); text-align:center; margin-bottom:22px; }
+  .lbl{ font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--inkS); margin:14px 0 5px; }
+  input, select, textarea{ width:100%; padding:12px 14px; border:1.5px solid rgba(28,43,44,.3); border-radius:12px; font-size:15px; font-family:Arial,sans-serif; background:#fff; }
+  .btn{ display:block; width:100%; margin-top:20px; padding:15px; border:none; border-radius:16px; font-size:15px; font-weight:700; cursor:pointer;
+    background:linear-gradient(135deg,#F6CDAB,#EFB98F,#E09A73); box-shadow:inset 0 1px 0 rgba(255,255,255,.45); }
+  .note{ margin-top:16px; padding:12px 14px; border-radius:10px; background:#fff; font-size:13px; line-height:1.5; }
+  .note.ok{ border-left:4px solid #4a7c59; } .note.err{ border-left:4px solid var(--red); }
+  .hint{ font-size:11.5px; color:var(--inkS); margin-top:4px; }
+  .row{ display:flex; gap:10px; } .row > div{ flex:1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Manual Actions</h1>
+  <div class="sub">Women of Venice · works from any device, no saved encounter needed</div>
+
+  <div class="lbl">Encounter ID (from the Sheet's "ID" column — leave blank if unknown, name+date usually enough)</div>
+  <input id="eid" type="text" placeholder="e.g. E1234567890">
+
+  <div class="row">
+    <div><div class="lbl">Model's first name</div><input id="name" type="text"></div>
+    <div><div class="lbl">Language</div><select id="lang"><option value="it">Italiano</option><option value="en">English</option></select></div>
+  </div>
+
+  <div class="lbl">Drive folder link (paste the "Incontri/date_Name" folder share link)</div>
+  <input id="folder" type="text" placeholder="https://drive.google.com/drive/folders/...">
+
+  <div class="lbl">Action</div>
+  <select id="action">
+    <option value="proofs">🖼 Send proofs (she picks favourites)</option>
+    <option value="deliver">📤 Deliver photos (final, ready to keep)</option>
+    <option value="status">🔄 Update status only (no email)</option>
+  </select>
+
+  <div id="statusRow" style="display:none">
+    <div class="lbl">New status</div>
+    <select id="statusVal">
+      <option value="Delivered">Delivered</option>
+      <option value="Published">Published</option>
+      <option value="Proofs sent">Proofs sent</option>
+    </select>
+  </div>
+
+  <button class="btn" id="go">Send action →</button>
+  <div class="hint">This talks directly to the WOV connector — same one the app uses. It does not read or need any saved encounter list.</div>
+  <div id="result"></div>
+</div>
+<script>
+var EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
+
+function folderIdFromUrl(u){
+  var m = (u||"").match(/folders\/([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : (u||"").trim();
+}
+
+document.getElementById("action").onchange = function(){
+  document.getElementById("statusRow").style.display = (this.value === "status") ? "block" : "none";
+};
+
+document.getElementById("go").onclick = function(){
+  var res = document.getElementById("result");
+  var eid = document.getElementById("eid").value.trim();
+  var name = document.getElementById("name").value.trim();
+  var lang = document.getElementById("lang").value;
+  var folderUrl = document.getElementById("folder").value.trim();
+  var action = document.getElementById("action").value;
+  var fid = folderIdFromUrl(folderUrl);
+
+  if (!name || (!fid && action !== "status")) {
+    res.innerHTML = '<div class="note err">Need at least the model\'s name, and a folder link for proofs/deliver actions.</div>';
+    return;
+  }
+
+  var record = { id: eid, name: name, lang: lang, fid: fid };
+  if (action === "status") record.status = document.getElementById("statusVal").value;
+
+  res.innerHTML = '<div class="note">Sending…</div>';
+  fetch(EXEC, {
+    method: "POST", mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action: action, record: record })
+  }).then(function(){
+    res.innerHTML = '<div class="note ok">✓ Sent. Check your Gmail / her inbox to confirm it landed — no-cors mode means this page can\'t read the server\'s reply, but the request went out.</div>';
+  }).catch(function(e){
+    res.innerHTML = '<div class="note err">✗ Network error: ' + e + '</div>';
+  });
+};
+</script>
+</body>
+</html>
