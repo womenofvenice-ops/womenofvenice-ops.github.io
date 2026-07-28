@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Women of Venice — Manual Actions v1.1 (adds email field — required for send-to-work) · fires proofs/deliver/status straight to the connector, no local storage needed -->
+<!-- Women of Venice — Manual Actions v1.2 (no folder link needed — connector recomputes the folder from name+date, same as the Sheet Dashboard) · fires proofs/deliver/status straight to the connector, no local storage needed -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -38,8 +38,8 @@
   <div class="lbl">Her email address (REQUIRED — this is who receives the message)</div>
   <input id="email" type="email" placeholder="her@email.com">
 
-  <div class="lbl">Drive folder link (paste the "Incontri/date_Name" folder share link)</div>
-  <input id="folder" type="text" placeholder="https://drive.google.com/drive/folders/...">
+  <div class="lbl">Date she was met (must match her original signing date — check the Sheet's "Quando" column)</div>
+  <input id="metdate" type="date">
 
   <div class="lbl">Action</div>
   <select id="action">
@@ -64,11 +64,6 @@
 <script>
 var EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
 
-function folderIdFromUrl(u){
-  var m = (u||"").match(/folders\/([a-zA-Z0-9_-]+)/);
-  return m ? m[1] : (u||"").trim();
-}
-
 document.getElementById("action").onchange = function(){
   document.getElementById("statusRow").style.display = (this.value === "status") ? "block" : "none";
 };
@@ -78,17 +73,16 @@ document.getElementById("go").onclick = function(){
   var eid = document.getElementById("eid").value.trim();
   var name = document.getElementById("name").value.trim();
   var lang = document.getElementById("lang").value;
-  var folderUrl = document.getElementById("folder").value.trim();
+  var metdate = document.getElementById("metdate").value;
   var action = document.getElementById("action").value;
-  var fid = folderIdFromUrl(folderUrl);
 
   var email = document.getElementById("email").value.trim();
-  if (!name || !email || (!fid && action !== "status")) {
-    res.innerHTML = '<div class="note err">Need at least the model\'s name, her email, and a folder link for proofs/deliver actions.</div>';
+  if (!name || !email || (!metdate && action !== "status")) {
+    res.innerHTML = '<div class="note err">Need at least the model\'s name, her email, and the date she was met (for proofs/deliver actions — the connector rebuilds her folder from name+date, same as it did when she signed).</div>';
     return;
   }
 
-  var record = { id: eid, name: name, lang: lang, fid: fid, email: email };
+  var record = { id: eid, name: name, lang: lang, email: email, createdAt: metdate ? (metdate + "T12:00:00") : new Date().toISOString() };
   if (action === "status") record.status = document.getElementById("statusVal").value;
 
   res.innerHTML = '<div class="note">Sending…</div>';
