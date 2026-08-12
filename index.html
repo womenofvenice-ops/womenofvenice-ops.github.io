@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Women of Venice — Site v2.3 (portfolio homepage · links About page) · self-feeding from THIS repo's /portfolio folder · lives in repo womenofvenice-ops.github.io -->
+<!-- Women of Venice — Site v2.4 (portfolio homepage · loads from Google Apps Script JSON feed) · lives in repo womenofvenice-ops.github.io -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -68,41 +68,70 @@
 </div>
 <script>
 (function(){
-  var API = "https://api.github.com/repos/womenofvenice-ops/womenofvenice-ops.github.io/contents/portfolio";
+  // ========== CONFIG ==========
+  // Your Google Apps Script feed URL (portfolio)
+  var FEED_URL = 'https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec?action=portfolio&format=json';
+  // ========== END CONFIG ==========
+
   var g = document.getElementById("g");
   var EXT = /\.(jpe?g|png|webp|gif)$/i;
+
   function born(){ g.innerHTML = '<div class="load">The portfolio is being born — come back soon ✦</div>'; }
-  fetch(API)
-    .then(function(r){ if (r.status === 404) { born(); throw "empty"; } if(!r.ok) throw "err"; return r.json(); })
-    .then(function(list){
-      var files = (list || []).filter(function(f){ return f.type === "file" && EXT.test(f.name); });
+  function showError(msg){ g.innerHTML = '<div class="load">' + msg + '</div>'; }
+
+  fetch(FEED_URL)
+    .then(function(r){
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    })
+    .then(function(data){
+      // Filter to only images with consent
+      var files = (data.files || []).filter(function(f){ return f.consent === true; });
+      
+      // Also filter by image extension (safety)
+      files = files.filter(function(f){ return EXT.test(f.name); });
+
+      // Sort by name
       files.sort(function(a,b){ return a.name < b.name ? -1 : 1; });
-      if (!files.length) { born(); return; }
-      var urls = files.map(function(f){ return f.download_url; });
-      var names = files.map(function(f){ return f.name; });
-      var CAP = {};
-      fetch("captions.json").then(function(r){ return r.ok ? r.json() : {}; }).catch(function(){ return {}; }).then(function(c){ CAP = c || {}; });
+
+      if (!files.length) {
+        born();
+        return;
+      }
+
+      // Build the grid
       g.innerHTML = files.map(function(f, i){
-        return '<a href="'+f.download_url+'" data-i="'+i+'">'+
-               '<img loading="lazy" src="'+f.download_url+'" alt="Women of Venice portrait"></a>';
+        return '<a href="'+f.url+'" data-i="'+i+'">'+
+               '<img loading="lazy" src="'+f.url+'" alt="Women of Venice portrait"></a>';
       }).join("");
+
+      // Apply "wide" class to landscape images
       Array.prototype.forEach.call(g.querySelectorAll("img"), function(im){
         function tag(){ if (im.naturalWidth >= im.naturalHeight * 1.1) im.parentNode.classList.add("wide"); }
         if (im.complete && im.naturalWidth) tag(); else im.onload = tag;
       });
-      // ---- lightbox ----
+
+      // ——— Lightbox ———
       var lb = document.getElementById("lb"), lbImg = document.getElementById("lb-img"),
           cnt = document.getElementById("lb-cnt"), cur = 0;
       var capEl = document.getElementById("lb-cap");
-      function show(i){ cur = (i + urls.length) % urls.length; lbImg.src = urls[cur];
-        cnt.textContent = (cur+1) + " / " + urls.length; lb.classList.add("on");
-        var c = CAP[names[cur]];
-        capEl.innerHTML = c ? ('<div class="t">'+(c.title||"")+'</div><div class="s">'+(c.story||"")+'</div>') : "";
+
+      function show(i){
+        cur = (i + files.length) % files.length;
+        var f = files[cur];
+        lbImg.src = f.url;
+        cnt.textContent = (cur+1) + " / " + files.length;
+        lb.classList.add("on");
+        // Show story if available
+        capEl.innerHTML = f.story ? ('<div class="t">' + f.model + '</div><div class="s">"' + f.story + '"</div>') : ('<div class="t">' + f.model + '</div>');
       }
+
       function hide(){ lb.classList.remove("on"); lbImg.src = ""; }
+
       Array.prototype.forEach.call(g.querySelectorAll("a"), function(a){
         a.onclick = function(ev){ ev.preventDefault(); show(+a.getAttribute("data-i")); };
       });
+
       document.getElementById("lb-x").onclick = hide;
       document.getElementById("lb-pv").onclick = function(){ show(cur-1); };
       document.getElementById("lb-nx").onclick = function(){ show(cur+1); };
@@ -113,6 +142,7 @@
         else if (ev.key === "ArrowRight") show(cur+1);
         else if (ev.key === "Escape") hide();
       });
+
       var tx = null;
       lb.addEventListener("touchstart", function(ev){ tx = ev.changedTouches[0].clientX; }, {passive:true});
       lb.addEventListener("touchend", function(ev){
@@ -121,7 +151,10 @@
         if (dx > 45) show(cur-1); else if (dx < -45) show(cur+1);
       }, {passive:true});
     })
-    .catch(function(e){ if (e !== "empty") g.innerHTML = '<div class="load">Loading error — please retry.</div>'; });
+    .catch(function(e){
+      console.error("Portfolio load error:", e);
+      showError("Loading error — please retry.");
+    });
 })();
 </script>
 </body>
