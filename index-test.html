@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<!-- WOMEN OF VENICE — TEST PAGE (v2.9-test) -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TEST — Women of Venice Gallery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="logo.png">
+  <style>
+    :root {
+      --cream: #F4ECDE;
+      --ink: #1C2B2C;
+      --inkS: #5A6667;
+      --red: #A8492E;
+      --peach: #E09A73;
+    }
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      font-family: 'Playfair Display', Georgia, serif;
+      background: var(--cream);
+      color: var(--ink);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .test-banner {
+      background: var(--red);
+      color: #fff;
+      text-align: center;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-family: 'Inter', Arial, sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+    .test-banner a {
+      color: #fff;
+      text-decoration: underline;
+    }
+    h1 {
+      font-size: 28px;
+      text-align: center;
+      letter-spacing: 0.04em;
+    }
+    .sub {
+      font-family: 'Inter', Arial, sans-serif;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.3em;
+      color: var(--peach);
+      text-align: center;
+      margin-top: 4px;
+    }
+    .motto {
+      font-style: italic;
+      text-align: center;
+      color: var(--red);
+      font-size: 16px;
+      margin-top: 4px;
+      margin-bottom: 20px;
+    }
+    /* ——— GALLERY (no cropping) ——— */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .gallery-grid a {
+      display: block;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #e8dfcd;
+    }
+    .gallery-grid img {
+      width: 100%;
+      height: auto;
+      display: block;
+      object-fit: contain;
+    }
+    .gallery-grid a.wide {
+      grid-column: span 2;
+    }
+    .load {
+      text-align: center;
+      font-family: 'Inter', Arial, sans-serif;
+      color: var(--inkS);
+      padding: 50px 0;
+    }
+    .load-more-container {
+      text-align: center;
+      margin-top: 30px;
+    }
+    .load-more-container button {
+      font-family: 'Inter', Arial, sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--red);
+      background: transparent;
+      border: 1.5px solid var(--red);
+      padding: 10px 32px;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .load-more-container button:hover {
+      background: var(--red);
+      color: #fff;
+    }
+    /* ——— Lightbox ——— */
+    .lb {
+      position: fixed;
+      inset: 0;
+      background: rgba(28, 43, 44, 0.95);
+      display: none;
+      z-index: 50;
+    }
+    .lb.on {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .lb img {
+      max-width: 94vw;
+      max-height: 88vh;
+      border-radius: 8px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+    .lb button {
+      position: absolute;
+      background: none;
+      border: none;
+      color: #F4ECDE;
+      cursor: pointer;
+      font-size: 34px;
+      padding: 14px;
+      line-height: 1;
+    }
+    .lb .x { top: 10px; right: 16px; font-size: 26px; }
+    .lb .pv { left: 6px; top: 50%; transform: translateY(-50%); }
+    .lb .nx { right: 6px; top: 50%; transform: translateY(-50%); }
+    .lb .cnt {
+      position: absolute;
+      bottom: 14px;
+      left: 0; right: 0;
+      text-align: center;
+      color: var(--peach);
+      font-family: 'Inter', Arial, sans-serif;
+      font-size: 12px;
+      letter-spacing: 0.2em;
+    }
+    .lb .cap {
+      position: absolute;
+      bottom: 44px;
+      left: 0; right: 0;
+      text-align: center;
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    .lb .cap .t {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-style: italic;
+      color: #F4ECDE;
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+    .lb .cap .s {
+      font-family: 'Inter', Arial, sans-serif;
+      color: #C9BFA8;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    @media (max-width: 480px) {
+      .gallery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+      }
+      .gallery-grid a.wide { grid-column: span 1; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ——— TEST BANNER ——— -->
+  <div class="test-banner">
+    ⚠️ TEST PAGE — Gallery Feed Debug · <a href="index.html">Back to main site</a>
+  </div>
+
+  <h1>Women of Venice</h1>
+  <div class="sub">Portraits &amp; Stories · Venezia</div>
+  <div class="motto">✦ I'll steal you from Chronos — and give you Kairos.</div>
+
+  <!-- GALLERY -->
+  <div id="g" class="gallery-grid"><div class="load">Loading…</div></div>
+  <div class="load-more-container" id="loadMoreContainer" style="display:none;">
+    <button id="loadMoreBtn">Load More</button>
+  </div>
+
+  <!-- LIGHTBOX -->
+  <div class="lb" id="lb">
+    <button class="x" id="lb-x">✕</button>
+    <button class="pv" id="lb-pv">‹</button>
+    <img id="lb-img" alt="Women of Venice">
+    <button class="nx" id="lb-nx">›</button>
+    <div class="cap" id="lb-cap"></div>
+    <div class="cnt" id="lb-cnt"></div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  // ========== CONFIG ==========
+  var FEED_URL = 'https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec?action=portfolio&format=json';
+  // ========== END CONFIG ==========
+
+  var g = document.getElementById("g");
+  var loadMoreBtn = document.getElementById('loadMoreBtn');
+  var loadMoreContainer = document.getElementById('loadMoreContainer');
+  var EXT = /\.(jpe?g|png|webp|gif)$/i;
+  var allFiles = [];
+  var currentIndex = 0;
+  var INITIAL_COUNT = 20;
+
+  function showError(msg){ g.innerHTML = '<div class="load">⚠️ ' + msg + '</div>'; }
+
+  function shuffleArray(arr) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var temp = arr[i];
+      arr[i] = arr[j];
+      arr[j] = temp;
+    }
+    return arr;
+  }
+
+  function renderGallery(files) {
+    if (!files.length) return;
+    var fragment = document.createDocumentFragment();
+    files.forEach(function(f, idx) {
+      var a = document.createElement('a');
+      a.href = f.url;
+      a.setAttribute('data-i', currentIndex + idx);
+      var img = document.createElement('img');
+      img.loading = "lazy";
+      img.src = f.url;
+      img.setAttribute('referrerpolicy', 'no-referrer');
+      img.alt = "Women of Venice portrait";
+      a.appendChild(img);
+      img.onload = function() {
+        if (img.naturalWidth >= img.naturalHeight * 1.1) a.classList.add('wide');
+      };
+      fragment.appendChild(a);
+    });
+    g.appendChild(fragment);
+    if (!window.displayedFiles) window.displayedFiles = [];
+    window.displayedFiles = window.displayedFiles.concat(files);
+  }
+
+  function loadMore() {
+    var remaining = allFiles.slice(currentIndex);
+    if (!remaining.length) {
+      loadMoreContainer.style.display = 'none';
+      return;
+    }
+    var batchSize = 20;
+    var batch = remaining.slice(0, batchSize);
+    renderGallery(batch);
+    currentIndex += batch.length;
+    if (currentIndex >= allFiles.length) {
+      loadMoreContainer.style.display = 'none';
+    }
+    attachLightboxHandlers();
+  }
+
+  function attachLightboxHandlers() {
+    var links = g.querySelectorAll('a');
+    links.forEach(function(a) {
+      a.onclick = function(ev) {
+        ev.preventDefault();
+        var idx = parseInt(a.getAttribute('data-i'), 10);
+        showLightbox(idx);
+      };
+    });
+  }
+
+  function showLightbox(i) {
+    var lb = document.getElementById("lb"), lbImg = document.getElementById("lb-img"),
+        cnt = document.getElementById("lb-cnt"), capEl = document.getElementById("lb-cap");
+    var files = window.displayedFiles || [];
+    if (!files.length) return;
+    var cur = (i + files.length) % files.length;
+    var f = files[cur];
+    lbImg.src = f.url;
+    lbImg.setAttribute('referrerpolicy', 'no-referrer');
+    cnt.textContent = (cur+1) + " / " + files.length;
+    lb.classList.add("on");
+    var displayName = (f.model || "").replace(/-/g, ' ').replace(/\b\w/g, function(l){ return l.toUpperCase(); });
+    capEl.innerHTML = f.story ? ('<div class="t">' + displayName + '</div><div class="s">"' + f.story + '"</div>') : ('<div class="t">' + displayName + '</div>');
+    window._lightboxCur = cur;
+    window._lightboxFiles = files;
+  }
+
+  // Lightbox navigation
+  document.getElementById("lb-x").onclick = function() {
+    document.getElementById("lb").classList.remove("on");
+    document.getElementById("lb-img").src = "";
+  };
+  document.getElementById("lb-pv").onclick = function() {
+    var files = window._lightboxFiles || [];
+    var cur = window._lightboxCur || 0;
+    showLightbox((cur - 1 + files.length) % files.length);
+  };
+  document.getElementById("lb-nx").onclick = function() {
+    var files = window._lightboxFiles || [];
+    var cur = window._lightboxCur || 0;
+    showLightbox((cur + 1) % files.length);
+  };
+  document.getElementById("lb").onclick = function(ev) {
+    if (ev.target === this) {
+      this.classList.remove("on");
+      document.getElementById("lb-img").src = "";
+    }
+  };
+  document.addEventListener("keydown", function(ev) {
+    var lb = document.getElementById("lb");
+    if (!lb.classList.contains("on")) return;
+    if (ev.key === "ArrowLeft") { document.getElementById("lb-pv").click(); }
+    else if (ev.key === "ArrowRight") { document.getElementById("lb-nx").click(); }
+    else if (ev.key === "Escape") { document.getElementById("lb-x").click(); }
+  });
+
+  var tx = null;
+  document.getElementById("lb").addEventListener("touchstart", function(ev) {
+    tx = ev.changedTouches[0].clientX;
+  }, {passive:true});
+  document.getElementById("lb").addEventListener("touchend", function(ev) {
+    if (tx === null) return;
+    var dx = ev.changedTouches[0].clientX - tx;
+    tx = null;
+    if (dx > 45) { document.getElementById("lb-pv").click(); }
+    else if (dx < -45) { document.getElementById("lb-nx").click(); }
+  }, {passive:true});
+
+  // ========== FETCH FEED (WITH CORS FIX) ==========
+  var timeout = setTimeout(function() {
+    if (g.querySelector('.load')) {
+      showError("Loading timed out. Please refresh the page.");
+    }
+  }, 15000);
+
+  // ** FIX: Added headers to avoid CORS preflight **
+  fetch(FEED_URL, {
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8'
+    }
+  })
+    .then(function(r) {
+      clearTimeout(timeout);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(data) {
+      var files = (data.files || []).filter(function(f){ return f.consent === true; });
+      files = files.filter(function(f){ return EXT.test(f.name); });
+      allFiles = shuffleArray(files);
+      if (!allFiles.length) {
+        g.innerHTML = '<div class="load">📭 No consented portraits found. Add some!</div>';
+        return;
+      }
+
+      var initialBatch = allFiles.slice(0, INITIAL_COUNT);
+      window.displayedFiles = initialBatch.slice();
+      renderGallery(initialBatch);
+      currentIndex = initialBatch.length;
+      attachLightboxHandlers();
+
+      if (allFiles.length > INITIAL_COUNT) {
+        loadMoreContainer.style.display = 'block';
+        loadMoreBtn.onclick = loadMore;
+      }
+    })
+    .catch(function(e) {
+      clearTimeout(timeout);
+      console.error("Portfolio fetch error:", e);
+      // Show a more detailed error on the page
+      var errorMsg = "Failed to load portfolio. ";
+      if (e.message) errorMsg += "(" + e.message + ")";
+      showError(errorMsg + " — Check console for details.");
+    });
+})();
+</script>
+</body>
+</html>
