@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- WOMEN OF VENICE — TEST PAGE (v2.9-test) -->
+<!-- WOMEN OF VENICE — TEST PAGE (v2.9-fix) -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -70,12 +70,8 @@
       letter-spacing: 0.04em;
       color: var(--ink);
     }
-    .nav-title a {
-      text-decoration: none;
-      color: var(--ink);
-    }
+    .nav-title a { text-decoration: none; color: var(--ink); }
 
-    /* ——— HAMBURGER MENU ——— */
     .hamburger {
       display: none;
       flex-direction: column;
@@ -122,30 +118,21 @@
       padding: 6px 18px;
       border-radius: 30px;
     }
-    .nav-links a.primary:hover {
-      background: #8a3d28;
-      color: #fff;
-    }
+    .nav-links a.primary:hover { background: #8a3d28; color: #fff; }
     .nav-links a.secondary {
       background: var(--ink);
       color: #fff;
       padding: 6px 18px;
       border-radius: 30px;
     }
-    .nav-links a.secondary:hover {
-      background: #3a4a4b;
-      color: #fff;
-    }
+    .nav-links a.secondary:hover { background: #3a4a4b; color: #fff; }
     .nav-links a.contact-btn {
       background: var(--ink);
       color: #fff;
       padding: 6px 18px;
       border-radius: 30px;
     }
-    .nav-links a.contact-btn:hover {
-      background: #3a4a4b;
-      color: #fff;
-    }
+    .nav-links a.contact-btn:hover { background: #3a4a4b; color: #fff; }
 
     @media (max-width: 760px) {
       .hamburger { display: flex; }
@@ -174,10 +161,7 @@
       text-align: center;
       padding: 8px 0 18px;
     }
-    .hero h1 {
-      font-size: 34px;
-      letter-spacing: 0.04em;
-    }
+    .hero h1 { font-size: 34px; letter-spacing: 0.04em; }
     .hero .sub {
       font-family: 'Inter', Arial, sans-serif;
       font-size: 12px;
@@ -304,10 +288,7 @@
       color: var(--ink);
       margin-bottom: 6px;
     }
-    .footer a {
-      color: var(--red);
-      text-decoration: none;
-    }
+    .footer a { color: var(--red); text-decoration: none; }
     .footer a:hover { text-decoration: underline; }
     .footer .bottom-links { margin-top: 8px; font-size: 12px; }
 
@@ -320,12 +301,12 @@
 <body>
 <div class="wrap">
 
-  <!-- ====== TEST BANNER ====== -->
+  <!-- TEST BANNER -->
   <div class="test-banner">
     ⚠️ TEST PAGE — Gallery Feed Debug · <a href="index.html">Back to main site</a>
   </div>
 
-  <!-- ====== NAVIGATION ====== -->
+  <!-- NAVIGATION -->
   <div class="nav">
     <div class="nav-left">
       <a href="index.html" class="nav-logo">
@@ -348,14 +329,14 @@
     </div>
   </div>
 
-  <!-- ====== HERO ====== -->
+  <!-- HERO -->
   <div class="hero">
     <h1>Women of Venice</h1>
     <div class="sub">Portraits &amp; Stories · Venezia</div>
     <div class="motto">✦ I'll steal you from Chronos — and give you Kairos.</div>
   </div>
 
-  <!-- ====== GALLERY ====== -->
+  <!-- GALLERY -->
   <div id="gallery-section">
     <div id="g" class="gallery-grid"><div class="load">Loading…</div></div>
     <div class="load-more-container" id="loadMoreContainer" style="display:none;">
@@ -363,7 +344,7 @@
     </div>
   </div>
 
-  <!-- ====== LIGHTBOX ====== -->
+  <!-- LIGHTBOX -->
   <div class="lb" id="lb">
     <button class="x" id="lb-x">✕</button>
     <button class="pv" id="lb-pv">‹</button>
@@ -373,7 +354,7 @@
     <div class="cnt" id="lb-cnt"></div>
   </div>
 
-  <!-- ====== FOOTER ====== -->
+  <!-- FOOTER -->
   <div class="footer">
     <div class="tagline">✦ one encounter at a time · Venezia</div>
     <div>
@@ -573,6 +554,9 @@
         if (g) g.innerHTML = '<div class="load">📭 No consented portraits found. Add some!</div>';
         return;
       }
+
+      // ========== CLEAR THE CONTAINER BEFORE RENDERING ==========
+      if (g) g.innerHTML = '';  // Remove the "Loading…" text
 
       var initialBatch = allFiles.slice(0, INITIAL_COUNT);
       window.displayedFiles = initialBatch.slice();
