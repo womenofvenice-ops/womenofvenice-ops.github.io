@@ -19,6 +19,8 @@
     * { box-sizing: border-box; margin: 0; }
     body { font-family: 'Playfair Display', Georgia, serif; background: var(--cream); color: var(--ink); min-height: 100vh; padding: 20px; }
     .wrap { max-width: 1200px; margin: 0 auto; }
+
+    /* ——— TEST BANNER ——— */
     .test-banner {
       background: var(--red);
       color: #fff;
@@ -31,24 +33,167 @@
       margin-bottom: 20px;
     }
     .test-banner a { color: #fff; text-decoration: underline; }
-    h1 { font-size: 28px; text-align: center; letter-spacing: 0.04em; }
-    .sub {
+
+    /* ——— NAVIGATION ——— */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0 12px;
+      border-bottom: 1px solid rgba(28, 43, 44, 0.08);
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .nav-logo {
+      display: block;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: var(--cream);
+      border: 1px solid rgba(28, 43, 44, 0.1);
+    }
+    .nav-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .nav-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--ink);
+    }
+    .nav-title a {
+      text-decoration: none;
+      color: var(--ink);
+    }
+
+    /* ——— HAMBURGER MENU ——— */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 6px;
+    }
+    .hamburger span {
+      display: block;
+      width: 26px;
+      height: 2.5px;
+      background: var(--ink);
+      border-radius: 2px;
+      transition: 0.3s;
+    }
+    .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+    .hamburger.active span:nth-child(2) { opacity: 0; }
+    .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Inter', Arial, sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .nav-links a {
+      color: var(--ink);
+      text-decoration: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .nav-links a:hover {
+      background: rgba(168, 73, 46, 0.08);
+      color: var(--red);
+    }
+    .nav-links a.primary {
+      background: var(--red);
+      color: #fff;
+      padding: 6px 18px;
+      border-radius: 30px;
+    }
+    .nav-links a.primary:hover {
+      background: #8a3d28;
+      color: #fff;
+    }
+    .nav-links a.secondary {
+      background: var(--ink);
+      color: #fff;
+      padding: 6px 18px;
+      border-radius: 30px;
+    }
+    .nav-links a.secondary:hover {
+      background: #3a4a4b;
+      color: #fff;
+    }
+    .nav-links a.contact-btn {
+      background: var(--ink);
+      color: #fff;
+      padding: 6px 18px;
+      border-radius: 30px;
+    }
+    .nav-links a.contact-btn:hover {
+      background: #3a4a4b;
+      color: #fff;
+    }
+
+    @media (max-width: 760px) {
+      .hamburger { display: flex; }
+      .nav-links {
+        display: none;
+        flex-direction: column;
+        align-items: stretch;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--cream);
+        padding: 16px 12px;
+        border-radius: 0 0 12px 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        border-top: 1px solid rgba(28,43,44,0.06);
+        gap: 6px;
+        z-index: 40;
+      }
+      .nav-links.open { display: flex; }
+      .nav-links a { padding: 10px 12px; border-radius: 8px; text-align: center; }
+    }
+
+    /* ——— HERO ——— */
+    .hero {
+      text-align: center;
+      padding: 8px 0 18px;
+    }
+    .hero h1 {
+      font-size: 34px;
+      letter-spacing: 0.04em;
+    }
+    .hero .sub {
       font-family: 'Inter', Arial, sans-serif;
       font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 0.3em;
       color: var(--peach);
-      text-align: center;
-      margin-top: 4px;
+      margin-top: 2px;
     }
-    .motto {
+    .hero .motto {
       font-style: italic;
-      text-align: center;
       color: var(--red);
-      font-size: 16px;
+      font-size: 17px;
       margin-top: 4px;
-      margin-bottom: 20px;
     }
+
+    /* ——— GALLERY ——— */
     .gallery-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -69,6 +214,7 @@
     }
     .gallery-grid a.wide { grid-column: span 2; }
     .load { text-align: center; font-family: 'Inter', Arial, sans-serif; color: var(--inkS); padding: 50px 0; }
+
     .load-more-container { text-align: center; margin-top: 30px; }
     .load-more-container button {
       font-family: 'Inter', Arial, sans-serif;
@@ -83,6 +229,8 @@
       transition: background 0.2s, color 0.2s;
     }
     .load-more-container button:hover { background: var(--red); color: #fff; }
+
+    /* ——— LIGHTBOX ——— */
     .lb {
       position: fixed;
       inset: 0;
@@ -137,6 +285,32 @@
       font-size: 13px;
       line-height: 1.5;
     }
+
+    /* ——— FOOTER ——— */
+    .footer {
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(28, 43, 44, 0.08);
+      text-align: center;
+      font-family: 'Inter', Arial, sans-serif;
+      font-size: 13px;
+      color: var(--inkS);
+      line-height: 1.8;
+    }
+    .footer .tagline {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-style: italic;
+      font-size: 16px;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+    .footer a {
+      color: var(--red);
+      text-decoration: none;
+    }
+    .footer a:hover { text-decoration: underline; }
+    .footer .bottom-links { margin-top: 8px; font-size: 12px; }
+
     @media (max-width: 480px) {
       .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
       .gallery-grid a.wide { grid-column: span 1; }
@@ -146,21 +320,50 @@
 <body>
 <div class="wrap">
 
+  <!-- ====== TEST BANNER ====== -->
   <div class="test-banner">
     ⚠️ TEST PAGE — Gallery Feed Debug · <a href="index.html">Back to main site</a>
   </div>
 
-  <h1>Women of Venice</h1>
-  <div class="sub">Portraits &amp; Stories · Venezia</div>
-  <div class="motto">✦ I'll steal you from Chronos — and give you Kairos.</div>
+  <!-- ====== NAVIGATION ====== -->
+  <div class="nav">
+    <div class="nav-left">
+      <a href="index.html" class="nav-logo">
+        <img src="logo-icon.png" alt="Women of Venice" onerror="this.style.display='none'">
+      </a>
+      <div class="nav-title"><a href="index.html">Women of Venice</a></div>
+    </div>
 
-  <!-- GALLERY -->
-  <div id="g" class="gallery-grid"><div class="load">Loading…</div></div>
-  <div class="load-more-container" id="loadMoreContainer" style="display:none;">
-    <button id="loadMoreBtn">Load More</button>
+    <button class="hamburger" id="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+
+    <div class="nav-links" id="navLinks">
+      <a href="about.html" class="primary">📖 The Project</a>
+      <a href="artist.html" class="secondary">👤 About</a>
+      <a href="#gallery-section">🖼️ Gallery</a>
+      <a href="booking.html">📸 Book a Session</a>
+      <a href="posa.html">✨ Become a Portrait</a>
+      <a href="mailto:womenofvenice@gmail.com" class="contact-btn">✉️ Contact</a>
+    </div>
   </div>
 
-  <!-- LIGHTBOX -->
+  <!-- ====== HERO ====== -->
+  <div class="hero">
+    <h1>Women of Venice</h1>
+    <div class="sub">Portraits &amp; Stories · Venezia</div>
+    <div class="motto">✦ I'll steal you from Chronos — and give you Kairos.</div>
+  </div>
+
+  <!-- ====== GALLERY ====== -->
+  <div id="gallery-section">
+    <div id="g" class="gallery-grid"><div class="load">Loading…</div></div>
+    <div class="load-more-container" id="loadMoreContainer" style="display:none;">
+      <button id="loadMoreBtn">Load More</button>
+    </div>
+  </div>
+
+  <!-- ====== LIGHTBOX ====== -->
   <div class="lb" id="lb">
     <button class="x" id="lb-x">✕</button>
     <button class="pv" id="lb-pv">‹</button>
@@ -170,19 +373,17 @@
     <div class="cnt" id="lb-cnt"></div>
   </div>
 
-  <!-- FOOTER -->
-  <div style="margin-top:40px;padding-top:20px;border-top:1px solid rgba(28,43,44,0.08);text-align:center;font-family:'Inter',Arial,sans-serif;font-size:13px;color:var(--inkS);">
-    <div style="font-family:'Playfair Display',Georgia,serif;font-style:italic;font-size:16px;color:var(--ink);margin-bottom:6px;">
-      ✦ one encounter at a time · Venezia
-    </div>
+  <!-- ====== FOOTER ====== -->
+  <div class="footer">
+    <div class="tagline">✦ one encounter at a time · Venezia</div>
     <div>
-      <a href="about.html" style="color:var(--red);text-decoration:none;">The Project</a> ·
-      <a href="artist.html" style="color:var(--red);text-decoration:none;">About</a> ·
-      <a href="booking.html" style="color:var(--red);text-decoration:none;">Book a Session</a> ·
-      <a href="mailto:womenofvenice@gmail.com" style="color:var(--red);text-decoration:none;">Contact</a>
+      <a href="about.html">The Project</a> ·
+      <a href="artist.html">About</a> ·
+      <a href="booking.html">Book a Session</a> ·
+      <a href="mailto:womenofvenice@gmail.com">Contact</a>
     </div>
-    <div style="margin-top:8px;font-size:12px;">
-      <a href="https://linktr.ee/womenofvenice" target="_blank" style="color:var(--red);text-decoration:none;">🔗 Linktree</a>
+    <div class="bottom-links">
+      <a href="https://linktr.ee/womenofvenice" target="_blank">🔗 Linktree</a>
     </div>
   </div>
 
@@ -190,8 +391,23 @@
 
 <script>
 (function(){
-  // ========== DIRECT JSONP URL (from the 302 redirect) ==========
-  // This URL already contains the full JSON data and responds with JSONP.
+  // ========== HAMBURGER MENU ==========
+  var hamburger = document.getElementById('hamburger');
+  var navLinks = document.getElementById('navLinks');
+  if (hamburger && navLinks) {
+    hamburger.addEventListener('click', function() {
+      hamburger.classList.toggle('active');
+      navLinks.classList.toggle('open');
+    });
+    navLinks.querySelectorAll('a').forEach(function(link) {
+      link.addEventListener('click', function() {
+        hamburger.classList.remove('active');
+        navLinks.classList.remove('open');
+      });
+    });
+  }
+
+  // ========== CONFIG: DIRECT JSONP URL ==========
   var FEED_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnQ2lPH17X07OsQFKH36zbexF1Jbiq93lIJWAl2ME5304sUbICYtL5OSSopjE4oNni2Pg_Ge0nE_oZEqLzdWRVS3SBmTS1vZUvDYp0yqHT_8hUaZUtMKstJXVChoRD-j3yvacygj4eGldwggeDJvomjoM02QSIGptHtwbLKKv5ptV2bYyWY9iUbNaFjG0Eo44nZmvpxcx2TXIzOuh1fTEAvfrfkJ_OugLFvc8iF7j0kAdPH_XvfucSPXdL20lpAZs9fcOR4gDzjg5r9QjowFFqZKYj6C2GoGLPJzosE3AfL-YfPvpP1raSBIS0EUZRaiZwyAkFPKjdLW4x4xCxYrF8_cdVU5kA&lib=MxI0IzCoNuzIhyWj1sCHtC619Olu2p57F';
   // ========== END CONFIG ==========
 
@@ -204,7 +420,9 @@
   var INITIAL_COUNT = 20;
   var loaded = false;
 
-  function showError(msg){ g.innerHTML = '<div class="load">⚠️ ' + msg + '</div>'; }
+  function showError(msg){
+    if (g) g.innerHTML = '<div class="load">⚠️ ' + msg + '</div>';
+  }
 
   function shuffleArray(arr) {
     for (var i = arr.length - 1; i > 0; i--) {
@@ -217,7 +435,7 @@
   }
 
   function renderGallery(files) {
-    if (!files.length) return;
+    if (!files.length || !g) return;
     var fragment = document.createDocumentFragment();
     files.forEach(function(f, idx) {
       var a = document.createElement('a');
@@ -241,16 +459,22 @@
 
   function loadMore() {
     var remaining = allFiles.slice(currentIndex);
-    if (!remaining.length) { loadMoreContainer.style.display = 'none'; return; }
+    if (!remaining.length) {
+      if (loadMoreContainer) loadMoreContainer.style.display = 'none';
+      return;
+    }
     var batchSize = 20;
     var batch = remaining.slice(0, batchSize);
     renderGallery(batch);
     currentIndex += batch.length;
-    if (currentIndex >= allFiles.length) { loadMoreContainer.style.display = 'none'; }
+    if (currentIndex >= allFiles.length) {
+      if (loadMoreContainer) loadMoreContainer.style.display = 'none';
+    }
     attachLightboxHandlers();
   }
 
   function attachLightboxHandlers() {
+    if (!g) return;
     var links = g.querySelectorAll('a');
     links.forEach(function(a) {
       a.onclick = function(ev) {
@@ -262,26 +486,33 @@
   }
 
   function showLightbox(i) {
-    var lb = document.getElementById("lb"), lbImg = document.getElementById("lb-img"),
-        cnt = document.getElementById("lb-cnt"), capEl = document.getElementById("lb-cap");
+    var lb = document.getElementById("lb");
+    var lbImg = document.getElementById("lb-img");
+    var cnt = document.getElementById("lb-cnt");
+    var capEl = document.getElementById("lb-cap");
+    if (!lb || !lbImg) return;
     var files = window.displayedFiles || [];
     if (!files.length) return;
     var cur = (i + files.length) % files.length;
     var f = files[cur];
     lbImg.src = f.url;
     lbImg.setAttribute('referrerpolicy', 'no-referrer');
-    cnt.textContent = (cur+1) + " / " + files.length;
+    if (cnt) cnt.textContent = (cur+1) + " / " + files.length;
     lb.classList.add("on");
     var displayName = (f.model || "").replace(/-/g, ' ').replace(/\b\w/g, function(l){ return l.toUpperCase(); });
-    capEl.innerHTML = f.story ? ('<div class="t">' + displayName + '</div><div class="s">"' + f.story + '"</div>') : ('<div class="t">' + displayName + '</div>');
+    if (capEl) {
+      capEl.innerHTML = f.story ? ('<div class="t">' + displayName + '</div><div class="s">"' + f.story + '"</div>') : ('<div class="t">' + displayName + '</div>');
+    }
     window._lightboxCur = cur;
     window._lightboxFiles = files;
   }
 
   // Lightbox navigation
+  var lb = document.getElementById("lb");
+  var lbImg = document.getElementById("lb-img");
   document.getElementById("lb-x").onclick = function() {
-    document.getElementById("lb").classList.remove("on");
-    document.getElementById("lb-img").src = "";
+    if (lb) lb.classList.remove("on");
+    if (lbImg) lbImg.src = "";
   };
   document.getElementById("lb-pv").onclick = function() {
     var files = window._lightboxFiles || [];
@@ -293,31 +524,34 @@
     var cur = window._lightboxCur || 0;
     showLightbox((cur + 1) % files.length);
   };
-  document.getElementById("lb").onclick = function(ev) {
-    if (ev.target === this) {
-      this.classList.remove("on");
-      document.getElementById("lb-img").src = "";
-    }
-  };
+  if (lb) {
+    lb.onclick = function(ev) {
+      if (ev.target === this) {
+        this.classList.remove("on");
+        if (lbImg) lbImg.src = "";
+      }
+    };
+  }
   document.addEventListener("keydown", function(ev) {
-    var lb = document.getElementById("lb");
-    if (!lb.classList.contains("on")) return;
+    if (!lb || !lb.classList.contains("on")) return;
     if (ev.key === "ArrowLeft") { document.getElementById("lb-pv").click(); }
     else if (ev.key === "ArrowRight") { document.getElementById("lb-nx").click(); }
     else if (ev.key === "Escape") { document.getElementById("lb-x").click(); }
   });
 
   var tx = null;
-  document.getElementById("lb").addEventListener("touchstart", function(ev) {
-    tx = ev.changedTouches[0].clientX;
-  }, {passive:true});
-  document.getElementById("lb").addEventListener("touchend", function(ev) {
-    if (tx === null) return;
-    var dx = ev.changedTouches[0].clientX - tx;
-    tx = null;
-    if (dx > 45) { document.getElementById("lb-pv").click(); }
-    else if (dx < -45) { document.getElementById("lb-nx").click(); }
-  }, {passive:true});
+  if (lb) {
+    lb.addEventListener("touchstart", function(ev) {
+      tx = ev.changedTouches[0].clientX;
+    }, {passive:true});
+    lb.addEventListener("touchend", function(ev) {
+      if (tx === null) return;
+      var dx = ev.changedTouches[0].clientX - tx;
+      tx = null;
+      if (dx > 45) { document.getElementById("lb-pv").click(); }
+      else if (dx < -45) { document.getElementById("lb-nx").click(); }
+    }, {passive:true});
+  }
 
   // ========== LOAD JSONP ==========
   var timeout = setTimeout(function() {
@@ -328,7 +562,6 @@
 
   console.log("🔍 Creating script tag with URL:", FEED_URL);
 
-  // Define the callback function BEFORE loading the script
   window.wovPortfolio = function(data) {
     loaded = true;
     console.log("✅ JSONP callback fired! Files:", data.files ? data.files.length : 0);
@@ -337,7 +570,7 @@
       files = files.filter(function(f){ return EXT.test(f.name); });
       allFiles = shuffleArray(files);
       if (!allFiles.length) {
-        g.innerHTML = '<div class="load">📭 No consented portraits found. Add some!</div>';
+        if (g) g.innerHTML = '<div class="load">📭 No consented portraits found. Add some!</div>';
         return;
       }
 
@@ -347,9 +580,9 @@
       currentIndex = initialBatch.length;
       attachLightboxHandlers();
 
-      if (allFiles.length > INITIAL_COUNT) {
+      if (allFiles.length > INITIAL_COUNT && loadMoreContainer) {
         loadMoreContainer.style.display = 'block';
-        loadMoreBtn.onclick = loadMore;
+        if (loadMoreBtn) loadMoreBtn.onclick = loadMore;
       }
     } catch (e) {
       console.error("Portfolio render error:", e);
