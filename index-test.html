@@ -218,8 +218,9 @@
 
 <script>
 (function(){
-  // ========== CONFIG ==========
-  var FEED_URL = 'https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec?action=portfolio&format=json';
+  // ========== CONFIG (JSONP) ==========
+  // Use JSONP format with a callback parameter
+  var FEED_URL = 'https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec?action=portfolio&format=jsonp&callback=wovPortfolio';
   // ========== END CONFIG ==========
 
   var g = document.getElementById("g");
@@ -229,6 +230,7 @@
   var allFiles = [];
   var currentIndex = 0;
   var INITIAL_COUNT = 20;
+  var loaded = false;
 
   function showError(msg){ g.innerHTML = '<div class="load">⚠️ ' + msg + '</div>'; }
 
@@ -350,25 +352,10 @@
     else if (dx < -45) { document.getElementById("lb-nx").click(); }
   }, {passive:true});
 
-  // ========== FETCH FEED (WITH CORS FIX) ==========
-  var timeout = setTimeout(function() {
-    if (g.querySelector('.load')) {
-      showError("Loading timed out. Please refresh the page.");
-    }
-  }, 15000);
-
-  // ** FIX: Added headers to avoid CORS preflight **
-  fetch(FEED_URL, {
-    headers: {
-      'Content-Type': 'text/plain;charset=utf-8'
-    }
-  })
-    .then(function(r) {
-      clearTimeout(timeout);
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    })
-    .then(function(data) {
+  // ========== JSONP CALLBACK ==========
+  window.wovPortfolio = function(data) {
+    loaded = true;
+    try {
       var files = (data.files || []).filter(function(f){ return f.consent === true; });
       files = files.filter(function(f){ return EXT.test(f.name); });
       allFiles = shuffleArray(files);
@@ -387,15 +374,27 @@
         loadMoreContainer.style.display = 'block';
         loadMoreBtn.onclick = loadMore;
       }
-    })
-    .catch(function(e) {
-      clearTimeout(timeout);
-      console.error("Portfolio fetch error:", e);
-      // Show a more detailed error on the page
-      var errorMsg = "Failed to load portfolio. ";
-      if (e.message) errorMsg += "(" + e.message + ")";
-      showError(errorMsg + " — Check console for details.");
-    });
+    } catch (e) {
+      console.error("Portfolio render error:", e);
+      showError("Error rendering portfolio.");
+    }
+  };
+
+  // ========== LOAD JSONP ==========
+  var timeout = setTimeout(function() {
+    if (!loaded) {
+      showError("Loading timed out. The feed URL might be incorrect or blocked.");
+    }
+  }, 15000);
+
+  // Create a script tag to load the JSONP response
+  var script = document.createElement('script');
+  script.src = FEED_URL;
+  script.onerror = function() {
+    clearTimeout(timeout);
+    showError("Failed to load portfolio. Check the feed URL.");
+  };
+  document.head.appendChild(script);
 })();
 </script>
 </body>
