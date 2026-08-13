@@ -17,17 +17,8 @@
       --peach: #E09A73;
     }
     * { box-sizing: border-box; margin: 0; }
-    body {
-      font-family: 'Playfair Display', Georgia, serif;
-      background: var(--cream);
-      color: var(--ink);
-      min-height: 100vh;
-      padding: 20px;
-    }
-    .wrap {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
+    body { font-family: 'Playfair Display', Georgia, serif; background: var(--cream); color: var(--ink); min-height: 100vh; padding: 20px; }
+    .wrap { max-width: 1200px; margin: 0 auto; }
     .test-banner {
       background: var(--red);
       color: #fff;
@@ -39,15 +30,8 @@
       font-size: 14px;
       margin-bottom: 20px;
     }
-    .test-banner a {
-      color: #fff;
-      text-decoration: underline;
-    }
-    h1 {
-      font-size: 28px;
-      text-align: center;
-      letter-spacing: 0.04em;
-    }
+    .test-banner a { color: #fff; text-decoration: underline; }
+    h1 { font-size: 28px; text-align: center; letter-spacing: 0.04em; }
     .sub {
       font-family: 'Inter', Arial, sans-serif;
       font-size: 12px;
@@ -65,7 +49,6 @@
       margin-top: 4px;
       margin-bottom: 20px;
     }
-    /* ——— GALLERY (no cropping) ——— */
     .gallery-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -84,19 +67,9 @@
       display: block;
       object-fit: contain;
     }
-    .gallery-grid a.wide {
-      grid-column: span 2;
-    }
-    .load {
-      text-align: center;
-      font-family: 'Inter', Arial, sans-serif;
-      color: var(--inkS);
-      padding: 50px 0;
-    }
-    .load-more-container {
-      text-align: center;
-      margin-top: 30px;
-    }
+    .gallery-grid a.wide { grid-column: span 2; }
+    .load { text-align: center; font-family: 'Inter', Arial, sans-serif; color: var(--inkS); padding: 50px 0; }
+    .load-more-container { text-align: center; margin-top: 30px; }
     .load-more-container button {
       font-family: 'Inter', Arial, sans-serif;
       font-size: 14px;
@@ -109,11 +82,7 @@
       cursor: pointer;
       transition: background 0.2s, color 0.2s;
     }
-    .load-more-container button:hover {
-      background: var(--red);
-      color: #fff;
-    }
-    /* ——— Lightbox ——— */
+    .load-more-container button:hover { background: var(--red); color: #fff; }
     .lb {
       position: fixed;
       inset: 0;
@@ -121,17 +90,8 @@
       display: none;
       z-index: 50;
     }
-    .lb.on {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .lb img {
-      max-width: 94vw;
-      max-height: 88vh;
-      border-radius: 8px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-    }
+    .lb.on { display: flex; align-items: center; justify-content: center; }
+    .lb img { max-width: 94vw; max-height: 88vh; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
     .lb button {
       position: absolute;
       background: none;
@@ -178,10 +138,7 @@
       line-height: 1.5;
     }
     @media (max-width: 480px) {
-      .gallery-grid {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 10px;
-      }
+      .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
       .gallery-grid a.wide { grid-column: span 1; }
     }
   </style>
@@ -189,7 +146,6 @@
 <body>
 <div class="wrap">
 
-  <!-- ——— TEST BANNER ——— -->
   <div class="test-banner">
     ⚠️ TEST PAGE — Gallery Feed Debug · <a href="index.html">Back to main site</a>
   </div>
@@ -214,15 +170,29 @@
     <div class="cnt" id="lb-cnt"></div>
   </div>
 
+  <!-- FOOTER -->
+  <div style="margin-top:40px;padding-top:20px;border-top:1px solid rgba(28,43,44,0.08);text-align:center;font-family:'Inter',Arial,sans-serif;font-size:13px;color:var(--inkS);">
+    <div style="font-family:'Playfair Display',Georgia,serif;font-style:italic;font-size:16px;color:var(--ink);margin-bottom:6px;">
+      ✦ one encounter at a time · Venezia
+    </div>
+    <div>
+      <a href="about.html" style="color:var(--red);text-decoration:none;">The Project</a> ·
+      <a href="artist.html" style="color:var(--red);text-decoration:none;">About</a> ·
+      <a href="booking.html" style="color:var(--red);text-decoration:none;">Book a Session</a> ·
+      <a href="mailto:womenofvenice@gmail.com" style="color:var(--red);text-decoration:none;">Contact</a>
+    </div>
+    <div style="margin-top:8px;font-size:12px;">
+      <a href="https://linktr.ee/womenofvenice" target="_blank" style="color:var(--red);text-decoration:none;">🔗 Linktree</a>
+    </div>
+  </div>
+
 </div>
 
 <script>
 (function(){
-  // ========== CONFIG ==========
-  // Original JSON feed URL
-  var ORIGINAL_URL = 'https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec?action=portfolio&format=json';
-  // CORS proxy (free, no API key required)
-  var PROXY_URL = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(ORIGINAL_URL);
+  // ========== DIRECT JSONP URL (from the 302 redirect) ==========
+  // This URL already contains the full JSON data and responds with JSONP.
+  var FEED_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnQ2lPH17X07OsQFKH36zbexF1Jbiq93lIJWAl2ME5304sUbICYtL5OSSopjE4oNni2Pg_Ge0nE_oZEqLzdWRVS3SBmTS1vZUvDYp0yqHT_8hUaZUtMKstJXVChoRD-j3yvacygj4eGldwggeDJvomjoM02QSIGptHtwbLKKv5ptV2bYyWY9iUbNaFjG0Eo44nZmvpxcx2TXIzOuh1fTEAvfrfkJ_OugLFvc8iF7j0kAdPH_XvfucSPXdL20lpAZs9fcOR4gDzjg5r9QjowFFqZKYj6C2GoGLPJzosE3AfL-YfPvpP1raSBIS0EUZRaiZwyAkFPKjdLW4x4xCxYrF8_cdVU5kA&lib=MxI0IzCoNuzIhyWj1sCHtC619Olu2p57F';
   // ========== END CONFIG ==========
 
   var g = document.getElementById("g");
@@ -232,6 +202,7 @@
   var allFiles = [];
   var currentIndex = 0;
   var INITIAL_COUNT = 20;
+  var loaded = false;
 
   function showError(msg){ g.innerHTML = '<div class="load">⚠️ ' + msg + '</div>'; }
 
@@ -270,17 +241,12 @@
 
   function loadMore() {
     var remaining = allFiles.slice(currentIndex);
-    if (!remaining.length) {
-      loadMoreContainer.style.display = 'none';
-      return;
-    }
+    if (!remaining.length) { loadMoreContainer.style.display = 'none'; return; }
     var batchSize = 20;
     var batch = remaining.slice(0, batchSize);
     renderGallery(batch);
     currentIndex += batch.length;
-    if (currentIndex >= allFiles.length) {
-      loadMoreContainer.style.display = 'none';
-    }
+    if (currentIndex >= allFiles.length) { loadMoreContainer.style.display = 'none'; }
     attachLightboxHandlers();
   }
 
@@ -353,18 +319,20 @@
     else if (dx < -45) { document.getElementById("lb-nx").click(); }
   }, {passive:true});
 
-  // ========== FETCH VIA PROXY ==========
+  // ========== LOAD JSONP ==========
   var timeout = setTimeout(function() {
-    showError("⏱️ Loading timed out. Check your internet connection.");
+    if (!loaded) {
+      showError("⏱️ Loading timed out. Check the Network tab for details.");
+    }
   }, 15000);
 
-  fetch(PROXY_URL)
-    .then(function(r) {
-      clearTimeout(timeout);
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    })
-    .then(function(data) {
+  console.log("🔍 Creating script tag with URL:", FEED_URL);
+
+  // Define the callback function BEFORE loading the script
+  window.wovPortfolio = function(data) {
+    loaded = true;
+    console.log("✅ JSONP callback fired! Files:", data.files ? data.files.length : 0);
+    try {
       var files = (data.files || []).filter(function(f){ return f.consent === true; });
       files = files.filter(function(f){ return EXT.test(f.name); });
       allFiles = shuffleArray(files);
@@ -383,12 +351,27 @@
         loadMoreContainer.style.display = 'block';
         loadMoreBtn.onclick = loadMore;
       }
-    })
-    .catch(function(e) {
-      clearTimeout(timeout);
-      console.error("Portfolio fetch error:", e);
-      showError("Failed to load portfolio: " + e.message);
-    });
+    } catch (e) {
+      console.error("Portfolio render error:", e);
+      showError("Error rendering portfolio.");
+    }
+  };
+
+  var script = document.createElement('script');
+  script.src = FEED_URL;
+  script.onload = function() {
+    console.log("✅ Script tag loaded successfully.");
+    if (!loaded) {
+      console.warn("⚠️ Script loaded but callback not called. Check the response.");
+      showError("Script loaded but callback not called. Check the Network tab.");
+    }
+  };
+  script.onerror = function(e) {
+    clearTimeout(timeout);
+    console.error("❌ Script tag failed to load.", e);
+    showError("Failed to load portfolio. Check the Network tab for details.");
+  };
+  document.head.appendChild(script);
 })();
 </script>
 </body>
