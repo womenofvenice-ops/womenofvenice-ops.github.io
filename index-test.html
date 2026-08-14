@@ -1,25 +1,35 @@
 <!DOCTYPE html>
-<!-- Women of Venice — v3.1 FINAL (working contact form, overlay) -->
+<!-- Women of Venice — v3.2 (all P0-P3 fixes applied) -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Women of Venice — Portraits & Stories</title>
   <link rel="preconnect" href="https://lh3.googleusercontent.com">
-  <link rel="preconnect" href="https://script.googleusercontent.com">
+  <link rel="preconnect" href="https://script.google.com">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="icon" href="https://raw.githubusercontent.com/womenofvenice-ops/womenofvenice-ops.github.io/main/logo-woman-in-the-arch.png">
+  <link rel="icon" href="logo-woman-in-the-arch.png">
   <script src="https://unpkg.com/masonry-layout@4.2.2/dist/masonry.pkgd.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
-    /* ===== CSS Variables ===== */
+    /* ===== CSS Variables (Light & Dark) ===== */
     :root {
+      --bg: #F4ECDE;
+      --text: #1C2B2C;
+      --text-light: #5A6667;
+      --red: #A8492E;
+      --peach: #E09A73;
+      --card-bg: #ffffff;
+      --shadow: rgba(0,0,0,0.08);
+      --input-bg: #fff;
+      --border: #ddd;
+      --link: var(--red);
+    }
+    [data-theme="dark"] {
       --bg: #1a1a1a;
       --text: #eee;
       --text-light: #bbb;
-      --red: #A8492E;
-      --peach: #E09A73;
       --card-bg: #2a2a2a;
       --shadow: rgba(0,0,0,0.3);
       --input-bg: #333;
@@ -43,7 +53,7 @@
       justify-content: space-between;
       align-items: center;
       padding: 4px 0 12px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
+      border-bottom: 1px solid var(--border);
       margin-bottom: 16px;
       position: relative;
       flex-wrap: wrap;
@@ -600,7 +610,7 @@
     <div class="nav-right">
       <div class="nav-links" id="navLinks">
         <a href="about.html" class="primary">📖 The Project</a>
-        <a href="artist.html" class="secondary">👤 About</a>
+        <!-- artist.html link removed for now -->
         <a href="#gallery-section">🖼️ Gallery</a>
         <a href="booking.html">📸 Book a Session</a>
         <a href="posa.html">✨ Become a Portrait</a>
@@ -644,14 +654,12 @@
   <!-- ===== CONTACT ===== -->
   <section class="contact-section" id="contact">
     <h2>Get in Touch</h2>
-    <form id="contactForm" action="https://formspree.io/f/xyegpdgv" method="POST">
+    <form id="contactForm" action="https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec" method="POST">
+      <!-- This will be routed as a lead intake via the connector -->
+      <input type="hidden" name="action" value="lead">
       <input type="text" name="name" placeholder="Your name" required>
       <input type="email" name="_replyto" placeholder="Your email" required>
       <textarea name="message" rows="4" placeholder="Message" required></textarea>
-
-      <!-- Hidden subject: will be set dynamically via JavaScript -->
-      <input type="hidden" name="_subject" id="formSubject" value="WOV Contact Form">
-
       <button type="submit">Send</button>
     </form>
   </section>
@@ -683,7 +691,6 @@
     <div class="tagline">✦ one encounter at a time · Venezia</div>
     <div>
       <a href="about.html">The Project</a> ·
-      <a href="artist.html">About</a> ·
       <a href="booking.html">Book a Session</a> ·
       <a href="#contact">Contact</a>
     </div>
@@ -711,6 +718,7 @@
       });
     });
   }
+
   // ======================== ERROR HANDLING ========================
   function showError(msg) {
     if (g) {
@@ -718,33 +726,15 @@
         '<br><button onclick="location.reload()" style="margin-top:16px;padding:8px 24px;background:var(--red);color:#fff;border:none;border-radius:30px;cursor:pointer;">Retry</button></div>';
     }
   }
-  // ======================== END ERROR HANDLING ========================
-  // ======================== CONTACT FORM (AJAX) ========================
+
+  // ======================== CONTACT FORM (via Connector) ========================
   var contactForm = document.getElementById('contactForm');
   var formOverlay = document.getElementById('formOverlay');
   var closeFormBtn = document.getElementById('closeFormSuccess');
-  var formSubject = document.getElementById('formSubject');
 
   if (contactForm) {
-    // Update the hidden subject field when name or email changes
-    var nameField = contactForm.querySelector('input[name="name"]');
-    var emailField = contactForm.querySelector('input[name="_replyto"]');
-
-    function updateSubject() {
-      var name = nameField ? nameField.value.trim() : '';
-      var email = emailField ? emailField.value.trim() : '';
-      var subject = (name || email || 'WOV Contact Form') + ' — WOV Contact Form';
-      if (formSubject) formSubject.value = subject;
-    }
-
-    if (nameField) nameField.addEventListener('input', updateSubject);
-    if (emailField) emailField.addEventListener('input', updateSubject);
-
     contactForm.addEventListener('submit', function(e) {
       e.preventDefault();
-
-      // Update subject before sending
-      updateSubject();
 
       var formData = new FormData(this);
       var submitBtn = this.querySelector('button[type="submit"]');
@@ -763,7 +753,6 @@
         if (response.ok) {
           formOverlay.classList.add('show');
           contactForm.reset();
-          if (formSubject) formSubject.value = 'WOV Contact Form';
         } else {
           alert('Something went wrong. Please try again.');
         }
@@ -784,7 +773,6 @@
       formOverlay.classList.remove('show');
     });
   }
-
   if (formOverlay) {
     formOverlay.addEventListener('click', function(e) {
       if (e.target === this) {
@@ -793,7 +781,7 @@
     });
   }
 
-  // ======================== DARK MODE ========================
+  // ======================== DARK MODE (fully functional) ========================
   var darkToggle = document.getElementById('darkToggle');
   var currentTheme = localStorage.getItem('theme') || 'dark';
   if (currentTheme === 'dark') {
@@ -815,8 +803,10 @@
     }
   });
 
-  // ======================== PORTFOLIO FEED (JSONP) ========================
-  var FEED_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnQ2lPH17X07OsQFKH36zbexF1Jbiq93lIJWAl2ME5304sUbICYtL5OSSopjE4oNni2Pg_Ge0nE_oZEqLzdWRVS3SBmTS1vZUvDYp0yqHT_8hUaZUtMKstJXVChoRD-j3yvacygj4eGldwggeDJvomjoM02QSIGptHtwbLKKv5ptV2bYyWY9iUbNaFjG0Eo44nZmvpxcx2TXIzOuh1fTEAvfrfkJ_OugLFvc8iF7j0kAdPH_XvfucSPXdL20lpAZs9fcOR4gDzjg5r9QjowFFqZKYj6C2GoGLPJzosE3AfL-YfPvpP1raSBIS0EUZRaiZwyAkFPKjdLW4x4xCxYrF8_cdVU5kA&lib=MxI0IzCoNuzIhyWj1sCHtC619Olu2p57F';
+  // ======================== PORTFOLIO FEED (Permanent URL) ========================
+  // Using the stable /exec endpoint, not the temporary redirect.
+  var FEED_URL = 'https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec?action=portfolio&format=jsonp&callback=wovPortfolio';
+
   var INITIAL_COUNT = 6;
   var BATCH_SIZE = 12;
   var allFiles = [];
@@ -839,7 +829,8 @@
   var lbClose = document.getElementById('lbClose');
   var lbControls = document.getElementById('lbControls');
 
-  // Venice captions
+  // Only for the Venice model, keep a pool of poetic captions.
+  // For all other models, use the real story (or nothing).
   var VENICE_CAPTIONS = [
     "Venice — a city where water and stone hold centuries of whispered stories.",
     "The light on the canals, the silence of the campos — Venice at dawn.",
@@ -872,13 +863,23 @@
     return arr;
   }
 
-  function getThumbUrl(fileId, size) {
-  return 'https://lh3.googleusercontent.com/d/' + fileId + '=w' + size;
-}
+  // Extract file ID from the complete URL (backend returns full URL)
+  function extractFileId(url) {
+    var match = url.match(/[?&]id=([^&]+)/);
+    if (match) return match[1];
+    // if no 'id' param, try to get the last part of the path
+    var parts = url.split('/');
+    return parts[parts.length - 1].split('?')[0];
+  }
 
- function getFullUrl(fileId) {
-  return 'https://lh3.googleusercontent.com/d/' + fileId + '=w1000';
-}
+  // Build CDN URLs using the file ID (no redirects)
+  function getThumbUrl(fileId, size) {
+    return 'https://lh3.googleusercontent.com/d/' + fileId + '=w' + size;
+  }
+
+  function getFullUrl(fileId) {
+    return 'https://lh3.googleusercontent.com/d/' + fileId + '=w1000';
+  }
 
   function formatName(raw) {
     return (raw || '').replace(/-/g, ' ').replace(/\b\w/g, function(l){ return l.toUpperCase(); });
@@ -889,10 +890,13 @@
   }
 
   function getStoryForFile(f) {
+    // Only use Venice captions if the model is exactly "Venezia LaSerenissima"
     var isVenice = f.model && f.model.toLowerCase().indexOf('venezia') >= 0;
     if (isVenice) {
+      // Use a rotating caption ONLY for Venice model
       return getNextVeniceCaption();
     }
+    // For all other models, return the real story (or empty)
     return f.story || '';
   }
 
@@ -900,10 +904,11 @@
     if (!files || !files.length) return;
     var fragment = document.createDocumentFragment();
     files.forEach(function(f, idx) {
+      var fileId = extractFileId(f.url);
       var item = document.createElement('div');
       item.className = 'gallery-item';
-      var thumbUrl = getThumbUrl(f.id, 50);
-      var fullUrl = getFullUrl(f.id);
+      var thumbUrl = getThumbUrl(fileId, 50);
+      var fullUrl = getFullUrl(fileId);
       var img = document.createElement('img');
       img.className = 'placeholder-blur';
       img.src = thumbUrl;
@@ -992,7 +997,8 @@
     selected.forEach(function(f) {
       var name = formatName(f.model);
       var story = getStoryForFile(f);
-      var fullUrl = getFullUrl(f.id);
+      var fileId = extractFileId(f.url);
+      var fullUrl = getFullUrl(fileId);
       html += '<div class="featured-item" data-idx="' + (displayedFiles.length + allFiles.indexOf(f)) + '">';
       html += '<img src="' + fullUrl + '" alt="' + name + '" loading="lazy">';
       html += '<div class="info">';
@@ -1017,7 +1023,8 @@
     var candidates = files.filter(function(f) { return f.consent; });
     if (candidates.length) {
       var pick = candidates[Math.floor(Math.random() * candidates.length)];
-      heroImg.src = getFullUrl(pick.id);
+      var fileId = extractFileId(pick.url);
+      heroImg.src = getFullUrl(fileId);
     } else {
       heroImg.src = 'logo-woman-in-the-arch.png';
     }
@@ -1049,7 +1056,8 @@
 
   function showLightboxImage(idx) {
     var f = lightboxFiles[idx];
-    lbImg.src = getFullUrl(f.id);
+    var fileId = extractFileId(f.url);
+    lbImg.src = getFullUrl(fileId);
     var name = formatName(f.model);
     var story = getStoryForFile(f);
     lbCap.innerHTML = '<div class="t">' + name + '</div><div class="s">' + (story ? '"' + story + '"' : '') + '</div>';
@@ -1121,7 +1129,7 @@
 
   var timeout = setTimeout(function() {
     if (!loaded) {
-      gallery.innerHTML = '<div class="load">⏱️ Loading timed out. Refresh.</div>';
+      showError('⏱️ Loading timed out. Refresh the page or click Retry.');
     }
   }, 15000);
 
@@ -1130,11 +1138,12 @@
   script.onload = function() {
     if (!loaded) {
       console.warn('Callback not called.');
+      showError('Callback not called. Check the feed URL.');
     }
   };
   script.onerror = function() {
     clearTimeout(timeout);
-    gallery.innerHTML = '<div class="load">Failed to load portfolio.</div>';
+    showError('Failed to load portfolio. Please refresh.');
   };
   document.head.appendChild(script);
 
