@@ -664,14 +664,14 @@
       <!-- Hidden subject: will be set dynamically via JavaScript -->
       <input type="hidden" name="_subject" id="formSubject" value="WOV Contact Form">
 
-      <!-- Auto-response (copy to sender) – you can customize the message -->
-      <input type="hidden" name="_autoresponse" value="Thank you for your message! I'll get back to you within 24 hours. — Claudio, Women of Venice">
-
-      <!-- Checkbox: send a copy to the sender, checked by default -->
+      <!-- Checkbox: send a copy to the sender (uses _autoresponse) -->
       <div class="checkbox-group">
-        <input type="checkbox" name="_sendcopy" value="yes" id="sendCopy" checked>
+        <input type="checkbox" id="sendCopy" checked>
         <label for="sendCopy">Send me a copy of this message</label>
       </div>
+      <!-- Hidden field to control auto-response (set by JavaScript) -->
+      <input type="hidden" name="_autoresponse" id="formAutoResponse" value="">
+
       <button type="submit">Send</button>
     </form>
   </section>
@@ -732,11 +732,13 @@
     });
   }
 
-  // ======================== CONTACT FORM (AJAX) ========================
+    // ======================== CONTACT FORM (AJAX) ========================
   var contactForm = document.getElementById('contactForm');
   var formOverlay = document.getElementById('formOverlay');
   var closeFormBtn = document.getElementById('closeFormSuccess');
   var formSubject = document.getElementById('formSubject');
+  var formAutoResponse = document.getElementById('formAutoResponse');
+  var sendCopyCheckbox = document.getElementById('sendCopy');
 
   if (contactForm) {
     // Update the hidden subject field when name or email changes
@@ -753,11 +755,30 @@
     if (nameField) nameField.addEventListener('input', updateSubject);
     if (emailField) emailField.addEventListener('input', updateSubject);
 
-    contactForm.addEventListener('submit', function(e) {
-      e.preventDefault(); // Prevent page reload
+    // Update auto-response based on checkbox state
+    function updateAutoResponse() {
+      var email = emailField ? emailField.value.trim() : '';
+      if (sendCopyCheckbox && sendCopyCheckbox.checked && email) {
+        // Set the auto-response message (customizable)
+        formAutoResponse.value = 'Thank you for your message! I\'ll get back to you within 24 hours.\n\n— Claudio, Women of Venice\n\nHere is a copy of your message:\n\n' + (contactForm.querySelector('textarea[name="message"]') ? contactForm.querySelector('textarea[name="message"]').value : '');
+      } else {
+        formAutoResponse.value = '';
+      }
+    }
 
-      // Update subject one more time before sending
+    if (sendCopyCheckbox) {
+      sendCopyCheckbox.addEventListener('change', updateAutoResponse);
+    }
+    if (emailField) emailField.addEventListener('input', updateAutoResponse);
+    var messageField = contactForm.querySelector('textarea[name="message"]');
+    if (messageField) messageField.addEventListener('input', updateAutoResponse);
+
+    contactForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      // Update subject and auto-response before sending
       updateSubject();
+      updateAutoResponse();
 
       var formData = new FormData(this);
       var submitBtn = this.querySelector('button[type="submit"]');
@@ -774,11 +795,12 @@
       })
       .then(function(response) {
         if (response.ok) {
-          // Show success overlay
           formOverlay.classList.add('show');
-          contactForm.reset(); // Clear the form fields
-          // Reset subject to default after reset
+          contactForm.reset();
           if (formSubject) formSubject.value = 'WOV Contact Form';
+          if (formAutoResponse) formAutoResponse.value = '';
+          // Reset the copy checkbox to default (checked)
+          if (sendCopyCheckbox) sendCopyCheckbox.checked = true;
         } else {
           alert('Something went wrong. Please try again.');
         }
@@ -792,7 +814,7 @@
       });
     });
   }
-
+  
   if (closeFormBtn) {
     closeFormBtn.addEventListener('click', function() {
       formOverlay.classList.remove('show');
