@@ -1,17 +1,14 @@
 <!DOCTYPE html>
-<!-- Women of Venice — v3.0 (masonry, dark mode, stories, contact) -->
+<!-- Women of Venice — v3.1 (dark default, rotating Venice captions, footer cleaned) -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Women of Venice — Portraits & Stories</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="icon" href="logo.png">
-  <!-- Masonry library -->
   <script src="https://unpkg.com/masonry-layout@4.2.2/dist/masonry.pkgd.min.js"></script>
-  <!-- Font Awesome for icons (optional) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
     /* ——— CSS Variables ——— */
@@ -277,6 +274,7 @@
       overflow: hidden;
       box-shadow: 0 4px 16px var(--shadow);
       transition: transform 0.3s;
+      cursor: pointer;
     }
     .featured-item:hover {
       transform: translateY(-4px);
@@ -305,7 +303,7 @@
       .featured-grid { grid-template-columns: 1fr; }
     }
 
-    /* ——— Gallery (masonry container) ——— */
+    /* ——— Gallery (masonry) ——— */
     .gallery-grid {
       margin-top: 24px;
     }
@@ -321,6 +319,7 @@
       overflow: hidden;
       box-shadow: 0 2px 10px var(--shadow);
       transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
     }
     .gallery-item:hover {
       transform: scale(1.02);
@@ -547,7 +546,6 @@
       transform: translateY(0);
     }
 
-    /* ——— Responsive ——— */
     @media (max-width: 800px) {
       .grid-sizer, .gallery-item { width: 50%; }
     }
@@ -583,13 +581,13 @@
         <a href="posa.html">✨ Become a Portrait</a>
         <a href="#contact" class="contact-btn">✉️ Contact</a>
         <button class="dark-toggle" id="darkToggle" aria-label="Toggle dark mode">
-          <i class="fas fa-moon"></i>
+          <i class="fas fa-sun"></i>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ===== HERO (full‑width image) ===== -->
+  <!-- ===== HERO ===== -->
   <div class="hero" id="hero">
     <img id="heroImage" src="" alt="Women of Venice">
     <div class="hero-content">
@@ -603,7 +601,7 @@
   <section class="featured-stories" id="featured">
     <h2>Featured Stories</h2>
     <div class="featured-grid" id="featuredGrid">
-      <!-- Dynamically filled -->
+      <!-- filled by JS -->
     </div>
   </section>
 
@@ -612,14 +610,13 @@
     <h2 style="text-align:center;font-size:28px;margin:20px 0 10px;">All Portraits</h2>
     <div class="gallery-grid" id="gallery">
       <div class="grid-sizer"></div>
-      <!-- items inserted by JS -->
     </div>
     <div class="load-more-container" id="loadMoreContainer">
       <button id="loadMoreBtn">Load More</button>
     </div>
   </section>
 
-  <!-- ===== CONTACT FORM ===== -->
+  <!-- ===== CONTACT ===== -->
   <section class="contact-section" id="contact">
     <h2>Get in Touch</h2>
     <form id="contactForm" action="https://formspree.io/f/xpzvlrnz" method="POST">
@@ -669,6 +666,29 @@
   var displayedFiles = [];
   var masonryInstance = null;
 
+  // ======================== VENICE CAPTIONS (rotating pool) ========================
+  var VENICE_CAPTIONS = [
+    "Venice — a city where water and stone hold centuries of whispered stories.",
+    "The light on the canals, the silence of the campos — Venice at dawn.",
+    "La Serenissima, forever suspended between sky and lagoon.",
+    "Every corner of Venice is a frame waiting for a story.",
+    "Venice, where every stone has a voice and every canal a memory.",
+    "The city of bridges — connecting lives, stories, and dreams.",
+    "Venice at golden hour: the most beautiful city on water.",
+    "A floating city, a living museum, a timeless muse.",
+    "The streets of Venice are pages of an endless book.",
+    "Venice — a labyrinth of canals, light, and history.",
+    "In Venice, even the silence is musical.",
+    "The soul of Venice is its shadows, its reflections, its hidden courtyards."
+  ];
+  var veniceIndex = 0;
+
+  function getNextVeniceCaption() {
+    var cap = VENICE_CAPTIONS[veniceIndex % VENICE_CAPTIONS.length];
+    veniceIndex++;
+    return cap;
+  }
+
   // DOM refs
   var gallery = document.getElementById('gallery');
   var loadMoreBtn = document.getElementById('loadMoreBtn');
@@ -686,7 +706,7 @@
   var lbClose = document.getElementById('lbClose');
   var lbControls = document.getElementById('lbControls');
 
-  // ======================== HELPER FUNCTIONS ========================
+  // ======================== HELPERS ========================
   function shuffleArray(arr) {
     for (var i = arr.length - 1; i > 0; i--) {
       var j = Math.floor(Math.random() * (i + 1));
@@ -713,6 +733,14 @@
     return (str && str.length > n) ? str.substring(0, n) + '…' : str;
   }
 
+  function getStoryForFile(f) {
+    var isVenice = f.model && f.model.toLowerCase().indexOf('venezia') >= 0;
+    if (isVenice) {
+      return getNextVeniceCaption();
+    }
+    return f.story || '';
+  }
+
   // ======================== RENDER GALLERY ========================
   function renderGalleryItems(files) {
     if (!files || !files.length) return;
@@ -720,7 +748,6 @@
     files.forEach(function(f, idx) {
       var item = document.createElement('div');
       item.className = 'gallery-item';
-      // Use a low-res placeholder first (blur)
       var thumbUrl = getThumbUrl(f.id, 50);
       var fullUrl = getFullUrl(f.id);
       var img = document.createElement('img');
@@ -729,25 +756,20 @@
       img.dataset.full = fullUrl;
       img.alt = f.name;
       img.loading = 'lazy';
-      // On load, swap to full and remove blur
       img.onload = function() {
-        // Load full image
         var fullImg = new Image();
         fullImg.src = fullUrl;
         fullImg.onload = function() {
           img.src = fullUrl;
           img.classList.add('loaded');
-          // Update masonry after image loads
           if (masonryInstance) masonryInstance.layout();
         };
         fullImg.onerror = function() {
-          // fallback: keep thumb
           img.classList.add('loaded');
         };
       };
       item.appendChild(img);
 
-      // Caption
       var cap = document.createElement('div');
       cap.className = 'caption';
       var nameEl = document.createElement('div');
@@ -755,18 +777,17 @@
       nameEl.textContent = formatName(f.model);
       var quoteEl = document.createElement('div');
       quoteEl.className = 'quote';
-      quoteEl.textContent = f.story ? '"' + truncate(f.story, 100) + '"' : '';
+      var story = getStoryForFile(f);
+      quoteEl.textContent = story ? '"' + truncate(story, 100) + '"' : '';
       cap.appendChild(nameEl);
       cap.appendChild(quoteEl);
       item.appendChild(cap);
 
-      // Store data for lightbox
       item.dataset.idx = currentIndex + idx;
       item.dataset.full = fullUrl;
       item.dataset.name = formatName(f.model);
-      item.dataset.story = f.story || '';
+      item.dataset.story = story || '';
 
-      // Click to open lightbox
       item.addEventListener('click', function() {
         openLightbox(parseInt(this.dataset.idx));
       });
@@ -775,11 +796,9 @@
     });
     gallery.appendChild(fragment);
 
-    // Update displayedFiles array
     displayedFiles = displayedFiles.concat(files);
     currentIndex += files.length;
 
-    // Init or layout Masonry
     if (masonryInstance) {
       masonryInstance.reloadItems();
       masonryInstance.layout();
@@ -792,7 +811,6 @@
       });
     }
 
-    // Observe for scroll animations
     var items = gallery.querySelectorAll('.gallery-item');
     var observer = new IntersectionObserver(function(entries) {
       entries.forEach(function(entry) {
@@ -808,7 +826,10 @@
 
   // ======================== FEATURED STORIES ========================
   function renderFeaturedStories(files) {
-    var stories = files.filter(function(f) { return f.story && f.story.trim().length > 0; });
+    var stories = files.filter(function(f) {
+      var story = getStoryForFile(f);
+      return story && story.trim().length > 0;
+    });
     if (stories.length === 0) {
       featuredGrid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--text-light)">No stories yet. Check back soon!</p>';
       return;
@@ -817,27 +838,37 @@
     var html = '';
     selected.forEach(function(f) {
       var name = formatName(f.model);
-      html += '<div class="featured-item">';
-      html += '<img src="' + getFullUrl(f.id) + '" alt="' + name + '" loading="lazy">';
+      var story = getStoryForFile(f);
+      var fullUrl = getFullUrl(f.id);
+      html += '<div class="featured-item" data-idx="' + (displayedFiles.length + allFiles.indexOf(f)) + '">';
+      html += '<img src="' + fullUrl + '" alt="' + name + '" loading="lazy">';
       html += '<div class="info">';
       html += '<h3>' + name + '</h3>';
-      html += '<p>"' + truncate(f.story, 160) + '"</p>';
+      html += '<p>"' + truncate(story, 160) + '"</p>';
       html += '</div>';
       html += '</div>';
     });
     featuredGrid.innerHTML = html;
+    // make featured items clickable to open lightbox
+    featuredGrid.querySelectorAll('.featured-item').forEach(function(el) {
+      el.addEventListener('click', function() {
+        var idx = parseInt(this.dataset.idx, 10);
+        if (!isNaN(idx) && idx >= 0 && idx < displayedFiles.length) {
+          openLightbox(idx);
+        }
+      });
+    });
   }
 
-  // ======================== HERO IMAGE ========================
+  // ======================== HERO ========================
   function setHeroImage(files) {
     if (!files || !files.length) return;
-    // pick a random image with consent
     var candidates = files.filter(function(f) { return f.consent; });
     if (candidates.length) {
       var pick = candidates[Math.floor(Math.random() * candidates.length)];
       heroImg.src = getFullUrl(pick.id);
     } else {
-      heroImg.src = 'logo.png'; // fallback
+      heroImg.src = 'logo.png';
     }
   }
 
@@ -852,7 +883,6 @@
     showLightboxImage(lightboxIdx);
     lb.classList.add('on');
     document.body.style.overflow = 'hidden';
-    // Hide controls after 3s of inactivity
     clearTimeout(window.lbTimer);
     lbControls.classList.remove('hidden');
     window.lbTimer = setTimeout(function() {
@@ -870,9 +900,9 @@
     var f = lightboxFiles[idx];
     lbImg.src = getFullUrl(f.id);
     var name = formatName(f.model);
-    lbCap.innerHTML = '<div class="t">' + name + '</div><div class="s">' + (f.story ? '"' + f.story + '"' : '') + '</div>';
+    var story = getStoryForFile(f);
+    lbCap.innerHTML = '<div class="t">' + name + '</div><div class="s">' + (story ? '"' + story + '"' : '') + '</div>';
     lbCount.textContent = (idx+1) + ' / ' + lightboxFiles.length;
-    // Reset timer
     clearTimeout(window.lbTimer);
     lbControls.classList.remove('hidden');
     window.lbTimer = setTimeout(function() {
@@ -880,7 +910,6 @@
     }, 3000);
   }
 
-  // Lightbox controls
   lbPrev.addEventListener('click', function(e) { e.stopPropagation(); lightboxIdx = (lightboxIdx - 1 + lightboxFiles.length) % lightboxFiles.length; showLightboxImage(lightboxIdx); });
   lbNext.addEventListener('click', function(e) { e.stopPropagation(); lightboxIdx = (lightboxIdx + 1) % lightboxFiles.length; showLightboxImage(lightboxIdx); });
   lbClose.addEventListener('click', closeLightbox);
@@ -891,7 +920,6 @@
     else if (e.key === 'ArrowRight') { lbNext.click(); e.preventDefault(); }
     else if (e.key === 'Escape') { closeLightbox(); }
   });
-  // Show controls on mouse move in lightbox
   lb.addEventListener('mousemove', function() {
     clearTimeout(window.lbTimer);
     lbControls.classList.remove('hidden');
@@ -900,12 +928,14 @@
     }, 3000);
   });
 
-  // ======================== DARK MODE ========================
+  // ======================== DARK MODE (default = dark) ========================
   var darkToggle = document.getElementById('darkToggle');
-  var currentTheme = localStorage.getItem('theme') || 'light';
+  var currentTheme = localStorage.getItem('theme') || 'dark'; // ← default to dark
   if (currentTheme === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
     darkToggle.innerHTML = '<i class="fas fa-sun"></i>';
+  } else {
+    darkToggle.innerHTML = '<i class="fas fa-moon"></i>';
   }
   darkToggle.addEventListener('click', function() {
     var theme = document.documentElement.getAttribute('data-theme');
@@ -946,16 +976,11 @@
         gallery.innerHTML = '<div class="load">No portraits available yet.</div>';
         return;
       }
-      // Shuffle for random rotation
       allFiles = shuffleArray(files);
-      // Set hero image
       setHeroImage(allFiles);
-      // Render featured stories
       renderFeaturedStories(allFiles);
-      // Initial gallery batch
       var initialBatch = allFiles.slice(0, INITIAL_COUNT);
       renderGalleryItems(initialBatch);
-      // Show load more if more exist
       if (allFiles.length > INITIAL_COUNT) {
         loadMoreContainer.style.display = 'block';
       } else {
@@ -967,7 +992,6 @@
     }
   };
 
-  // JSONP load
   var timeout = setTimeout(function() {
     if (!loaded) {
       gallery.innerHTML = '<div class="load">⏱️ Loading timed out. Refresh.</div>';
@@ -988,7 +1012,7 @@
   };
   document.head.appendChild(script);
 
-  // Hamburger menu
+  // Hamburger
   var hamburger = document.getElementById('hamburger');
   var navLinks = document.getElementById('navLinks');
   if (hamburger && navLinks) {
