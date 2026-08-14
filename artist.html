@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<!-- Women of Venice — Artist Bio (About Claudio) -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>About — Women of Venice</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="icon" href="logo-icon.png">
+  <style>
+    :root {
+      --bg: #1a1a1a;
+      --text: #eee;
+      --text-light: #bbb;
+      --red: #A8492E;
+      --peach: #E09A73;
+      --card-bg: #2a2a2a;
+      --shadow: rgba(0,0,0,0.3);
+      --border: #555;
+      --link: #d48c7a;
+    }
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      font-family: 'Playfair Display', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .wrap {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .nav-logo {
+      display: block;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: var(--card-bg);
+      border: 1px solid var(--shadow);
+    }
+    .nav-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .nav-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .nav-title a {
+      text-decoration: none;
+      color: var(--text);
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Inter', Arial, sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .nav-links a {
+      color: var(--text);
+      text-decoration: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      transition: 0.2s;
+    }
+    .nav-links a:hover {
+      background: rgba(168,73,46,0.2);
+      color: var(--red);
+    }
+    .nav-links a.primary {
+      background: var(--red);
+      color: #fff;
+      padding: 6px 18px;
+      border-radius: 30px;
+    }
+    .nav-links a.primary:hover { background: #8a3d28; }
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px;
+    }
+    .hamburger span {
+      display: block;
+      width: 26px;
+      height: 2.5px;
+      background: var(--text);
+      border-radius: 2px;
+      transition: 0.3s;
+    }
+    .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px,5px); }
+    .hamburger.active span:nth-child(2) { opacity: 0; }
+    .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px,-5px); }
+    @media (max-width: 760px) {
+      .hamburger { display: flex; }
+      .nav-links {
+        display: none;
+        flex-direction: column;
+        align-items: stretch;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--card-bg);
+        padding: 16px;
+        border-radius: 0 0 12px 12px;
+        box-shadow: 0 8px 24px var(--shadow);
+        border-top: 1px solid var(--shadow);
+        gap: 6px;
+        z-index: 40;
+      }
+      .nav-links.open { display: flex; }
+      .nav-links a { padding: 10px 12px; border-radius: 8px; text-align: center; }
+    }
+    .back-link {
+      display: inline-block;
+      font-family: 'Inter', Arial, sans-serif;
+      font-size: 13px;
+      color: var(--link);
+      text-decoration: none;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .back-link:hover { text-decoration: underline; }
+    h1 {
+      font-size: 32px;
+      text-align: center;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+    .sub {
+      font-family: 'Inter', Arial, sans-serif;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.3em;
+      color: var(--peach);
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .bio-content {
+      background: var(--card-bg);
+      padding: 30px 32px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px var(--shadow);
+      margin: 20px 0 30px;
+    }
+    .bio-content p {
+      font-size: 17px;
+      line-height: 1.8;
+      margin-bottom: 16px;
+    }
+    .bio-content p:last-child {
+      margin-bottom: 0;
+    }
+    .bio-content .signature {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-style: italic;
+      font-size: 20px;
+      color: var(--peach);
+      margin-top: 20px;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 1px solid var(--shadow);
+      text-align: center;
+      font-family: 'Inter', Arial, sans-serif;
+      font-size: 13px;
+      color: var(--text-light);
+      line-height: 1.8;
+    }
+    .footer a {
+      color: var(--link);
+      text-decoration: none;
+    }
+    .footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== NAVIGATION ===== -->
+  <div class="nav">
+    <div class="nav-left">
+      <a href="index.html" class="nav-logo">
+        <img src="logo-icon.png" alt="Women of Venice" onerror="this.style.display='none'">
+      </a>
+      <div class="nav-title"><a href="index.html">Women of Venice</a></div>
+    </div>
+    <button class="hamburger" id="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-links" id="navLinks">
+      <a href="about.html" class="primary">📖 The Project</a>
+      <a href="artist.html">👤 About</a>
+      <a href="index.html#gallery-section">🖼️ Gallery</a>
+      <a href="booking.html">📸 Book a Session</a>
+      <a href="posa.html">✨ Become a Portrait</a>
+      <a href="index.html#contact" class="contact-btn" style="background:var(--text);color:var(--bg);padding:6px 18px;border-radius:30px;text-decoration:none;">✉️ Contact</a>
+    </div>
+  </div>
+
+  <a class="back-link" href="index.html">← Women of Venice</a>
+  <h1>About the Artist</h1>
+  <div class="sub">Claudio · Photographer &amp; Storyteller</div>
+
+  <div class="bio-content">
+    <!-- ====== REPLACE THIS TEXT WITH YOUR OWN BIO ====== -->
+    <p>
+      My name is Claudio. I am a photographer based in Venice, drawn to the city's light, its quiet corners, and the stories carried by the women who move through its streets.
+    </p>
+    <p>
+      <em>Women of Venice</em> began as a personal exploration — a way to meet the city through its people, one portrait at a time. Over time, it has become a living archive of encounters, a collection of faces and voices that together tell a story about Venice that you won't find in guidebooks.
+    </p>
+    <p>
+      I believe that every portrait is a collaboration — a moment of trust, a shared silence, a conversation. My job is not to capture a person, but to create a space where she can reveal herself.
+    </p>
+    <p>
+      When I am not photographing, I am walking the canals, drinking espresso, and listening to the city's endless whisper.
+    </p>
+    <!-- ================================================= -->
+    <div class="signature">— Claudio</div>
+  </div>
+
+  <div class="footer">
+    <div>
+      <a href="about.html">The Project</a> ·
+      <a href="artist.html">About</a> ·
+      <a href="booking.html">Book a Session</a> ·
+      <a href="index.html#contact">Contact</a>
+    </div>
+    <div style="margin-top:6px;font-size:12px;">
+      <a href="https://linktr.ee/womenofvenice" target="_blank">🔗 Linktree</a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Hamburger menu
+  var hamburger = document.getElementById('hamburger');
+  var navLinks = document.getElementById('navLinks');
+  if (hamburger && navLinks) {
+    hamburger.addEventListener('click', function() {
+      hamburger.classList.toggle('active');
+      navLinks.classList.toggle('open');
+    });
+    navLinks.querySelectorAll('a').forEach(function(link) {
+      link.addEventListener('click', function() {
+        hamburger.classList.remove('active');
+        navLinks.classList.remove('open');
+      });
+    });
+  }
+</script>
+</body>
+</html>
