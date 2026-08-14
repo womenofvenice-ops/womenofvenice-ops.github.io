@@ -380,20 +380,6 @@
       border-color: var(--red);
       outline: none;
     }
-    .contact-section .checkbox-group {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-family: 'Inter', Arial, sans-serif;
-      font-size: 13px;
-      color: var(--text-light);
-    }
-    .contact-section .checkbox-group input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      accent-color: var(--red);
-      padding: 0;
-    }
     .contact-section button {
       padding: 12px;
       background: var(--red);
@@ -652,28 +638,17 @@
       <button id="loadMoreBtn">Load More</button>
     </div>
   </section>
-
+  
   <!-- ===== CONTACT ===== -->
   <section class="contact-section" id="contact">
     <h2>Get in Touch</h2>
-    <form id="contactForm" action="https://formspree.io/f/xyegpdgv" method="POST">
-      <input type="text" name="name" placeholder="Your name" required>
-      <input type="email" name="_replyto" placeholder="Your email" required>
-      <textarea name="message" rows="4" placeholder="Message" required></textarea>
-
-      <!-- Hidden subject: will be set dynamically via JavaScript -->
-      <input type="hidden" name="_subject" id="formSubject" value="WOV Contact Form">
-
-      <!-- Checkbox: send a copy to the sender (uses _autoresponse) -->
-      <div class="checkbox-group">
-        <input type="checkbox" id="sendCopy" checked>
-        <label for="sendCopy">Send me a copy of this message</label>
-      </div>
-      <!-- Hidden field to control auto-response (set by JavaScript) -->
-      <input type="hidden" name="_autoresponse" id="formAutoResponse" value="">
-
-      <button type="submit">Send</button>
-    </form>
+   <form id="contactForm" action="https://formspree.io/f/xyegpdgv" method="POST">
+  <input type="text" name="name" placeholder="Your name" required>
+  <input type="email" name="_replyto" placeholder="Your email" required>
+  <textarea name="message" rows="4" placeholder="Message" required></textarea>
+  <input type="hidden" name="_subject" id="formSubject" value="WOV Contact Form">
+  <button type="submit">Send</button>
+  </form>
   </section>
 
   <!-- ===== FORM SUCCESS OVERLAY ===== -->
@@ -732,13 +707,11 @@
     });
   }
 
-    // ======================== CONTACT FORM (AJAX) ========================
+     // ======================== CONTACT FORM (AJAX) ========================
   var contactForm = document.getElementById('contactForm');
   var formOverlay = document.getElementById('formOverlay');
   var closeFormBtn = document.getElementById('closeFormSuccess');
   var formSubject = document.getElementById('formSubject');
-  var formAutoResponse = document.getElementById('formAutoResponse');
-  var sendCopyCheckbox = document.getElementById('sendCopy');
 
   if (contactForm) {
     // Update the hidden subject field when name or email changes
@@ -755,30 +728,11 @@
     if (nameField) nameField.addEventListener('input', updateSubject);
     if (emailField) emailField.addEventListener('input', updateSubject);
 
-    // Update auto-response based on checkbox state
-    function updateAutoResponse() {
-      var email = emailField ? emailField.value.trim() : '';
-      if (sendCopyCheckbox && sendCopyCheckbox.checked && email) {
-        // Set the auto-response message (customizable)
-        formAutoResponse.value = 'Thank you for your message! I\'ll get back to you within 24 hours.\n\n— Claudio, Women of Venice\n\nHere is a copy of your message:\n\n' + (contactForm.querySelector('textarea[name="message"]') ? contactForm.querySelector('textarea[name="message"]').value : '');
-      } else {
-        formAutoResponse.value = '';
-      }
-    }
-
-    if (sendCopyCheckbox) {
-      sendCopyCheckbox.addEventListener('change', updateAutoResponse);
-    }
-    if (emailField) emailField.addEventListener('input', updateAutoResponse);
-    var messageField = contactForm.querySelector('textarea[name="message"]');
-    if (messageField) messageField.addEventListener('input', updateAutoResponse);
-
     contactForm.addEventListener('submit', function(e) {
       e.preventDefault();
 
-      // Update subject and auto-response before sending
+      // Update subject before sending
       updateSubject();
-      updateAutoResponse();
 
       var formData = new FormData(this);
       var submitBtn = this.querySelector('button[type="submit"]');
@@ -798,9 +752,6 @@
           formOverlay.classList.add('show');
           contactForm.reset();
           if (formSubject) formSubject.value = 'WOV Contact Form';
-          if (formAutoResponse) formAutoResponse.value = '';
-          // Reset the copy checkbox to default (checked)
-          if (sendCopyCheckbox) sendCopyCheckbox.checked = true;
         } else {
           alert('Something went wrong. Please try again.');
         }
@@ -812,21 +763,6 @@
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
       });
-    });
-  }
-  
-  if (closeFormBtn) {
-    closeFormBtn.addEventListener('click', function() {
-      formOverlay.classList.remove('show');
-    });
-  }
-
-  // Close overlay by clicking outside the card
-  if (formOverlay) {
-    formOverlay.addEventListener('click', function(e) {
-      if (e.target === this) {
-        this.classList.remove('show');
-      }
     });
   }
 
