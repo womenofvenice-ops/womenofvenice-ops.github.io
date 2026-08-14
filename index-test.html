@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Women of Venice — v3.1 (dark default, rotating Venice captions, footer cleaned) -->
+<!-- Women of Venice — v3.1 FINAL (logo-woman-in-the-arch, footer 18px, contact copy) -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -7,27 +7,17 @@
   <title>Women of Venice — Portraits & Stories</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="icon" href="logo.png">
+  <link rel="icon" href="logo-woman-in-the-arch.png">
   <script src="https://unpkg.com/masonry-layout@4.2.2/dist/masonry.pkgd.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
-    /* ——— CSS Variables ——— */
+    /* ===== CSS Variables ===== */
     :root {
-      --bg: #F4ECDE;
-      --text: #1C2B2C;
-      --text-light: #5A6667;
-      --red: #A8492E;
-      --peach: #E09A73;
-      --card-bg: #ffffff;
-      --shadow: rgba(0,0,0,0.08);
-      --input-bg: #fff;
-      --border: #ddd;
-      --link: var(--red);
-    }
-    [data-theme="dark"] {
       --bg: #1a1a1a;
       --text: #eee;
       --text-light: #bbb;
+      --red: #A8492E;
+      --peach: #E09A73;
       --card-bg: #2a2a2a;
       --shadow: rgba(0,0,0,0.3);
       --input-bg: #333;
@@ -43,18 +33,15 @@
       min-height: 100vh;
       padding: 20px;
     }
-    .wrap {
-      max-width: 1400px;
-      margin: 0 auto;
-    }
+    .wrap { max-width: 1400px; margin: 0 auto; }
 
-    /* ——— Navigation ——— */
+    /* ===== Navigation ===== */
     .nav {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 4px 0 12px;
-      border-bottom: 1px solid rgba(28,43,44,0.08);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
       margin-bottom: 16px;
       position: relative;
       flex-wrap: wrap;
@@ -80,15 +67,7 @@
       object-fit: cover;
       display: block;
     }
-    .nav-title {
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-    }
-    .nav-title a {
-      text-decoration: none;
-      color: var(--text);
-    }
+    /* Nav title removed – only the logo icon shows */
     .nav-right {
       display: flex;
       align-items: center;
@@ -110,7 +89,7 @@
       transition: background 0.2s, color 0.2s;
     }
     .nav-links a:hover {
-      background: rgba(168,73,46,0.08);
+      background: rgba(168,73,46,0.2);
       color: var(--red);
     }
     .nav-links a.primary {
@@ -119,30 +98,21 @@
       padding: 6px 18px;
       border-radius: 30px;
     }
-    .nav-links a.primary:hover {
-      background: #8a3d28;
-      color: #fff;
-    }
+    .nav-links a.primary:hover { background: #8a3d28; color: #fff; }
     .nav-links a.secondary {
       background: var(--text);
       color: var(--bg);
       padding: 6px 18px;
       border-radius: 30px;
     }
-    .nav-links a.secondary:hover {
-      background: #3a4a4b;
-      color: #fff;
-    }
+    .nav-links a.secondary:hover { background: #3a4a4b; color: #fff; }
     .nav-links a.contact-btn {
       background: var(--text);
       color: var(--bg);
       padding: 6px 18px;
       border-radius: 30px;
     }
-    .nav-links a.contact-btn:hover {
-      background: #3a4a4b;
-      color: #fff;
-    }
+    .nav-links a.contact-btn:hover { background: #3a4a4b; color: #fff; }
     .dark-toggle {
       background: none;
       border: 1px solid var(--text);
@@ -202,7 +172,7 @@
       .nav-links a { padding: 10px 12px; border-radius: 8px; text-align: center; }
     }
 
-    /* ——— Hero with full‑width image ——— */
+    /* ===== Hero ===== */
     .hero {
       position: relative;
       width: 100%;
@@ -253,7 +223,7 @@
       text-shadow: 0 2px 8px rgba(0,0,0,0.4);
     }
 
-    /* ——— Featured Stories ——— */
+    /* ===== Featured Stories ===== */
     .featured-stories {
       margin: 40px 0;
     }
@@ -303,7 +273,7 @@
       .featured-grid { grid-template-columns: 1fr; }
     }
 
-    /* ——— Gallery (masonry) ——— */
+    /* ===== Gallery (masonry) ===== */
     .gallery-grid {
       margin-top: 24px;
     }
@@ -375,7 +345,7 @@
       color: #fff;
     }
 
-    /* ——— Contact Form ——— */
+    /* ===== Contact Form ===== */
     .contact-section {
       max-width: 600px;
       margin: 60px auto 0;
@@ -410,6 +380,20 @@
       border-color: var(--red);
       outline: none;
     }
+    .contact-section .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Inter', Arial, sans-serif;
+      font-size: 13px;
+      color: var(--text-light);
+    }
+    .contact-section .checkbox-group input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--red);
+      padding: 0;
+    }
     .contact-section button {
       padding: 12px;
       background: var(--red);
@@ -425,7 +409,7 @@
       background: #8a3d28;
     }
 
-    /* ——— Lightbox ——— */
+    /* ===== Lightbox ===== */
     .lb {
       position: fixed;
       inset: 0;
@@ -512,7 +496,7 @@
       font-style: italic;
     }
 
-    /* ——— Footer ——— */
+    /* ===== Footer ===== */
     .footer {
       margin-top: 40px;
       padding-top: 24px;
@@ -526,8 +510,9 @@
     .footer .tagline {
       font-family: 'Playfair Display', Georgia, serif;
       font-style: italic;
-      font-size: 16px;
+      font-size: 18px;
       color: var(--text);
+      margin-bottom: 6px;
     }
     .footer a {
       color: var(--link);
@@ -535,7 +520,7 @@
     }
     .footer a:hover { text-decoration: underline; }
 
-    /* ——— Scroll fade animation ——— */
+    /* ===== Scroll fade animation ===== */
     .gallery-item {
       opacity: 0;
       transform: translateY(20px);
@@ -563,8 +548,9 @@
   <div class="nav">
     <div class="nav-left">
       <a href="index.html" class="nav-logo">
-        <img src="logo-icon.png" alt="Women of Venice" onerror="this.style.display='none'">
+        <img src="logo-woman-in-the-arch.png" alt="Women of Venice" onerror="this.style.display='none'">
       </a>
+      <!-- Nav title removed – only the logo icon shows -->
     </div>
 
     <button class="hamburger" id="hamburger" aria-label="Menu">
@@ -622,6 +608,11 @@
       <input type="text" name="name" placeholder="Your name" required>
       <input type="email" name="_replyto" placeholder="Your email" required>
       <textarea name="message" rows="4" placeholder="Message" required></textarea>
+      <!-- Checkbox: send a copy to the sender, checked by default -->
+      <div class="checkbox-group">
+        <input type="checkbox" name="_sendcopy" value="yes" id="sendCopy" checked>
+        <label for="sendCopy">Send me a copy of this message</label>
+      </div>
       <button type="submit">Send</button>
     </form>
   </section>
@@ -647,7 +638,7 @@
       <a href="booking.html">Book a Session</a> ·
       <a href="#contact">Contact</a>
     </div>
-    <div style="margin-top:8px;font-size:12px;">
+    <div style="margin-top:6px;font-size:12px;">
       <a href="https://linktr.ee/womenofvenice" target="_blank">🔗 Linktree</a>
     </div>
   </div>
@@ -665,7 +656,7 @@
   var displayedFiles = [];
   var masonryInstance = null;
 
-  // ======================== VENICE CAPTIONS (rotating pool) ========================
+  // ======================== VENICE CAPTIONS ========================
   var VENICE_CAPTIONS = [
     "Venice — a city where water and stone hold centuries of whispered stories.",
     "The light on the canals, the silence of the campos — Venice at dawn.",
@@ -848,7 +839,6 @@
       html += '</div>';
     });
     featuredGrid.innerHTML = html;
-    // make featured items clickable to open lightbox
     featuredGrid.querySelectorAll('.featured-item').forEach(function(el) {
       el.addEventListener('click', function() {
         var idx = parseInt(this.dataset.idx, 10);
@@ -867,7 +857,7 @@
       var pick = candidates[Math.floor(Math.random() * candidates.length)];
       heroImg.src = getFullUrl(pick.id);
     } else {
-      heroImg.src = 'logo.png';
+      heroImg.src = 'logo-woman-in-the-arch.png';
     }
   }
 
@@ -927,9 +917,9 @@
     }, 3000);
   });
 
-  // ======================== DARK MODE (default = dark) ========================
+  // ======================== DARK MODE ========================
   var darkToggle = document.getElementById('darkToggle');
-  var currentTheme = localStorage.getItem('theme') || 'dark'; // ← default to dark
+  var currentTheme = localStorage.getItem('theme') || 'dark';
   if (currentTheme === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
     darkToggle.innerHTML = '<i class="fas fa-sun"></i>';
