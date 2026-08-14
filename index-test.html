@@ -539,6 +539,57 @@
       .hero { height: 50vh; }
       .hero-content h1 { font-size: 32px; }
     }
+/* ===== Form Success Overlay ===== */
+.form-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+.form-overlay.show {
+  display: flex;
+}
+.form-overlay .card {
+  background: var(--card-bg);
+  max-width: 500px;
+  width: 100%;
+  padding: 40px 32px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  position: relative;
+}
+.form-overlay .card h2 {
+  font-size: 28px;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+.form-overlay .card p {
+  font-family: 'Inter', Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-light);
+  margin-bottom: 24px;
+}
+.form-overlay .card .close-btn {
+  background: var(--red);
+  color: #fff;
+  border: none;
+  padding: 10px 32px;
+  border-radius: 30px;
+  font-family: 'Inter', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.form-overlay .card .close-btn:hover {
+  background: #8a3d28;
+}
   </style>
 </head>
 <body>
@@ -601,7 +652,7 @@
     </div>
   </section>
 
-  <!-- ===== CONTACT ===== -->
+   <!-- ===== CONTACT ===== -->
   <section class="contact-section" id="contact">
     <h2>Get in Touch</h2>
     <form id="contactForm" action="https://formspree.io/f/xyegpdgv" method="POST">
@@ -617,6 +668,15 @@
     </form>
   </section>
 
+  <!-- ===== FORM SUCCESS OVERLAY ===== -->
+  <div class="form-overlay" id="formOverlay">
+    <div class="card">
+      <h2>✨ Thank You</h2>
+      <p>Your message has been sent. I'll get back to you within 24 hours.</p>
+      <p style="font-size:13px;color:var(--peach);margin-bottom:24px;">— Claudio, Women of Venice</p>
+      <button class="close-btn" id="closeFormSuccess">Close</button>
+    </div>
+  </div>
   <!-- ===== LIGHTBOX ===== -->
   <div class="lb" id="lb">
     <button class="close" id="lbClose">&times;</button>
@@ -952,7 +1012,61 @@
       loadMoreContainer.style.display = 'none';
     }
   });
+  // ======================== CONTACT FORM (AJAX) ========================
+  var contactForm = document.getElementById('contactForm');
+  var formOverlay = document.getElementById('formOverlay');
+  var closeFormBtn = document.getElementById('closeFormSuccess');
 
+  if (contactForm) {
+    contactForm.addEventListener('submit', function(e) {
+      e.preventDefault(); // Prevent page reload
+
+      var formData = new FormData(this);
+      var submitBtn = this.querySelector('button[type="submit"]');
+      var originalText = submitBtn.textContent;
+      submitBtn.textContent = 'Sending…';
+      submitBtn.disabled = true;
+
+      fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json'
+        }
+      })
+      .then(function(response) {
+        if (response.ok) {
+          // Show success overlay
+          formOverlay.classList.add('show');
+          contactForm.reset(); // Clear the form fields
+        } else {
+          alert('Something went wrong. Please try again.');
+        }
+      })
+      .catch(function() {
+        alert('Network error. Please check your connection.');
+      })
+      .finally(function() {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+      });
+    });
+  }
+
+  if (closeFormBtn) {
+    closeFormBtn.addEventListener('click', function() {
+      formOverlay.classList.remove('show');
+    });
+  }
+
+  // Close overlay by clicking outside the card
+  if (formOverlay) {
+    formOverlay.addEventListener('click', function(e) {
+      if (e.target === this) {
+        this.classList.remove('show');
+      }
+    });
+  }
   // ======================== FETCH FEED ========================
   var loaded = false;
 
