@@ -5,9 +5,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Women of Venice — Portraits & Stories</title>
+  <link rel="preconnect" href="https://lh3.googleusercontent.com">
+  <link rel="preconnect" href="https://script.googleusercontent.com">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="icon" href="logo-woman-in-the-arch.png">
+  <link rel="icon" href="https://raw.githubusercontent.com/womenofvenice-ops/womenofvenice-ops.github.io/main/logo-woman-in-the-arch.png">
   <script src="https://unpkg.com/masonry-layout@4.2.2/dist/masonry.pkgd.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
@@ -709,7 +711,14 @@
       });
     });
   }
-
+  // ======================== ERROR HANDLING ========================
+  function showError(msg) {
+    if (g) {
+      g.innerHTML = '<div class="load">⚠️ ' + msg + 
+        '<br><button onclick="location.reload()" style="margin-top:16px;padding:8px 24px;background:var(--red);color:#fff;border:none;border-radius:30px;cursor:pointer;">Retry</button></div>';
+    }
+  }
+  // ======================== END ERROR HANDLING ========================
   // ======================== CONTACT FORM (AJAX) ========================
   var contactForm = document.getElementById('contactForm');
   var formOverlay = document.getElementById('formOverlay');
@@ -808,7 +817,7 @@
 
   // ======================== PORTFOLIO FEED (JSONP) ========================
   var FEED_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnQ2lPH17X07OsQFKH36zbexF1Jbiq93lIJWAl2ME5304sUbICYtL5OSSopjE4oNni2Pg_Ge0nE_oZEqLzdWRVS3SBmTS1vZUvDYp0yqHT_8hUaZUtMKstJXVChoRD-j3yvacygj4eGldwggeDJvomjoM02QSIGptHtwbLKKv5ptV2bYyWY9iUbNaFjG0Eo44nZmvpxcx2TXIzOuh1fTEAvfrfkJ_OugLFvc8iF7j0kAdPH_XvfucSPXdL20lpAZs9fcOR4gDzjg5r9QjowFFqZKYj6C2GoGLPJzosE3AfL-YfPvpP1raSBIS0EUZRaiZwyAkFPKjdLW4x4xCxYrF8_cdVU5kA&lib=MxI0IzCoNuzIhyWj1sCHtC619Olu2p57F';
-  var INITIAL_COUNT = 12;
+  var INITIAL_COUNT = 6;
   var BATCH_SIZE = 12;
   var allFiles = [];
   var currentIndex = 0;
@@ -864,12 +873,12 @@
   }
 
   function getThumbUrl(fileId, size) {
-    return 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w' + size;
-  }
+  return 'https://lh3.googleusercontent.com/d/' + fileId + '=w' + size;
+}
 
-  function getFullUrl(fileId) {
-    return 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w1000';
-  }
+ function getFullUrl(fileId) {
+  return 'https://lh3.googleusercontent.com/d/' + fileId + '=w1000';
+}
 
   function formatName(raw) {
     return (raw || '').replace(/-/g, ' ').replace(/\b\w/g, function(l){ return l.toUpperCase(); });
