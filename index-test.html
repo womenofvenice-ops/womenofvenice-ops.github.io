@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Women of Venice — v3.1 FINAL (contact form: subject, copy, overlay) -->
+<!-- Women of Venice — v3.1 FINAL (working contact form, overlay) -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -638,17 +638,20 @@
       <button id="loadMoreBtn">Load More</button>
     </div>
   </section>
-  
+
   <!-- ===== CONTACT ===== -->
   <section class="contact-section" id="contact">
     <h2>Get in Touch</h2>
-   <form id="contactForm" action="https://formspree.io/f/xyegpdgv" method="POST">
-  <input type="text" name="name" placeholder="Your name" required>
-  <input type="email" name="_replyto" placeholder="Your email" required>
-  <textarea name="message" rows="4" placeholder="Message" required></textarea>
-  <input type="hidden" name="_subject" id="formSubject" value="WOV Contact Form">
-  <button type="submit">Send</button>
-  </form>
+    <form id="contactForm" action="https://formspree.io/f/xyegpdgv" method="POST">
+      <input type="text" name="name" placeholder="Your name" required>
+      <input type="email" name="_replyto" placeholder="Your email" required>
+      <textarea name="message" rows="4" placeholder="Message" required></textarea>
+
+      <!-- Hidden subject: will be set dynamically via JavaScript -->
+      <input type="hidden" name="_subject" id="formSubject" value="WOV Contact Form">
+
+      <button type="submit">Send</button>
+    </form>
   </section>
 
   <!-- ===== FORM SUCCESS OVERLAY ===== -->
@@ -707,7 +710,7 @@
     });
   }
 
-     // ======================== CONTACT FORM (AJAX) ========================
+  // ======================== CONTACT FORM (AJAX) ========================
   var contactForm = document.getElementById('contactForm');
   var formOverlay = document.getElementById('formOverlay');
   var closeFormBtn = document.getElementById('closeFormSuccess');
@@ -763,6 +766,21 @@
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
       });
+    });
+  }
+
+  // Close overlay handlers
+  if (closeFormBtn) {
+    closeFormBtn.addEventListener('click', function() {
+      formOverlay.classList.remove('show');
+    });
+  }
+
+  if (formOverlay) {
+    formOverlay.addEventListener('click', function(e) {
+      if (e.target === this) {
+        this.classList.remove('show');
+      }
     });
   }
 
