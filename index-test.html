@@ -727,7 +727,7 @@
     }
   }
 
-  // ======================== CONTACT FORM — send JSON ========================
+  // ======================== CONTACT FORM — send URL‑encoded ========================
   var contactForm = document.getElementById('contactForm');
   var formOverlay = document.getElementById('formOverlay');
   var closeFormBtn = document.getElementById('closeFormSuccess');
@@ -746,23 +746,20 @@
       var email = this.querySelector('input[name="_replyto"]').value;
       var message = this.querySelector('textarea[name="message"]').value;
 
-      // Build JSON payload
-      var payload = {
-        action: 'lead',
-        record: {
-          name: name,
-          email: email,
-          message: message
-        }
-      };
+      // Build URL‑encoded body (no preflight)
+      var body = new URLSearchParams();
+      body.append('action', 'lead');
+      body.append('name', name);
+      body.append('email', email);
+      body.append('message', message);
 
       fetch(this.action, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
           'Accept': 'application/json'
         },
-        body: JSON.stringify(payload)
+        body: body.toString()
       })
       .then(function(response) {
         if (!response.ok) {
@@ -786,6 +783,20 @@
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
       });
+    });
+  }
+
+  // Close overlay handlers (already present, keep them)
+  if (closeFormBtn) {
+    closeFormBtn.addEventListener('click', function() {
+      formOverlay.classList.remove('show');
+    });
+  }
+  if (formOverlay) {
+    formOverlay.addEventListener('click', function(e) {
+      if (e.target === this) {
+        this.classList.remove('show');
+      }
     });
   }
 
