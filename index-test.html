@@ -720,10 +720,13 @@
   }
 
   // ======================== ERROR HANDLING ========================
-  function showError(msg) {
-    if (g) {
-      g.innerHTML = '<div class="load">⚠️ ' + msg + 
+   function showError(msg) {
+    var galleryEl = document.getElementById('gallery');
+    if (galleryEl) {
+      galleryEl.innerHTML = '<div class="load">⚠️ ' + msg + 
         '<br><button onclick="location.reload()" style="margin-top:16px;padding:8px 24px;background:var(--red);color:#fff;border:none;border-radius:30px;cursor:pointer;">Retry</button></div>';
+    } else {
+      alert(msg);
     }
   }
 
@@ -787,33 +790,6 @@
   }
 
   // Close overlay handlers (already present, keep them)
-  if (closeFormBtn) {
-    closeFormBtn.addEventListener('click', function() {
-      formOverlay.classList.remove('show');
-    });
-  }
-  if (formOverlay) {
-    formOverlay.addEventListener('click', function(e) {
-      if (e.target === this) {
-        this.classList.remove('show');
-      }
-    });
-  }
-
-  // Close overlay handlers (already exist, keep them)
-  if (closeFormBtn) {
-    closeFormBtn.addEventListener('click', function() {
-      formOverlay.classList.remove('show');
-    });
-  }
-  if (formOverlay) {
-    formOverlay.addEventListener('click', function(e) {
-      if (e.target === this) {
-        this.classList.remove('show');
-      }
-    });
-  }
-  // Close overlay handlers
   if (closeFormBtn) {
     closeFormBtn.addEventListener('click', function() {
       formOverlay.classList.remove('show');
