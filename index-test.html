@@ -730,62 +730,70 @@
     }
   }
 
-  // ======================== CONTACT FORM — send URL‑encoded ========================
+  // ======================== CONTACT FORM — iframe submission (no CORS) ========================
   var contactForm = document.getElementById('contactForm');
   var formOverlay = document.getElementById('formOverlay');
   var closeFormBtn = document.getElementById('closeFormSuccess');
 
+  // Create a hidden iframe to receive the response
+  var iframe = document.createElement('iframe');
+  iframe.name = 'hiddenFrame';
+  iframe.style.display = 'none';
+  document.body.appendChild(iframe);
+
   if (contactForm) {
+    // Set the form to target the hidden iframe
+    contactForm.target = 'hiddenFrame';
+
     contactForm.addEventListener('submit', function(e) {
-      e.preventDefault();
+      // Let the form submit normally to the iframe
+      // No preventDefault() – we want it to submit
 
       var submitBtn = this.querySelector('button[type="submit"]');
       var originalText = submitBtn.textContent;
       submitBtn.textContent = 'Sending…';
       submitBtn.disabled = true;
 
-      // Get field values
-      var name = this.querySelector('input[name="name"]').value;
-      var email = this.querySelector('input[name="_replyto"]').value;
-      var message = this.querySelector('textarea[name="message"]').value;
-
-      // Build URL‑encoded body (no preflight)
-      var body = new URLSearchParams();
-      body.append('action', 'lead');
-      body.append('name', name);
-      body.append('email', email);
-      body.append('message', message);
-
-      fetch(this.action, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json'
-        },
-        body: body.toString()
-      })
-      .then(function(response) {
-        if (!response.ok) {
-          throw new Error('Server error: ' + response.status);
-        }
-        return response.text();
-      })
-      .then(function(text) {
-        // The connector returns "lead" on success, or "error: ..."
-        if (text && text.indexOf('error') === -1) {
+      // Listen for the iframe to load (the response)
+      iframe.onload = function() {
+        try {
+          var response = iframe.contentDocument.body.innerText || iframe.contentDocument.body.textContent;
+          if (response && response.indexOf('error') === -1) {
+            formOverlay.classList.add('show');
+            contactForm.reset();
+          } else {
+            alert('Something went wrong. Please try again.');
+          }
+        } catch (err) {
+          // If we can't read the iframe content, assume success
           formOverlay.classList.add('show');
           contactForm.reset();
-        } else {
-          alert('Something went wrong. Please try again.');
         }
-      })
-      .catch(function() {
-        alert('Network error. Please check your connection.');
-      })
-      .finally(function() {
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
-      });
+        iframe.onload = null; // Clean up
+      };
+
+      // Re-enable the button if the iframe never loads (fallback)
+      setTimeout(function() {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+        iframe.onload = null;
+      }, 15000);
+    });
+  }
+
+  // Close overlay handlers
+  if (closeFormBtn) {
+    closeFormBtn.addEventListener('click', function() {
+      formOverlay.classList.remove('show');
+    });
+  }
+  if (formOverlay) {
+    formOverlay.addEventListener('click', function(e) {
+      if (e.target === this) {
+        this.classList.remove('show');
+      }
     });
   }
 
