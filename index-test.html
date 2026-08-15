@@ -727,7 +727,7 @@
     }
   }
 
-  // ======================== CONTACT FORM (via Connector) ========================
+  // ======================== CONTACT FORM — send JSON ========================
   var contactForm = document.getElementById('contactForm');
   var formOverlay = document.getElementById('formOverlay');
   var closeFormBtn = document.getElementById('closeFormSuccess');
@@ -736,21 +736,43 @@
     contactForm.addEventListener('submit', function(e) {
       e.preventDefault();
 
-      var formData = new FormData(this);
       var submitBtn = this.querySelector('button[type="submit"]');
       var originalText = submitBtn.textContent;
       submitBtn.textContent = 'Sending…';
       submitBtn.disabled = true;
 
+      // Get field values
+      var name = this.querySelector('input[name="name"]').value;
+      var email = this.querySelector('input[name="_replyto"]').value;
+      var message = this.querySelector('textarea[name="message"]').value;
+
+      // Build JSON payload
+      var payload = {
+        action: 'lead',
+        record: {
+          name: name,
+          email: email,
+          message: message
+        }
+      };
+
       fetch(this.action, {
         method: 'POST',
-        body: formData,
         headers: {
+          'Content-Type': 'application/json',
           'Accept': 'application/json'
-        }
+        },
+        body: JSON.stringify(payload)
       })
       .then(function(response) {
-        if (response.ok) {
+        if (!response.ok) {
+          throw new Error('Server error: ' + response.status);
+        }
+        return response.text();
+      })
+      .then(function(text) {
+        // The connector returns "lead" on success, or "error: ..."
+        if (text && text.indexOf('error') === -1) {
           formOverlay.classList.add('show');
           contactForm.reset();
         } else {
@@ -767,6 +789,19 @@
     });
   }
 
+  // Close overlay handlers (already exist, keep them)
+  if (closeFormBtn) {
+    closeFormBtn.addEventListener('click', function() {
+      formOverlay.classList.remove('show');
+    });
+  }
+  if (formOverlay) {
+    formOverlay.addEventListener('click', function(e) {
+      if (e.target === this) {
+        this.classList.remove('show');
+      }
+    });
+  }
   // Close overlay handlers
   if (closeFormBtn) {
     closeFormBtn.addEventListener('click', function() {
