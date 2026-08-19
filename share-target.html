@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<!-- WoV Send v1 — receives shared photos from Android's Share sheet, one tap to deliver -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WoV Send</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --cream:#F4ECDE; --ink:#1C2B2C; --inkS:#5A6667; --red:#A8492E; --peach:#E09A73; }
+  *{ box-sizing:border-box; margin:0; }
+  body{ font-family:'Inter',Arial,sans-serif; background:var(--cream); color:var(--ink); min-height:100vh; padding:24px 18px; }
+  h1{ font-family:'Playfair Display',Georgia,serif; font-size:22px; text-align:center; margin-bottom:4px; }
+  .sub{ text-align:center; font-size:12px; color:var(--inkS); margin-bottom:24px; }
+  .thumbs{ display:flex; gap:8px; overflow-x:auto; margin-bottom:24px; padding-bottom:4px; }
+  .thumbs img{ width:64px; height:64px; object-fit:cover; border-radius:10px; flex-shrink:0; }
+  .list{ display:flex; flex-direction:column; gap:10px; }
+  .name-btn{ display:block; width:100%; text-align:left; padding:16px 18px; border-radius:14px; border:none;
+    background:#fff; font-family:'Inter',Arial,sans-serif; font-size:17px; font-weight:700; color:var(--ink);
+    box-shadow:0 2px 8px rgba(28,43,44,.08); cursor:pointer; }
+  .name-btn .when{ display:block; font-size:12px; font-weight:400; color:var(--inkS); margin-top:2px; }
+  .name-btn:active{ background:var(--peach); color:#fff; }
+  .status{ text-align:center; margin-top:26px; font-size:15px; color:var(--inkS); }
+  .status.ok{ color:#2E7D32; font-weight:700; }
+  .status.err{ color:var(--red); font-weight:700; }
+  .spinner{ width:28px; height:28px; border:3px solid var(--peach); border-top-color:var(--red); border-radius:50%;
+    margin:14px auto; animation:spin .8s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+  <h1>✦ WoV Send</h1>
+  <div class="sub" id="sub">Loading shared photos…</div>
+  <div class="thumbs" id="thumbs"></div>
+  <div class="list" id="list"></div>
+  <div class="status" id="status"></div>
+
+<script>
+(function(){
+  var EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
+  var CACHE_NAME = "wov-send-share-v1";
+  var subEl = document.getElementById("sub");
+  var thumbsEl = document.getElementById("thumbs");
+  var listEl = document.getElementById("list");
+  var statusEl = document.getElementById("status");
+  var sharedFiles = []; // [{name, mime, blob}]
+
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+
+  function blobToBase64(blob) {
+    return new Promise(function (resolve) {
+      var reader = new FileReader();
+      reader.onloadend = function () { resolve(reader.result.split(",")[1]); };
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function loadSharedFiles() {
+    try {
+      var cache = await caches.open(CACHE_NAME);
+      var meta = await cache.match("shared-files");
+      if (!meta) { subEl.textContent = "No shared photos found — share some photos to this app first."; return; }
+      var m = await meta.json();
+      for (var i = 0; i < m.count; i++) {
+        var resp = await cache.match("shared-file-" + i);
+        if (!resp) continue;
+        var blob = await resp.blob();
+        var name = resp.headers.get("X-Name") || ("photo_" + i + ".jpg");
+        sharedFiles.push({ name: name, mime: blob.type || "image/jpeg", blob: blob });
+        var url = URL.createObjectURL(blob);
+        var img = document.createElement("img"); img.src = url;
+        thumbsEl.appendChild(img);
+        await cache.delete("shared-file-" + i);
+      }
+      await cache.delete("shared-files");
+      subEl.textContent = sharedFiles.length + " photo(s) ready — tap her name below.";
+      loadRecentEncounters();
+    } catch (e) {
+      subEl.textContent = "Could not load shared photos: " + e;
+    }
+  }
+
+  function loadRecentEncounters() {
+    listEl.innerHTML = "";
+    var s = document.createElement("script");
+    window.wovRecent = function (data) {
+      var items = (data && data.items) || [];
+      if (!items.length) { listEl.innerHTML = "<div class='status'>No recent encounters found.</div>"; return; }
+      items.forEach(function (it) {
+        var btn = document.createElement("button");
+        btn.className = "name-btn";
+        var whenStr = it.when ? new Date(it.when).toLocaleDateString() : "";
+        btn.innerHTML = it.name + '<span class="when">' + whenStr + "</span>";
+        btn.onclick = function () { sendTo(it); };
+        listEl.appendChild(btn);
+      });
+    };
+    // (Since this connector doesn't yet expose recentEncounters via JSONP in the base build,
+    //  this fetches it as JSON — add the doGet branch from wov-share-backend-additions.gs.txt first.)
+    fetch(EXEC + "?action=recentEncounters")
+      .then(function (r) { return r.json(); })
+      .then(function (data) { window.wovRecent(data); })
+      .catch(function (e) { listEl.innerHTML = "<div class='status err'>Could not load recent encounters: " + e + "</div>"; });
+  }
+
+  async function sendTo(person) {
+    listEl.style.display = "none";
+    statusEl.innerHTML = '<div class="spinner"></div>Uploading and sending to ' + person.name + "…";
+    try {
+      var filesB64 = [];
+      for (var i = 0; i < sharedFiles.length; i++) {
+        var b64 = await blobToBase64(sharedFiles[i].blob);
+        filesB64.push({ name: sharedFiles[i].name, mime: sharedFiles[i].mime, data: b64 });
+      }
+      await fetch(EXEC, {
+        method: "POST", mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "webshare", id: person.id, files: filesB64 })
+      });
+      statusEl.innerHTML = '<div class="status ok">\u2713 Sent to ' + person.name + "!</div>";
+    } catch (e) {
+      statusEl.innerHTML = '<div class="status err">\u26a0 Failed: ' + e + "</div>";
+      listEl.style.display = "flex";
+    }
+  }
+
+  loadSharedFiles();
+})();
+</script>
+</body>
+</html>
