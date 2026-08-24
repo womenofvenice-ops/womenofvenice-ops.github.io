@@ -55,9 +55,11 @@
 
   function renderList(){
     if(!KEY){ app.innerHTML = "<div class='status'>Private link required.</div>"; return; }
-    var filtered = items.filter(function(it){
+      var filtered = items.filter(function(it){
+      var s = (it.status||"").toLowerCase();
       if(filter==="all") return true;
-      return (it.status||"").toLowerCase().indexOf("approved")<0;
+      if(filter==="approved") return s.indexOf("approved")>=0;
+      return s.indexOf("approved")<0;
     });
     if(!filtered.length){ app.innerHTML = filterButtons() + "<div class='status'>Nothing here.</div>"; return; }
     var html = filterButtons() + '<div class="list">';
