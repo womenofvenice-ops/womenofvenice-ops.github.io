@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- WoV Stories Review v1 -->
+<!-- WoV Stories Review v2 — private link, delete, copy/reset/char-count -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -24,13 +24,17 @@
   .section-lbl{ font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--peach); font-weight:700; margin:16px 0 8px; }
   .transcript{ background:#fff; border-radius:14px; padding:14px; font-size:14.5px; line-height:1.6; color:var(--inkS); white-space:pre-line; }
   textarea{ width:100%; min-height:180px; border:1.5px solid rgba(28,43,44,.2); border-radius:14px; padding:14px; font-family:'Inter',Arial,sans-serif; font-size:15px; line-height:1.6; }
+  .toolrow{ display:flex; gap:8px; margin-top:8px; align-items:center; flex-wrap:wrap; }
+  .charcount{ font-size:12px; color:var(--inkS); margin-left:auto; }
   .btnrow{ display:flex; gap:10px; margin-top:14px; }
-  button{ flex:1; padding:14px; border-radius:30px; border:none; font-weight:700; font-size:15px; cursor:pointer; }
-  .approve{ background:var(--red); color:#fff; }
-  .edit{ background:#fff; color:var(--red); border:2px solid var(--red); }
+  button{ padding:12px 16px; border-radius:30px; border:none; font-weight:700; font-size:14px; cursor:pointer; }
+  .approve{ background:var(--red); color:#fff; flex:1; padding:14px; font-size:15px; }
+  .edit{ background:#fff; color:var(--red); border:2px solid var(--red); flex:1; padding:14px; font-size:15px; }
+  .small{ background:#fff; color:var(--ink); border:1.5px solid rgba(28,43,44,.2); font-size:12px; padding:8px 12px; }
+  .danger{ background:#fff; color:#B3261E; border:1.5px solid #B3261E; margin-top:16px; width:100%; padding:12px; }
   .status{ text-align:center; margin-top:14px; font-size:14px; color:var(--inkS); }
   .filterrow{ display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; justify-content:center; }
-  .filterrow button{ flex:none; padding:8px 14px; font-size:12px; background:#fff; color:var(--ink); border:1.5px solid rgba(28,43,44,.2); }
+  .filterrow button{ padding:8px 14px; font-size:12px; background:#fff; color:var(--ink); border:1.5px solid rgba(28,43,44,.2); }
   .filterrow button.on{ background:var(--ink); color:#fff; border-color:var(--ink); }
 </style>
 </head>
@@ -41,6 +45,7 @@
 <script>
 (function(){
   var EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
+  var KEY = new URLSearchParams(window.location.search).get("key") || "";
   var app = document.getElementById("app");
   var items = [];
   var filter = "await";
@@ -49,14 +54,14 @@
   function badgeClass(s){ s=(s||"").toLowerCase(); if(s.indexOf("approved")>=0) return "b-approved"; if(s.indexOf("edit")>=0) return "b-edit"; return "b-await"; }
 
   function renderList(){
+    if(!KEY){ app.innerHTML = "<div class='status'>Private link required.</div>"; return; }
     var filtered = items.filter(function(it){
       if(filter==="all") return true;
-      if(filter==="await") return (it.status||"").toLowerCase().indexOf("approved")<0;
-      return true;
+      return (it.status||"").toLowerCase().indexOf("approved")<0;
     });
     if(!filtered.length){ app.innerHTML = filterButtons() + "<div class='status'>Nothing here.</div>"; return; }
     var html = filterButtons() + '<div class="list">';
-    filtered.forEach(function(it,idx){
+    filtered.forEach(function(it){
       var realIdx = items.indexOf(it);
       var d = it.date ? new Date(it.date).toLocaleDateString() : "";
       html += '<div class="card" onclick="wovOpen('+realIdx+')">' +
@@ -78,6 +83,12 @@
 
   window.wovFilter = function(f){ filter=f; renderList(); };
 
+  function updateCharCount(){
+    var box=document.getElementById("storybox");
+    var cc=document.getElementById("charcount");
+    if(box && cc) cc.textContent = box.value.length + " chars";
+  }
+
   window.wovOpen = function(idx){
     var it = items[idx];
     app.innerHTML =
@@ -87,15 +98,35 @@
       '<div class="section-lbl">Transcript (her real words)</div>' +
       '<div class="transcript">'+esc(it.transcript||"(none captured)")+'</div>' +
       '<div class="section-lbl">Story \u2014 edit freely, or replace with your own quote from above</div>' +
-      '<textarea id="storybox">'+esc(it.draft||"")+'</textarea>' +
+      '<textarea id="storybox" oninput="updateCC()">'+esc(it.draft||"")+'</textarea>' +
+      '<div class="toolrow">' +
+        '<button class="small" onclick="wovCopy()">\ud83d\udccb Copy</button>' +
+        '<button class="small" onclick="wovReset('+idx+')">\u21ba Reset</button>' +
+        '<span class="charcount" id="charcount"></span>' +
+      '</div>' +
       '<div class="btnrow">' +
         '<button class="edit" onclick="wovSave('+idx+',\'\u270f\ufe0f Needs edit\')">Needs more work</button>' +
         '<button class="approve" onclick="wovSave('+idx+',\'\u2705 Approved\')">Approve</button>' +
       '</div>' +
+      '<button class="danger" onclick="wovDelete('+idx+')">\ud83d\uddd1 Delete this story</button>' +
       '<div class="status" id="savemsg"></div>';
+    updateCharCount();
   };
 
+  window.updateCC = updateCharCount;
   window.wovBack = function(){ renderList(); };
+
+  window.wovReset = function(idx){
+    document.getElementById("storybox").value = items[idx].draft || "";
+    updateCharCount();
+  };
+
+  window.wovCopy = async function(){
+    var box = document.getElementById("storybox");
+    try{ await navigator.clipboard.writeText(box.value); }
+    catch(e){ box.select(); try{ document.execCommand("copy"); }catch(e2){} }
+    var msg=document.getElementById("savemsg"); if(msg) msg.textContent="Copied \u2713";
+  };
 
   window.wovSave = async function(idx, status){
     var it = items[idx];
@@ -104,7 +135,7 @@
     try{
       await fetch(EXEC, { method:"POST", mode:"no-cors",
         headers:{ "Content-Type":"text/plain;charset=utf-8" },
-        body: JSON.stringify({ action:"storyUpdate", row:it.row, finalStory:text, status:status }) });
+        body: JSON.stringify({ action:"storyUpdate", key:KEY, row:it.row, finalStory:text, status:status }) });
       it.draft = text; it.status = status;
       document.getElementById("savemsg").textContent = "\u2713 Saved";
       setTimeout(function(){ renderList(); }, 700);
@@ -113,10 +144,29 @@
     }
   };
 
-  fetch(EXEC + "?action=storiesList")
-    .then(function(r){ return r.json(); })
-    .then(function(data){ items = (data && data.items) || []; renderList(); })
-    .catch(function(e){ app.innerHTML = "<div class='status'>Could not load: "+e+"</div>"; });
+  window.wovDelete = async function(idx){
+    var it = items[idx];
+    if(!window.confirm("Delete this story permanently? This cannot be undone.")) return;
+    document.getElementById("savemsg").textContent = "Deleting\u2026";
+    try{
+      await fetch(EXEC, { method:"POST", mode:"no-cors",
+        headers:{ "Content-Type":"text/plain;charset=utf-8" },
+        body: JSON.stringify({ action:"storyDelete", key:KEY, row:it.row }) });
+      loadAll();
+    }catch(err){
+      document.getElementById("savemsg").textContent = "\u26a0 " + err;
+    }
+  };
+
+  function loadAll(){
+    if(!KEY){ renderList(); return; }
+    fetch(EXEC + "?action=storiesList&key=" + encodeURIComponent(KEY))
+      .then(function(r){ return r.json(); })
+      .then(function(data){ items = (data && data.items) || []; renderList(); })
+      .catch(function(e){ app.innerHTML = "<div class='status'>Could not load: "+e+"</div>"; });
+  }
+
+  loadAll();
 })();
 </script>
 </body>
