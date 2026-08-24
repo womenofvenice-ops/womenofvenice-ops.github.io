@@ -63,7 +63,7 @@
     var html = filterButtons() + '<div class="list">';
     filtered.forEach(function(it){
       var realIdx = items.indexOf(it);
-      var d = it.date ? new Date(it.date).toLocaleDateString() : "";
+      var d = it.date ? new Date(it.date).toLocaleString() : "";
       html += '<div class="card" onclick="wovOpen('+realIdx+')">' +
         '<div class="name">'+esc(it.name||"?")+'</div>' +
         '<div class="meta">'+d+'</div>' +
@@ -91,9 +91,11 @@
 
   window.wovOpen = function(idx){
     var it = items[idx];
+    var d = it.date ? new Date(it.date).toLocaleString() : "";
     app.innerHTML =
       '<a class="back" onclick="wovBack()">\u2190 Back</a>' +
       '<h1 style="text-align:left;font-size:20px">'+esc(it.name||"?")+'</h1>' +
+      '<div class="meta" style="margin-bottom:6px">'+esc(d)+(it.sourceFileName?' \u00b7 '+esc(it.sourceFileName):'')+'</div>' +
       '<span class="badge '+badgeClass(it.status)+'">'+esc(it.status||"Awaiting review")+'</span>' +
       '<div class="section-lbl">Transcript (her real words)</div>' +
       '<div class="transcript">'+esc(it.transcript||"(none captured)")+'</div>' +
@@ -108,9 +110,27 @@
         '<button class="edit" onclick="wovSave('+idx+',\'\u270f\ufe0f Needs edit\')">Needs more work</button>' +
         '<button class="approve" onclick="wovSave('+idx+',\'\u2705 Approved\')">Approve</button>' +
       '</div>' +
-      '<button class="danger" onclick="wovDelete('+idx+')">\ud83d\uddd1 Delete this story</button>' +
+      '<button class="danger" id="delbtn" onclick="wovDeleteTap('+idx+')">\ud83d\uddd1 Delete this story</button>' +
       '<div class="status" id="savemsg"></div>';
     updateCharCount();
+  };
+
+  var deleteArmed = null, deleteTimer = null;
+  window.wovDeleteTap = function(idx){
+    var btn = document.getElementById("delbtn");
+    if(deleteArmed === idx){
+      clearTimeout(deleteTimer); deleteArmed = null;
+      wovDelete(idx);
+      return;
+    }
+    deleteArmed = idx;
+    btn.textContent = "\u26a0\ufe0f Tap again to permanently delete";
+    btn.style.background = "#B3261E"; btn.style.color = "#fff";
+    deleteTimer = setTimeout(function(){
+      deleteArmed = null;
+      btn.textContent = "\ud83d\uddd1 Delete this story";
+      btn.style.background = "#fff"; btn.style.color = "#B3261E";
+    }, 4000);
   };
 
   window.updateCC = updateCharCount;
@@ -146,7 +166,6 @@
 
   window.wovDelete = async function(idx){
     var it = items[idx];
-    if(!window.confirm("Delete this story permanently? This cannot be undone.")) return;
     document.getElementById("savemsg").textContent = "Deleting\u2026";
     try{
       await fetch(EXEC, { method:"POST", mode:"no-cors",
