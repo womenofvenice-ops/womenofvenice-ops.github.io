@@ -74,13 +74,13 @@
     app.innerHTML = html;
   }
 
-  function filterButtons(){
+    function filterButtons(){
     return '<div class="filterrow">' +
       '<button class="'+(filter==="await"?"on":"")+'" onclick="wovFilter(\'await\')">Needs review</button>' +
+      '<button class="'+(filter==="approved"?"on":"")+'" onclick="wovFilter(\'approved\')">Approved</button>' +
       '<button class="'+(filter==="all"?"on":"")+'" onclick="wovFilter(\'all\')">All</button>' +
       '</div>';
   }
-
   window.wovFilter = function(f){ filter=f; renderList(); };
 
   function updateCharCount(){
