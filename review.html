@@ -53,16 +53,21 @@
   function esc(s){ return String(s||"").replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function badgeClass(s){ s=(s||"").toLowerCase(); if(s.indexOf("approved")>=0) return "b-approved"; if(s.indexOf("edit")>=0) return "b-edit"; return "b-await"; }
 
+    var searchQuery = "";
+
   function renderList(){
     if(!KEY){ app.innerHTML = "<div class='status'>Private link required.</div>"; return; }
-      var filtered = items.filter(function(it){
+    var filtered = items.filter(function(it){
       var s = (it.status||"").toLowerCase();
-      if(filter==="all") return true;
-      if(filter==="approved") return s.indexOf("approved")>=0;
-      return s.indexOf("approved")<0;
+      var statusOk = filter==="all" ? true : (filter==="approved" ? s.indexOf("approved")>=0 : s.indexOf("approved")<0);
+      var searchOk = !searchQuery || (it.name||"").toLowerCase().indexOf(searchQuery.toLowerCase())>=0;
+      return statusOk && searchOk;
     });
-    if(!filtered.length){ app.innerHTML = filterButtons() + "<div class='status'>Nothing here.</div>"; return; }
-    var html = filterButtons() + '<div class="list">';
+    var topBar = filterButtons() +
+      '<input type="text" id="searchbox" placeholder="Search by name\u2026" value="'+esc(searchQuery)+'" ' +
+      'onchange="wovSearch(this.value)" style="width:100%;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(28,43,44,.2);font-size:15px;margin-bottom:14px;box-sizing:border-box">';
+    if(!filtered.length){ app.innerHTML = topBar + "<div class='status'>Nothing here.</div>"; return; }
+    var html = topBar + '<div class="list">';
     filtered.forEach(function(it){
       var realIdx = items.indexOf(it);
       var d = it.date ? new Date(it.date).toLocaleString() : "";
@@ -84,6 +89,7 @@
       '</div>';
   }
   window.wovFilter = function(f){ filter=f; renderList(); };
+  window.wovSearch = function(v){ searchQuery=v; renderList(); };
 
   function updateCharCount(){
     var box=document.getElementById("storybox");
