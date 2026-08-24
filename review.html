@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<!-- WoV Stories Review v1 -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WoV Stories</title>
+<link rel="icon" href="logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --cream:#F4ECDE; --ink:#1C2B2C; --inkS:#5A6667; --red:#A8492E; --peach:#E09A73; --gold:#C7A463; }
+  *{ box-sizing:border-box; margin:0; }
+  body{ font-family:'Inter',Arial,sans-serif; background:var(--cream); color:var(--ink); min-height:100vh; padding:20px 16px 40px; }
+  h1{ font-family:'Playfair Display',Georgia,serif; font-size:22px; text-align:center; margin-bottom:16px; }
+  .list{ display:flex; flex-direction:column; gap:10px; }
+  .card{ background:#fff; border-radius:16px; padding:14px 16px; box-shadow:0 2px 8px rgba(28,43,44,.08); cursor:pointer; }
+  .card .name{ font-weight:700; font-size:16px; }
+  .card .meta{ font-size:12px; color:var(--inkS); margin-top:2px; }
+  .badge{ display:inline-block; font-size:11px; font-weight:700; padding:3px 10px; border-radius:99px; margin-top:6px; }
+  .b-await{ background:#F3E3C4; color:#7A5A1E; }
+  .b-approved{ background:#CFE3CF; color:#2E5B2E; }
+  .b-edit{ background:#F0D0C8; color:#8A3A28; }
+  .back{ display:inline-block; margin-bottom:14px; color:var(--red); font-weight:700; font-size:14px; cursor:pointer; }
+  .section-lbl{ font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--peach); font-weight:700; margin:16px 0 8px; }
+  .transcript{ background:#fff; border-radius:14px; padding:14px; font-size:14.5px; line-height:1.6; color:var(--inkS); white-space:pre-line; }
+  textarea{ width:100%; min-height:180px; border:1.5px solid rgba(28,43,44,.2); border-radius:14px; padding:14px; font-family:'Inter',Arial,sans-serif; font-size:15px; line-height:1.6; }
+  .btnrow{ display:flex; gap:10px; margin-top:14px; }
+  button{ flex:1; padding:14px; border-radius:30px; border:none; font-weight:700; font-size:15px; cursor:pointer; }
+  .approve{ background:var(--red); color:#fff; }
+  .edit{ background:#fff; color:var(--red); border:2px solid var(--red); }
+  .status{ text-align:center; margin-top:14px; font-size:14px; color:var(--inkS); }
+  .filterrow{ display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; justify-content:center; }
+  .filterrow button{ flex:none; padding:8px 14px; font-size:12px; background:#fff; color:var(--ink); border:1.5px solid rgba(28,43,44,.2); }
+  .filterrow button.on{ background:var(--ink); color:#fff; border-color:var(--ink); }
+</style>
+</head>
+<body>
+  <h1>✦ WoV Stories</h1>
+  <div id="app">Loading…</div>
+
+<script>
+(function(){
+  var EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
+  var app = document.getElementById("app");
+  var items = [];
+  var filter = "await";
+
+  function esc(s){ return String(s||"").replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function badgeClass(s){ s=(s||"").toLowerCase(); if(s.indexOf("approved")>=0) return "b-approved"; if(s.indexOf("edit")>=0) return "b-edit"; return "b-await"; }
+
+  function renderList(){
+    var filtered = items.filter(function(it){
+      if(filter==="all") return true;
+      if(filter==="await") return (it.status||"").toLowerCase().indexOf("approved")<0;
+      return true;
+    });
+    if(!filtered.length){ app.innerHTML = filterButtons() + "<div class='status'>Nothing here.</div>"; return; }
+    var html = filterButtons() + '<div class="list">';
+    filtered.forEach(function(it,idx){
+      var realIdx = items.indexOf(it);
+      var d = it.date ? new Date(it.date).toLocaleDateString() : "";
+      html += '<div class="card" onclick="wovOpen('+realIdx+')">' +
+        '<div class="name">'+esc(it.name||"?")+'</div>' +
+        '<div class="meta">'+d+'</div>' +
+        '<span class="badge '+badgeClass(it.status)+'">'+esc(it.status||"Awaiting review")+'</span>' +
+        '</div>';
+    });
+    html += '</div>';
+    app.innerHTML = html;
+  }
+
+  function filterButtons(){
+    return '<div class="filterrow">' +
+      '<button class="'+(filter==="await"?"on":"")+'" onclick="wovFilter(\'await\')">Needs review</button>' +
+      '<button class="'+(filter==="all"?"on":"")+'" onclick="wovFilter(\'all\')">All</button>' +
+      '</div>';
+  }
+
+  window.wovFilter = function(f){ filter=f; renderList(); };
+
+  window.wovOpen = function(idx){
+    var it = items[idx];
+    app.innerHTML =
+      '<a class="back" onclick="wovBack()">\u2190 Back</a>' +
+      '<h1 style="text-align:left;font-size:20px">'+esc(it.name||"?")+'</h1>' +
+      '<span class="badge '+badgeClass(it.status)+'">'+esc(it.status||"Awaiting review")+'</span>' +
+      '<div class="section-lbl">Transcript (her real words)</div>' +
+      '<div class="transcript">'+esc(it.transcript||"(none captured)")+'</div>' +
+      '<div class="section-lbl">Story \u2014 edit freely, or replace with your own quote from above</div>' +
+      '<textarea id="storybox">'+esc(it.draft||"")+'</textarea>' +
+      '<div class="btnrow">' +
+        '<button class="edit" onclick="wovSave('+idx+',\'\u270f\ufe0f Needs edit\')">Needs more work</button>' +
+        '<button class="approve" onclick="wovSave('+idx+',\'\u2705 Approved\')">Approve</button>' +
+      '</div>' +
+      '<div class="status" id="savemsg"></div>';
+  };
+
+  window.wovBack = function(){ renderList(); };
+
+  window.wovSave = async function(idx, status){
+    var it = items[idx];
+    var text = document.getElementById("storybox").value;
+    document.getElementById("savemsg").textContent = "Saving\u2026";
+    try{
+      await fetch(EXEC, { method:"POST", mode:"no-cors",
+        headers:{ "Content-Type":"text/plain;charset=utf-8" },
+        body: JSON.stringify({ action:"storyUpdate", row:it.row, finalStory:text, status:status }) });
+      it.draft = text; it.status = status;
+      document.getElementById("savemsg").textContent = "\u2713 Saved";
+      setTimeout(function(){ renderList(); }, 700);
+    }catch(err){
+      document.getElementById("savemsg").textContent = "\u26a0 " + err;
+    }
+  };
+
+  fetch(EXEC + "?action=storiesList")
+    .then(function(r){ return r.json(); })
+    .then(function(data){ items = (data && data.items) || []; renderList(); })
+    .catch(function(e){ app.innerHTML = "<div class='status'>Could not load: "+e+"</div>"; });
+})();
+</script>
+</body>
+</html>
