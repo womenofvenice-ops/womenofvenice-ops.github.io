@@ -60,11 +60,9 @@
     .hero-content h1 { font-size: 48px; letter-spacing: 0.04em; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
     .hero-content .sub { font-family: 'Inter', Arial, sans-serif; font-size: 14px; text-transform: uppercase; letter-spacing: 0.3em; color: var(--peach); margin-top: 4px; }
     .hero-content .motto { font-style: italic; font-size: 20px; margin-top: 8px; text-shadow: 0 2px 8px rgba(0,0,0,0.4); }
-    .hero-content .eyebrow { font-family: 'Inter', Arial, sans-serif; font-size: 13px; text-transform: uppercase; letter-spacing: 0.28em; color: var(--peach); margin-bottom: 10px; }
-    .hero-content .unveil-headline { font-size: 36px; font-weight: 700; color: #F6E4B8; text-shadow: 0 2px 14px rgba(0,0,0,0.4); line-height: 1.15; }
-    .hero-content .unveil-sub { font-style: italic; font-size: 18px; color: rgba(244,236,222,0.9); margin-top: 10px; }
-    @media (min-width: 700px) { .hero-content .unveil-headline { font-size: 56px; } .hero-content .unveil-sub { font-size: 21px; } }
-    @media (min-width: 1100px) { .hero-content .unveil-headline { font-size: 64px; } }
+    .hero-content .unveil-headline { font-size: 26px; font-weight: 700; color: #F6E4B8; text-shadow: 0 2px 14px rgba(0,0,0,0.4); line-height: 1.15; margin-top: 14px; }
+    .hero-content .unveil-sub { font-style: italic; font-size: 15px; color: rgba(244,236,222,0.9); margin-top: 8px; }
+    @media (min-width: 700px) { .hero-content .unveil-headline { font-size: 32px; } .hero-content .unveil-sub { font-size: 17px; } }
     .featured-stories { margin: 40px 0; }
     .featured-stories h2 { font-size: 28px; text-align: center; margin-bottom: 30px; font-weight: 700; }
     .featured-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
@@ -150,17 +148,10 @@
 
   <div class="hero" id="hero">
     <img id="heroImage" src="" alt="Women of Venice">
-    <div class="hero-content">
-      <svg width="64" height="52" viewBox="30 0 140 160" style="margin:0 auto 12px;display:block;">
-        <defs><linearGradient id="heroArchGrad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#F6E4B8"/><stop offset="55%" stop-color="#E8C077"/><stop offset="100%" stop-color="#C7A463"/>
-        </linearGradient></defs>
-        <path d="M60 140 L60 86 C55 66 57 54 70 49 C85 44 96 33 100 12 C104 33 115 44 130 49 C143 54 145 66 140 86 L140 140 Z" fill="url(#heroArchGrad)"/>
-        <path d="M46 140 L154 140" stroke="#C7A463" stroke-width="6.5" stroke-linecap="round"/>
-        <path d="M100 140 L100 52" stroke="#F4ECDE" stroke-width="5" stroke-linecap="round"/>
-      </svg>
-      <div class="eyebrow">Women of Venice</div>
-      <h1 class="unveil-headline">Unveiling this Fall</h1>
+  <div class="hero-content">
+      <h1>Women of Venice</h1>
+      <div class="sub">Portraits &amp; Stories · Venezia</div>
+      <div class="unveil-headline">Unveiling this Fall</div>
       <div class="unveil-sub">real women, real Venice, real stories.</div>
       <div class="motto">✦ I'll steal you from Chronos — and give you Kairos.</div>
     </div>
@@ -415,9 +406,7 @@
       var files = (data.files || []);
       if (!files.length) { gallery.innerHTML = '<div class="load">No portraits published yet.</div>'; return; }
       var isFirstLoad = !allFiles.length;
-      var COMING_SOON_MODE = true; // flip to false, redeploy, when ready to reveal real models
-      var scopedFiles = COMING_SOON_MODE ? files.filter(function(f){ return f.isVenezia; }) : files;
-      allFiles = shuffleArray(scopedFiles);
+      allFiles = shuffleArray(files);
       setHeroImage(allFiles);
       renderFeaturedStories(allFiles);
       if (isFirstLoad) {
