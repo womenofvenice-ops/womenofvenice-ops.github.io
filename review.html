@@ -162,8 +162,7 @@
     }catch(err){ box.textContent = "\u26a0 " + err; btn.disabled=false; btn.textContent="\ud83d\udd0a Play recording"; }
   };
 
-  window.wovReset = function(idx){
-  window.wovReset = function(idx){
+    window.wovReset = function(idx){
     document.getElementById("storybox").value = items[idx].draft || "";
     updateCharCount();
   };
