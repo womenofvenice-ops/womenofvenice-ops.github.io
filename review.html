@@ -103,7 +103,8 @@
     app.innerHTML =
       '<a class="back" onclick="wovBack()">\u2190 Back</a>' +
       '<h1 style="text-align:left;font-size:20px">'+esc(it.name||"?")+'</h1>' +
-      '<div class="meta" style="margin-bottom:6px">'+esc(d)+(it.sourceFileName?' \u00b7 '+esc(it.sourceFileName):'')+'</div>' +
+            '<div class="meta" style="margin-bottom:6px">'+esc(d)+(it.sourceFileName?' \u00b7 '+esc(it.sourceFileName):'')+'</div>' +
+      (it.sourceFileId?'<button class="small" id="playbtn" onclick="wovPlayAudio(\''+it.sourceFileId+'\')">\ud83d\udd0a Play recording</button><div id="audiobox" style="margin:10px 0"></div>':'') +
       '<span class="badge '+badgeClass(it.status)+'">'+esc(it.status||"Awaiting review")+'</span>' +
       '<div class="section-lbl">Transcript (her real words)</div>' +
       '<div class="transcript">'+esc(it.transcript||"(none captured)")+'</div>' +
