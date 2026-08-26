@@ -144,7 +144,25 @@
 
   window.updateCC = updateCharCount;
   window.wovBack = function(){ renderList(); };
+  window.wovPlayAudio = async function(fileId){
+    var btn = document.getElementById("playbtn");
+    var box = document.getElementById("audiobox");
+    btn.disabled = true; btn.textContent = "Loading\u2026";
+    try{
+      var r = await fetch(EXEC + "?action=audioFile&id=" + encodeURIComponent(fileId) + "&key=" + encodeURIComponent(KEY));
+      var data = await r.json();
+      if(data.error){ box.textContent = "\u26a0 " + data.error; btn.disabled=false; btn.textContent="\ud83d\udd0a Play recording"; return; }
+      var byteChars = atob(data.audio);
+      var byteArr = new Uint8Array(byteChars.length);
+      for(var i=0;i<byteChars.length;i++) byteArr[i] = byteChars.charCodeAt(i);
+      var blob = new Blob([byteArr], { type: data.mime || "audio/mpeg" });
+      var url = URL.createObjectURL(blob);
+      box.innerHTML = '<audio controls autoplay src="'+url+'" style="width:100%"></audio>';
+      btn.style.display = "none";
+    }catch(err){ box.textContent = "\u26a0 " + err; btn.disabled=false; btn.textContent="\ud83d\udd0a Play recording"; }
+  };
 
+  window.wovReset = function(idx){
   window.wovReset = function(idx){
     document.getElementById("storybox").value = items[idx].draft || "";
     updateCharCount();
