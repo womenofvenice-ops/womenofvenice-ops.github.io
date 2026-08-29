@@ -183,7 +183,7 @@
     try{
       await fetch(EXEC, { method:"POST", mode:"no-cors",
         headers:{ "Content-Type":"text/plain;charset=utf-8" },
-        body: JSON.stringify({ action:"storyUpdate", key:KEY, row:it.row, finalStory:text, status:status }) });
+        body: JSON.stringify({ action:"storyUpdate", key:KEY, rowId:it.rowId, finalStory:text, status:status }) });
       it.draft = text; it.status = status;
       document.getElementById("savemsg").textContent = "\u2713 Saved";
       setTimeout(function(){ renderList(); }, 700);
@@ -198,7 +198,7 @@
     try{
       await fetch(EXEC, { method:"POST", mode:"no-cors",
         headers:{ "Content-Type":"text/plain;charset=utf-8" },
-        body: JSON.stringify({ action:"storyDelete", key:KEY, row:it.row }) });
+        body: JSON.stringify({ action:"storyDelete", key:KEY, rowId:it.rowId }) });
       loadAll();
     }catch(err){
       document.getElementById("savemsg").textContent = "\u26a0 " + err;
