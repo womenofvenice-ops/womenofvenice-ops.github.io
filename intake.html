@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   *{ box-sizing:border-box; margin:0; padding:0; }
-  body{ font-family:'Inter',sans-serif; background:#0F1215; color:#E6EDF3; padding:20px 16px 40px; }
+  body{ font-family:'Inter',sans-serif; background:#0F1215; color:#E6EDF3; padding:20px 16px 50px; }
   .wrap{ max-width:440px; margin:0 auto; }
   h1{ font-size:20px; font-weight:700; letter-spacing:.05em; color:#fff; margin-bottom:4px; }
   p.sub{ font-size:12.5px; color:#8B949E; margin-bottom:20px; }
@@ -17,10 +17,16 @@
   input:focus, select:focus, textarea:focus{ border-color:#58A6FF; }
   .sig-box{ background:#161B22; border:1px solid #30363D; border-radius:10px; position:relative; touch-action:none; }
   canvas{ display:block; width:100%; height:110px; border-radius:10px; }
-  .sig-clear{ position:absolute; top:6px; right:8px; font-size:10px; color:#8B949E; background:transparent; border:none; padding:4px 6px; cursor:pointer; }
-  .legal{ font-size:10.5px; color:#6E7681; line-height:1.4; margin:12px 0 18px; }
-  button.submit{ width:100%; background:#238636; color:#fff; font-weight:700; font-size:15px; padding:15px; border-radius:12px; border:none; cursor:pointer; }
-  button.submit:active{ background:#2EA043; }
+  .sig-clear{ position:absolute; top:6px; right:8px; font-size:11px; color:#8B949E; background:#21262D; border:1px solid #30363D; border-radius:6px; padding:4px 8px; cursor:pointer; }
+  
+  /* MANDATORY CHECKBOX STYLING */
+  .consent-box{ display:flex; align-items:flex-start; gap:10px; margin:16px 0 20px; cursor:pointer; }
+  .consent-box input[type="checkbox"]{ width:20px; height:20px; min-width:20px; margin-top:2px; accent-color:#238636; cursor:pointer; }
+  .consent-box span{ font-size:12px; color:#C9D1D9; line-height:1.45; user-select:none; }
+
+  button.submit{ width:100%; background:#238636; color:#fff; font-weight:700; font-size:15px; padding:15px; border-radius:12px; border:none; cursor:pointer; transition:background .15s; }
+  button.submit:disabled{ background:#30363D; color:#8B949E; cursor:not-allowed; }
+  button.submit:active:not(:disabled){ background:#2EA043; }
   .status{ text-align:center; font-size:13px; color:#58A6FF; margin-top:14px; }
 </style>
 </head>
@@ -32,7 +38,7 @@
   <form id="intakeForm">
     <div class="field">
       <label>Full Name</label>
-      <input type="text" id="name" required placeholder="e.g. Giulia Rossi">
+      <input type="text" id="name" required placeholder="e.g. Sofia Moro">
     </div>
 
     <div class="field">
@@ -41,7 +47,7 @@
     </div>
 
     <div class="field">
-      <label>Email Address</label>
+      <label>Email Address (For Consent Copy)</label>
       <input type="email" id="email" required placeholder="name@email.com">
     </div>
 
@@ -51,31 +57,35 @@
     </div>
 
     <div class="field">
-      <label>Target Format / Ambition</label>
+      <label>Target Acting Format / Ambition</label>
       <select id="targetFormat">
         <option value="Indie / Feature Cinema">Indie / Feature Cinema (A24 / Arthouse Lead)</option>
         <option value="Commercial / Fashion">Commercial / Luxury Fashion Brand Campaign</option>
         <option value="Short-Form Narrative">Short-Form Narrative Creator (Reels / TikTok Series)</option>
         <option value="Streaming Episodic">Streaming Episodic Series (Drama / Thriller)</option>
         <option value="Voice / Narrative Audio">Voice Acting / Narrative Audio</option>
-        <option value="Other">Other (Describe below)</option>
+        <option value="Other">Other</option>
       </select>
     </div>
 
     <div class="field">
       <label>Role Objective & Acting Tags (Optional)</label>
-      <textarea id="notes" rows="2" placeholder="e.g. Dark psychological roles, period drama, dry wit, Italian/English bilingual..."></textarea>
+      <textarea id="notes" rows="2" placeholder="e.g. Vulnerable drama, period lead, dry humor..."></textarea>
     </div>
 
     <div class="field">
-      <label>Consent Signature</label>
+      <label>Signature</label>
       <div class="sig-box">
         <canvas id="sigCanvas"></canvas>
         <button type="button" class="sig-clear" onclick="clearSig()">Clear</button>
       </div>
     </div>
 
-    <p class="legal">I grant Claudio permission to record a short audio/video screen test for casting diagnostics, creative evaluation, and artistic portfolio review.</p>
+    <!-- MANDATORY CHECKBOX -->
+    <label class="consent-box">
+      <input type="checkbox" id="consentCheck" required>
+      <span>I grant Claudio permission to record a short audio/video screen test for casting diagnostics, creative evaluation, and artistic portfolio review. I will receive a copy via email.</span>
+    </label>
 
     <button type="submit" class="submit" id="subBtn">Lock & Start 60s Audition</button>
     <div class="status" id="statusMsg"></div>
@@ -87,37 +97,63 @@
   var canvas = document.getElementById("sigCanvas");
   var ctx = canvas.getContext("2d");
   var drawing = false;
+  var hasDrawn = false;
+  var lastWidth = 0;
 
-  function resizeCanvas(){
+  // FIX: Sizing canvas without wiping when mobile address bar hides/shows
+  function setupCanvas(){
     var r = canvas.getBoundingClientRect();
+    if (Math.abs(r.width - lastWidth) < 5 && canvas.height > 0) return; // Ignore vertical scroll resize!
+    lastWidth = r.width;
+    
+    // Save signature if already drawn:
+    var savedData = hasDrawn ? canvas.toDataURL() : null;
     canvas.width = r.width;
-    canvas.height = r.height;
-    ctx.lineWidth = 2;
+    canvas.height = 110;
+    ctx.lineWidth = 2.2;
     ctx.strokeStyle = "#58A6FF";
+    ctx.lineCap = "round";
+
+    if(savedData){
+      var img = new Image();
+      img.onload = function(){ ctx.drawImage(img, 0, 0); };
+      img.src = savedData;
+    }
   }
-  window.addEventListener("resize", resizeCanvas);
-  setTimeout(resizeCanvas, 100);
+  window.addEventListener("resize", setupCanvas);
+  setTimeout(setupCanvas, 150);
 
   function getPos(e){
     var r = canvas.getBoundingClientRect();
     var t = e.touches ? e.touches[0] : e;
     return { x: t.clientX - r.left, y: t.clientY - r.top };
   }
-  canvas.addEventListener("mousedown", function(e){ drawing=true; var p=getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+
+  canvas.addEventListener("mousedown", function(e){ drawing=true; hasDrawn=true; var p=getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
   canvas.addEventListener("mousemove", function(e){ if(!drawing) return; var p=getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
   window.addEventListener("mouseup", function(){ drawing=false; });
-  canvas.addEventListener("touchstart", function(e){ drawing=true; var p=getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); });
-  canvas.addEventListener("touchmove", function(e){ if(!drawing) return; var p=getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); });
+
+  canvas.addEventListener("touchstart", function(e){ drawing=true; hasDrawn=true; var p=getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); }, {passive:false});
+  canvas.addEventListener("touchmove", function(e){ if(!drawing) return; var p=getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); }, {passive:false});
   window.addEventListener("touchend", function(){ drawing=false; });
 
-  function clearSig(){ ctx.clearRect(0, 0, canvas.width, canvas.height); }
+  function clearSig(){ 
+    ctx.clearRect(0, 0, canvas.width, canvas.height); 
+    hasDrawn = false; 
+  }
 
   document.getElementById("intakeForm").onsubmit = async function(e){
     e.preventDefault();
+
+    if(!hasDrawn){
+      alert("Please provide a quick signature before proceeding.");
+      return;
+    }
+
     var btn = document.getElementById("subBtn");
     var stat = document.getElementById("statusMsg");
     btn.disabled = true;
-    stat.textContent = "Locking intake...";
+    stat.textContent = "Locking candidate & emailing copy...";
 
     var payload = {
       action: "talentIntake",
@@ -137,9 +173,10 @@
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload)
       });
-      stat.textContent = "✓ Intake locked! Ready for 3-click recording.";
+      stat.textContent = "✓ Intake locked! Consent emailed to " + payload.email;
       btn.textContent = "Ready: Press 8BitDo (3 Clicks)";
       btn.style.background = "#1F6FEB";
+      btn.disabled = false;
     } catch(err) {
       stat.textContent = "⚠️ Error: " + err;
       btn.disabled = false;
