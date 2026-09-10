@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>CLAUD-IA · Talent Audition Intake</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ font-family:'Inter',sans-serif; background:#0F1215; color:#E6EDF3; padding:20px 16px 40px; }
+  .wrap{ max-width:440px; margin:0 auto; }
+  h1{ font-size:20px; font-weight:700; letter-spacing:.05em; color:#fff; margin-bottom:4px; }
+  p.sub{ font-size:12.5px; color:#8B949E; margin-bottom:20px; }
+  .field{ margin-bottom:14px; }
+  label{ display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#8B949E; margin-bottom:5px; }
+  input, select, textarea{ width:100%; background:#161B22; border:1px solid #30363D; border-radius:10px; padding:12px; color:#fff; font-size:14px; outline:none; }
+  input:focus, select:focus, textarea:focus{ border-color:#58A6FF; }
+  .sig-box{ background:#161B22; border:1px solid #30363D; border-radius:10px; position:relative; touch-action:none; }
+  canvas{ display:block; width:100%; height:110px; border-radius:10px; }
+  .sig-clear{ position:absolute; top:6px; right:8px; font-size:10px; color:#8B949E; background:transparent; border:none; padding:4px 6px; cursor:pointer; }
+  .legal{ font-size:10.5px; color:#6E7681; line-height:1.4; margin:12px 0 18px; }
+  button.submit{ width:100%; background:#238636; color:#fff; font-weight:700; font-size:15px; padding:15px; border-radius:12px; border:none; cursor:pointer; }
+  button.submit:active{ background:#2EA043; }
+  .status{ text-align:center; font-size:13px; color:#58A6FF; margin-top:14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>CLAUD-IA</h1>
+  <p class="sub">Autonomous Talent Screen Test & Diagnostic Intake</p>
+
+  <form id="intakeForm">
+    <div class="field">
+      <label>Full Name</label>
+      <input type="text" id="name" required placeholder="e.g. Giulia Rossi">
+    </div>
+
+    <div class="field">
+      <label>Instagram Handle / Portfolio</label>
+      <input type="text" id="instagram" placeholder="@username">
+    </div>
+
+    <div class="field">
+      <label>Email Address</label>
+      <input type="email" id="email" required placeholder="name@email.com">
+    </div>
+
+    <div class="field">
+      <label>Phone / WhatsApp</label>
+      <input type="tel" id="phone" placeholder="+39 ...">
+    </div>
+
+    <div class="field">
+      <label>Target Format / Ambition</label>
+      <select id="targetFormat">
+        <option value="Indie / Feature Cinema">Indie / Feature Cinema (A24 / Arthouse Lead)</option>
+        <option value="Commercial / Fashion">Commercial / Luxury Fashion Brand Campaign</option>
+        <option value="Short-Form Narrative">Short-Form Narrative Creator (Reels / TikTok Series)</option>
+        <option value="Streaming Episodic">Streaming Episodic Series (Drama / Thriller)</option>
+        <option value="Voice / Narrative Audio">Voice Acting / Narrative Audio</option>
+        <option value="Other">Other (Describe below)</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Role Objective & Acting Tags (Optional)</label>
+      <textarea id="notes" rows="2" placeholder="e.g. Dark psychological roles, period drama, dry wit, Italian/English bilingual..."></textarea>
+    </div>
+
+    <div class="field">
+      <label>Consent Signature</label>
+      <div class="sig-box">
+        <canvas id="sigCanvas"></canvas>
+        <button type="button" class="sig-clear" onclick="clearSig()">Clear</button>
+      </div>
+    </div>
+
+    <p class="legal">I grant Claudio permission to record a short audio/video screen test for casting diagnostics, creative evaluation, and artistic portfolio review.</p>
+
+    <button type="submit" class="submit" id="subBtn">Lock & Start 60s Audition</button>
+    <div class="status" id="statusMsg"></div>
+  </form>
+</div>
+
+<script>
+  var EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
+  var canvas = document.getElementById("sigCanvas");
+  var ctx = canvas.getContext("2d");
+  var drawing = false;
+
+  function resizeCanvas(){
+    var r = canvas.getBoundingClientRect();
+    canvas.width = r.width;
+    canvas.height = r.height;
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#58A6FF";
+  }
+  window.addEventListener("resize", resizeCanvas);
+  setTimeout(resizeCanvas, 100);
+
+  function getPos(e){
+    var r = canvas.getBoundingClientRect();
+    var t = e.touches ? e.touches[0] : e;
+    return { x: t.clientX - r.left, y: t.clientY - r.top };
+  }
+  canvas.addEventListener("mousedown", function(e){ drawing=true; var p=getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+  canvas.addEventListener("mousemove", function(e){ if(!drawing) return; var p=getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+  window.addEventListener("mouseup", function(){ drawing=false; });
+  canvas.addEventListener("touchstart", function(e){ drawing=true; var p=getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); });
+  canvas.addEventListener("touchmove", function(e){ if(!drawing) return; var p=getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); });
+  window.addEventListener("touchend", function(){ drawing=false; });
+
+  function clearSig(){ ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+  document.getElementById("intakeForm").onsubmit = async function(e){
+    e.preventDefault();
+    var btn = document.getElementById("subBtn");
+    var stat = document.getElementById("statusMsg");
+    btn.disabled = true;
+    stat.textContent = "Locking intake...";
+
+    var payload = {
+      action: "talentIntake",
+      name: document.getElementById("name").value.trim(),
+      instagram: document.getElementById("instagram").value.trim(),
+      email: document.getElementById("email").value.trim(),
+      phone: document.getElementById("phone").value.trim(),
+      targetFormat: document.getElementById("targetFormat").value,
+      notes: document.getElementById("notes").value.trim(),
+      signature: canvas.toDataURL("image/png")
+    };
+
+    try {
+      await fetch(EXEC, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+      stat.textContent = "✓ Intake locked! Ready for 3-click recording.";
+      btn.textContent = "Ready: Press 8BitDo (3 Clicks)";
+      btn.style.background = "#1F6FEB";
+    } catch(err) {
+      stat.textContent = "⚠️ Error: " + err;
+      btn.disabled = false;
+    }
+  };
+</script>
+</body>
+</html>
