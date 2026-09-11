@@ -173,10 +173,22 @@
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload)
       });
-      stat.textContent = "✓ Intake locked! Consent emailed to " + payload.email;
-      btn.textContent = "Ready: Press 8BitDo (3 Clicks)";
+      
+      stat.textContent = "✓ Consent locked & emailed to " + payload.email;
+      btn.textContent = "✓ Submitted";
       btn.style.background = "#1F6FEB";
-      btn.disabled = false;
+
+      // Reset form for the next candidate after 1.5 seconds:
+      setTimeout(function(){
+        document.getElementById("intakeForm").reset();
+        clearSig();
+        btn.textContent = "Lock & Start 60s Audition";
+        btn.style.background = "#238636";
+        btn.disabled = false;
+        stat.textContent = "";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 1500);
+
     } catch(err) {
       stat.textContent = "⚠️ Error: " + err;
       btn.disabled = false;
