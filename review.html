@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- WoV Stories & Director Dossier Review v3 -->
+<!-- WoV Stories & Director Dossier Review v3.1 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -52,6 +52,11 @@
   .filterrow{ display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; justify-content:center; }
   .filterrow button{ padding:8px 14px; font-size:12px; background:#fff; color:var(--ink); border:1.5px solid rgba(28,43,44,.2); }
   .filterrow button.on{ background:var(--ink); color:#fff; border-color:var(--ink); }
+
+  /* UNLOCK BOX */
+  .auth-box{ background:#fff; max-width:340px; margin:40px auto; padding:24px; border-radius:16px; box-shadow:0 4px 15px rgba(28,43,44,.08); text-align:center; }
+  .auth-box input{ width:100%; padding:12px; border:1.5px solid rgba(28,43,44,.2); border-radius:10px; font-size:14px; margin:14px 0; outline:none; }
+  .auth-box button{ width:100%; background:var(--red); color:#fff; padding:12px; border-radius:10px; font-size:14px; }
 </style>
 </head>
 <body>
@@ -61,7 +66,15 @@
 <script>
 (function(){
   var EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
-  var KEY = new URLSearchParams(window.location.search).get("key") || "";
+  
+  // 1. ROBUST KEY ACQUISITION (URL param takes precedence, persists to localStorage)
+  var rawUrlKey = new URLSearchParams(window.location.search).get("key") || "";
+  var KEY = (rawUrlKey || localStorage.getItem("wov_review_key") || "").trim().replace(/^["']|["']$/g, "");
+  
+  if (rawUrlKey) {
+    localStorage.setItem("wov_review_key", KEY);
+  }
+
   var app = document.getElementById("app");
   var items = [];
   var filter = "await";
@@ -70,8 +83,29 @@
   function esc(s){ return String(s||"").replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function badgeClass(s){ s=(s||"").toLowerCase(); if(s.indexOf("approved")>=0) return "b-approved"; if(s.indexOf("edit")>=0) return "b-edit"; return "b-await"; }
 
+  function renderUnlock(){
+    app.innerHTML = 
+      '<div class="auth-box">' +
+        '<div style="font-weight:700;font-size:16px;margin-bottom:6px">Director Authentication</div>' +
+        '<div style="font-size:12.5px;color:var(--inkS)">Enter private access key to unlock talent dossiers.</div>' +
+        '<input type="password" id="keyInput" placeholder="Private Access Key">' +
+        '<button onclick="wovUnlock()">Unlock Dashboard</button>' +
+        '<div id="authErr" style="color:var(--red);font-size:12px;margin-top:10px"></div>' +
+      '</div>';
+  }
+
+  window.wovUnlock = function(){
+    var input = document.getElementById("keyInput");
+    var val = input ? input.value.trim().replace(/^["']|["']$/g, "") : "";
+    if(!val){ return; }
+    KEY = val;
+    localStorage.setItem("wov_review_key", KEY);
+    app.innerHTML = "Authenticating…";
+    loadAll();
+  };
+
   function renderList(){
-    if(!KEY){ app.innerHTML = "<div class='status'>Private link required.</div>"; return; }
+    if(!KEY){ renderUnlock(); return; }
     var filtered = items.filter(function(it){
       var s = (it.status||"").toLowerCase();
       var statusOk = filter==="all" ? true : (filter==="approved" ? s.indexOf("approved")>=0 : s.indexOf("approved")<0);
@@ -89,7 +123,11 @@
     filtered.forEach(function(it){
       var realIdx = items.indexOf(it);
       var d = it.date ? new Date(it.date).toLocaleDateString() : "";
-      var arch = (it.dossier && it.dossier.castingDossier && it.dossier.castingDossier.marketArchetype) ? it.dossier.castingDossier.marketArchetype : "";
+      
+      // Ensure dossier object is ready
+      var dos = it.dossier || {};
+      if (typeof dos === "string") { try { dos = JSON.parse(dos); } catch(e){ dos = {}; } }
+      var arch = (dos.castingDossier && dos.castingDossier.marketArchetype) ? dos.castingDossier.marketArchetype : "";
       
       html += '<div class="card" onclick="wovOpen('+realIdx+')">' +
         '<div class="name">'+esc(it.name||"?")+'</div>' +
@@ -122,6 +160,8 @@
     var it = items[idx];
     var d = it.date ? new Date(it.date).toLocaleString() : "";
     var dos = it.dossier || {};
+    if (typeof dos === "string") { try { dos = JSON.parse(dos); } catch(e){ dos = {}; } }
+
     var cast = dos.castingDossier || {};
     var dir = dos.directorNotes || {};
     var strat = dos.contentStrategy || {};
@@ -263,11 +303,21 @@
   };
 
   function loadAll(){
-    if(!KEY){ renderList(); return; }
-    fetch(EXEC + "?action=storiesList&key=" + encodeURIComponent(KEY))
+    if(!KEY){ renderUnlock(); return; }
+    // Cache-busting parameter &_t guarantees real-time fresh updates
+    fetch(EXEC + "?action=storiesList&key=" + encodeURIComponent(KEY) + "&_t=" + Date.now())
       .then(function(r){ return r.json(); })
-      .then(function(data){ items = (data && data.items) || []; renderList(); })
-      .catch(function(e){ app.innerHTML = "<div class='status'>Could not load: "+e+"</div>"; });
+      .then(function(data){ 
+        if(data && data.error){
+          app.innerHTML = '<div class="auth-box"><div style="color:var(--red);font-weight:700;margin-bottom:8px">⚠️ ' + esc(data.error) + '</div><button onclick="localStorage.removeItem(\'wov_review_key\');location.reload();">Re-enter Key</button></div>';
+          return;
+        }
+        items = (data && data.items) || []; 
+        renderList(); 
+      })
+      .catch(function(e){ 
+        app.innerHTML = "<div class='status'>Could not load: "+e+"</div>"; 
+      });
   }
 
   loadAll();
