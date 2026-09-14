@@ -16,7 +16,7 @@
   input, select, textarea{ width:100%; background:#161B22; border:1px solid #30363D; border-radius:10px; padding:12px; color:#fff; font-size:14px; outline:none; }
   input:focus, select:focus, textarea:focus{ border-color:#58A6FF; }
   .sig-box{ background:#161B22; border:1px solid #30363D; border-radius:10px; position:relative; touch-action:none; }
-  canvas{ display:block; width:100%; height:110px; border-radius:10px; }
+  canvas{ display:block; width:100%; height:120px; border-radius:10px; touch-action:none; cursor:crosshair; }
   .sig-clear{ position:absolute; top:6px; right:8px; font-size:11px; color:#8B949E; background:#21262D; border:1px solid #30363D; border-radius:6px; padding:4px 8px; cursor:pointer; }
   
   /* MANDATORY CHECKBOX STYLING */
@@ -94,54 +94,97 @@
 
 <script>
   var EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
+// --- BULLETPROOF MOBILE SIGNATURE ENGINE ---
   var canvas = document.getElementById("sigCanvas");
   var ctx = canvas.getContext("2d");
   var drawing = false;
   var hasDrawn = false;
-  var lastWidth = 0;
 
-  // FIX: Sizing canvas without wiping when mobile address bar hides/shows
-  function setupCanvas(){
-    var r = canvas.getBoundingClientRect();
-    if (Math.abs(r.width - lastWidth) < 5 && canvas.height > 0) return; // Ignore vertical scroll resize!
-    lastWidth = r.width;
-    
-    // Save signature if already drawn:
-    var savedData = hasDrawn ? canvas.toDataURL() : null;
-    canvas.width = r.width;
-    canvas.height = 110;
-    ctx.lineWidth = 2.2;
-    ctx.strokeStyle = "#58A6FF";
-    ctx.lineCap = "round";
+  function initCanvas() {
+    var rect = canvas.getBoundingClientRect();
+    if (rect.width > 0) {
+      // Save existing drawing if resizing
+      var saved = hasDrawn ? canvas.toDataURL() : null;
+      canvas.width = rect.width;
+      canvas.height = 120;
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = "#58A6FF";
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
 
-    if(savedData){
-      var img = new Image();
-      img.onload = function(){ ctx.drawImage(img, 0, 0); };
-      img.src = savedData;
+      if (saved) {
+        var img = new Image();
+        img.onload = function(){ ctx.drawImage(img, 0, 0); };
+        img.src = saved;
+      }
     }
   }
-  window.addEventListener("resize", setupCanvas);
-  setTimeout(setupCanvas, 150);
 
-  function getPos(e){
-    var r = canvas.getBoundingClientRect();
-    var t = e.touches ? e.touches[0] : e;
-    return { x: t.clientX - r.left, y: t.clientY - r.top };
+  // Multi-tier initialization (guarantees canvas never loads at 0px)
+  window.addEventListener("load", initCanvas);
+  window.addEventListener("resize", function() { if (!hasDrawn) initCanvas(); });
+  setTimeout(initCanvas, 100);
+  setTimeout(initCanvas, 400);
+
+  function getPos(e) {
+    var rect = canvas.getBoundingClientRect();
+    var clientX, clientY;
+    if (e.touches && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
   }
 
-  canvas.addEventListener("mousedown", function(e){ drawing=true; hasDrawn=true; var p=getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
-  canvas.addEventListener("mousemove", function(e){ if(!drawing) return; var p=getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
-  window.addEventListener("mouseup", function(){ drawing=false; });
-
-  canvas.addEventListener("touchstart", function(e){ drawing=true; hasDrawn=true; var p=getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); }, {passive:false});
-  canvas.addEventListener("touchmove", function(e){ if(!drawing) return; var p=getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); }, {passive:false});
-  window.addEventListener("touchend", function(){ drawing=false; });
-
-  function clearSig(){ 
-    ctx.clearRect(0, 0, canvas.width, canvas.height); 
-    hasDrawn = false; 
+  function startDraw(e) {
+    // Auto-rescue: if canvas width is somehow 0, initialize immediately on touch!
+    if (canvas.width === 0 || canvas.width !== Math.round(canvas.getBoundingClientRect().width)) {
+      initCanvas();
+    }
+    drawing = true;
+    hasDrawn = true;
+    ctx.beginPath();
+    var p = getPos(e);
+    ctx.moveTo(p.x, p.y);
+    // Draw immediate dot so even a quick tap registers
+    ctx.lineTo(p.x + 0.1, p.y + 0.1);
+    ctx.stroke();
+    if (e.cancelable) e.preventDefault();
   }
 
+  function moveDraw(e) {
+    if (!drawing) return;
+    var p = getPos(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    if (e.cancelable) e.preventDefault();
+  }
+
+  function stopDraw() {
+    drawing = false;
+  }
+
+  // Mobile Touch Listeners (Strictly non-passive so Chrome cannot hijack)
+  canvas.addEventListener("touchstart", startDraw, { passive: false });
+  canvas.addEventListener("touchmove", moveDraw, { passive: false });
+  canvas.addEventListener("touchend", stopDraw, { passive: false });
+
+  // Desktop / Mouse Listeners
+  canvas.addEventListener("mousedown", startDraw);
+  canvas.addEventListener("mousemove", moveDraw);
+  window.addEventListener("mouseup", stopDraw);
+
+  function clearSig() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    hasDrawn = false;
+  }
+ 
   document.getElementById("intakeForm").onsubmit = async function(e){
     e.preventDefault();
 
