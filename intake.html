@@ -156,6 +156,8 @@
     stat.textContent = "Locking candidate & emailing copy...";
 
     var payload = {
+    // Silently copy name to phone clipboard for the Tasker Slate:
+    try { await navigator.clipboard.writeText(payload.name); } catch(eClip) {}
       action: "talentIntake",
       name: document.getElementById("name").value.trim(),
       instagram: document.getElementById("instagram").value.trim(),
