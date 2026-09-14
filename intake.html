@@ -94,7 +94,8 @@
 
 <script>
   var EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
-// --- BULLETPROOF MOBILE SIGNATURE ENGINE ---
+
+  // --- BULLETPROOF MOBILE SIGNATURE ENGINE ---
   var canvas = document.getElementById("sigCanvas");
   var ctx = canvas.getContext("2d");
   var drawing = false;
@@ -103,7 +104,6 @@
   function initCanvas() {
     var rect = canvas.getBoundingClientRect();
     if (rect.width > 0) {
-      // Save existing drawing if resizing
       var saved = hasDrawn ? canvas.toDataURL() : null;
       canvas.width = rect.width;
       canvas.height = 120;
@@ -143,7 +143,6 @@
   }
 
   function startDraw(e) {
-    // Auto-rescue: if canvas width is somehow 0, initialize immediately on touch!
     if (canvas.width === 0 || canvas.width !== Math.round(canvas.getBoundingClientRect().width)) {
       initCanvas();
     }
@@ -152,7 +151,6 @@
     ctx.beginPath();
     var p = getPos(e);
     ctx.moveTo(p.x, p.y);
-    // Draw immediate dot so even a quick tap registers
     ctx.lineTo(p.x + 0.1, p.y + 0.1);
     ctx.stroke();
     if (e.cancelable) e.preventDefault();
@@ -170,7 +168,7 @@
     drawing = false;
   }
 
-  // Mobile Touch Listeners (Strictly non-passive so Chrome cannot hijack)
+  // Mobile Touch Listeners (Non-passive so mobile Chrome cannot hijack)
   canvas.addEventListener("touchstart", startDraw, { passive: false });
   canvas.addEventListener("touchmove", moveDraw, { passive: false });
   canvas.addEventListener("touchend", stopDraw, { passive: false });
@@ -184,7 +182,7 @@
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     hasDrawn = false;
   }
- 
+
   document.getElementById("intakeForm").onsubmit = async function(e){
     e.preventDefault();
 
@@ -198,11 +196,17 @@
     btn.disabled = true;
     stat.textContent = "Locking candidate & emailing copy...";
 
+    var candidateName = document.getElementById("name").value.trim();
+
+    // 1. Silently copy name to phone clipboard for Tasker Slate:
+    try { 
+      await navigator.clipboard.writeText(candidateName); 
+    } catch(eClip) {}
+
+    // 2. Build payload cleanly:
     var payload = {
-    // Silently copy name to phone clipboard for the Tasker Slate:
-    try { await navigator.clipboard.writeText(payload.name); } catch(eClip) {}
       action: "talentIntake",
-      name: document.getElementById("name").value.trim(),
+      name: candidateName,
       instagram: document.getElementById("instagram").value.trim(),
       email: document.getElementById("email").value.trim(),
       phone: document.getElementById("phone").value.trim(),
