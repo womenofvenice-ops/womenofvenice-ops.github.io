@@ -356,7 +356,10 @@
   };
 
   window.updateCC = updateCharCount;
-  window.wovBack = function(){ renderList(); };
+  window.wovBack = function(){ 
+    document.getElementById("app").innerHTML = ""; 
+    renderList(); 
+  };
   window.wovPlayAudio = async function(fileId){
     var btn = document.getElementById("playbtn");
     var box = document.getElementById("audiobox");
