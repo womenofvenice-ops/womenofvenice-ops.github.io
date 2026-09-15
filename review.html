@@ -108,25 +108,38 @@
 
   function renderList(){
     if(!KEY){ renderUnlock(); return; }
+
+    // Render search and filter buttons ONCE so typing never closes the mobile keyboard:
+    var topBarEl = document.getElementById("topBar");
+    if(!topBarEl){
+      app.innerHTML = 
+        '<div id="topBar">' + filterButtons() +
+        '<input type="text" id="searchbox" placeholder="Search talent by name…" value="' + esc(searchQuery) + '" ' +
+        'oninput="wovSearch(this.value)" style="width:100%;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(28,43,44,.2);font-size:15px;margin-bottom:14px;">' +
+        '</div>' +
+        '<div id="listContainer"></div>';
+    }
+
     var filtered = items.filter(function(it){
       var s = (it.status||"").toLowerCase();
       var statusOk = filter==="all" ? true : (filter==="approved" ? s.indexOf("approved")>=0 : s.indexOf("approved")<0);
       var searchOk = !searchQuery || (it.name||"").toLowerCase().indexOf(searchQuery.toLowerCase())>=0;
       return statusOk && searchOk;
     });
+
+    var listEl = document.getElementById("listContainer");
+    if(!listEl) return;
+
+    if(!filtered.length){ 
+      listEl.innerHTML = "<div class='status'>No profiles found.</div>"; 
+      return; 
+    }
     
-    var topBar = filterButtons() +
-      '<input type="text" id="searchbox" placeholder="Search talent by name…" value="'+esc(searchQuery)+'" ' +
-      'oninput="wovSearch(this.value)" style="width:100%;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(28,43,44,.2);font-size:15px;margin-bottom:14px;">';
-      
-    if(!filtered.length){ app.innerHTML = topBar + "<div class='status'>No profiles found.</div>"; return; }
-    
-    var html = topBar + '<div class="list">';
+    var html = '<div class="list">';
     filtered.forEach(function(it){
       var realIdx = items.indexOf(it);
       var d = it.date ? new Date(it.date).toLocaleDateString() : "";
       
-      // Ensure dossier object is ready
       var dos = it.dossier || {};
       if (typeof dos === "string") { try { dos = JSON.parse(dos); } catch(e){ dos = {}; } }
       var arch = (dos.castingDossier && dos.castingDossier.marketArchetype) ? dos.castingDossier.marketArchetype : "";
@@ -139,7 +152,7 @@
         '</div>';
     });
     html += '</div>';
-    app.innerHTML = html;
+    listEl.innerHTML = html;
   }
 
   function filterButtons(){
