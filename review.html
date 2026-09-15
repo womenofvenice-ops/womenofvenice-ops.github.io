@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- WoV Stories & Director Dossier Review v3.1 -->
+<!-- WoV Stories & Director Dossier Review v3.2 (Multi-Take Progression & Talent Feedback) -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -36,6 +36,8 @@
   .d-title{ font-weight:700; color:var(--ink); font-size:12px; text-transform:uppercase; letter-spacing:.05em; margin-bottom:2px; }
   .d-coach{ background:#FFFBF5; border-left:3.5px solid var(--gold); }
   .d-hook{ background:#FDF7F4; border-left:3.5px solid var(--red); }
+  .d-feedback{ background:#F0FDF4; border-left:3.5px solid #22C55E; }
+  .d-progression{ background:#EFF6FF; border-left:3.5px solid #3B82F6; }
   .soundbite-pill{ font-family:'Playfair Display',Georgia,serif; font-style:italic; font-size:15px; color:var(--red); margin-top:4px; }
 
   .transcript{ background:#fff; border-radius:14px; padding:14px; font-size:14.5px; line-height:1.6; color:var(--inkS); white-space:pre-line; border:1px solid rgba(28,43,44,.08); }
@@ -166,6 +168,7 @@
     var dir = dos.directorNotes || {};
     var strat = dos.contentStrategy || {};
 
+    // 1. CASTING PROFILE & PRIVATE COACHING
     var dossierHtml = "";
     if(dos.castingDossier){
       dossierHtml = 
@@ -182,8 +185,34 @@
           '<div class="d-row"><div class="d-title">⚠️ Blindspot to Correct</div>'+esc(dir.blindspotToCorrect||"-")+'</div>' +
           '<div class="d-row"><div class="d-title">🎯 Next Session Directive</div><b>'+esc(dir.nextSessionDirective||"-")+'</b></div>' +
           '<div class="d-row"><div class="d-title">🎙️ Vocal Delivery Analysis</div>'+esc(dir.vocalDelivery||"-")+'</div>' +
-        '</div>' +
+        '</div>';
+    }
 
+    // 2. MULTI-TAKE PROGRESSION (FOR TAKE 2+)
+    var progressionHtml = "";
+    if(dos.progressionAnalysis && it.name.indexOf("Take 1") < 0){
+      progressionHtml = 
+        '<div class="section-lbl">📈 Multi-Take Progression Analysis</div>' +
+        '<div class="dossier-box d-progression">' +
+          '<div class="d-row"><div class="d-title">Take-Over-Take Evolution</div>'+esc(dos.progressionAnalysis)+'</div>' +
+        '</div>';
+    }
+
+    // 3. CONSTRUCTIVE TALENT FEEDBACK (READY TO SHARE WITH ACTRESS)
+    var feedbackHtml = "";
+    if(dos.talentFeedback){
+      feedbackHtml = 
+        '<div class="section-lbl">💌 Positive Constructive Critique (For Actress)</div>' +
+        '<div class="dossier-box d-feedback">' +
+          '<div style="font-size:14px;line-height:1.6;color:#1C2B2C;margin-bottom:12px">'+esc(dos.talentFeedback)+'</div>' +
+          '<button class="small" onclick="wovCopyFeedback('+idx+')">📋 Copy Feedback to Send Her</button>' +
+        '</div>';
+    }
+
+    // 4. AUDIENCE HOOK & SIGNATURE SOUNDBITE
+    var hookHtml = "";
+    if(strat.viralHook || strat.signatureSoundbite){
+      hookHtml = 
         '<div class="section-lbl">🔥 Audience Hook & Soundbite</div>' +
         '<div class="dossier-box d-hook">' +
           '<div class="d-row"><div class="d-title">Viral Hook (Opening Line for Reel)</div>"'+esc(strat.viralHook||"-")+'"</div>' +
@@ -199,6 +228,9 @@
       '<div><span class="badge '+badgeClass(it.status)+'">'+esc(it.status||"Awaiting review")+'</span></div>' +
       
       dossierHtml +
+      progressionHtml +
+      feedbackHtml +
+      hookHtml +
 
       '<div class="section-lbl">Portfolio Story Narrative (Editable)</div>' +
       '<textarea id="storybox" oninput="updateCC()">'+esc(it.draft||"")+'</textarea>' +
@@ -219,6 +251,23 @@
       '<div class="status" id="savemsg"></div>';
       
     updateCharCount();
+  };
+
+  // Dedicated Crash-Proof Feedback Copier
+  window.wovCopyFeedback = function(idx){
+    var it = items[idx];
+    var dos = it.dossier || {};
+    if (typeof dos === "string") { try { dos = JSON.parse(dos); } catch(e){ dos = {}; } }
+    var text = dos.talentFeedback || "";
+    if(!text){ alert("No feedback text available."); return; }
+    
+    navigator.clipboard.writeText(text).then(function(){
+      var msg = document.getElementById("savemsg");
+      if(msg) msg.textContent = "Feedback copied to clipboard ✓";
+      alert("✓ Constructive critique copied! Ready to text or email to the actress.");
+    }).catch(function(){
+      prompt("Copy critique below:", text);
+    });
   };
 
   var deleteArmed = null, deleteTimer = null;
