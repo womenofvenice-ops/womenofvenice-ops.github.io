@@ -277,6 +277,53 @@
     });
   };
 
+  // Dedicated Callback Session Activator
+  window.wovActivateCallback = async function(idx){
+    var it = items[idx];
+    var dos = it.dossier || {};
+    if (typeof dos === "string") { try { dos = JSON.parse(dos); } catch(e){ dos = {}; } }
+
+    var cleanName = (it.name || "Talent").replace(/\s*\(Take\s*\d+\)/i, "").trim();
+    var currentTakeNum = dos.takeNumber || 1;
+    var lastAdj = (dos.directorNotes && dos.directorNotes.nextSessionDirective) ? dos.directorNotes.nextSessionDirective : "";
+    var castFit = (dos.castingDossier && dos.castingDossier.castingFit) ? dos.castingDossier.castingFit : "";
+
+    var btn = document.getElementById("activateBtn");
+    if(btn){
+      btn.disabled = true;
+      btn.textContent = "Activating Callback in Cloud…";
+    }
+
+    try {
+      await fetch(EXEC, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "activateCallback",
+          key: KEY,
+          name: cleanName,
+          targetFormat: castFit,
+          takeCount: currentTakeNum,
+          lastAdjustment: lastAdj
+        })
+      });
+
+      if(btn){
+        btn.textContent = "✓ Callback Session ACTIVE for " + cleanName + "!";
+        btn.style.background = "#238636"; // Turns solid green!
+      }
+      var msg = document.getElementById("savemsg");
+      if(msg) msg.textContent = "Session active! Shoot in Open Camera and tap your Camera Widget.";
+    } catch(err) {
+      if(btn){
+        btn.disabled = false;
+        btn.textContent = "⚠️ Error activating: " + err;
+        btn.style.background = "#B3261E";
+      }
+    }
+  };
+
   var deleteArmed = null, deleteTimer = null;
   window.wovDeleteTap = function(idx){
     var btn = document.getElementById("delbtn");
