@@ -68,7 +68,7 @@
 <script>
 (function(){
   var EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
-  
+  var ACTIVE_TALENT = localStorage.getItem("wov_active_talent") || null;
   // 1. ROBUST KEY ACQUISITION (URL param takes precedence, persists to localStorage)
   var rawUrlKey = new URLSearchParams(window.location.search).get("key") || "";
   var KEY = (rawUrlKey || localStorage.getItem("wov_review_key") || "").trim().replace(/^["']|["']$/g, "");
@@ -233,6 +233,31 @@
         '</div>';
     }
 
+    // 5. SMART CLOUD SESSION STATUS (GREEN CARD IF ACTIVE, BLUE BUTTON IF INACTIVE)
+    var cleanName = (it.name || "Talent").replace(/\s*\(Take\s*\d+\)/i, "").trim();
+    var activeTalentName = (typeof ACTIVE_TALENT !== "undefined" && ACTIVE_TALENT) ? ACTIVE_TALENT : (localStorage.getItem("wov_active_talent") || "");
+    var isActive = activeTalentName && (
+      activeTalentName.toLowerCase() === cleanName.toLowerCase() ||
+      cleanName.toLowerCase().indexOf(activeTalentName.toLowerCase()) >= 0 ||
+      activeTalentName.toLowerCase().indexOf(cleanName.toLowerCase()) >= 0
+    );
+
+    var sessionStatusHtml = "";
+    if (isActive) {
+      sessionStatusHtml = 
+        '<div style="background:#F0FDF4;border:1.5px solid #22C55E;border-radius:12px;padding:14px;text-align:center;margin:12px 0 16px;">' +
+          '<div style="color:#166534;font-weight:700;font-size:15px;">🟢 SESSION ACTIVE IN CLOUD</div>' +
+          '<div style="color:#15803D;font-size:12.5px;margin-top:4px;">Ready for next take in Open Camera. Tap Camera Widget to offload.</div>' +
+        '</div>';
+    } else {
+      sessionStatusHtml = 
+        '<div style="margin:12px 0 16px;">' +
+          '<button id="activateBtn" style="width:100%;background:#1F6FEB;color:#fff;padding:12px;border-radius:12px;font-size:14px;font-weight:700;" onclick="wovActivateCallback('+idx+')">' +
+            '🎬 Activate Callback Session for ' + esc(cleanName) +
+          '</button>' +
+        '</div>';
+    }
+
     app.innerHTML =
       '<a class="back" onclick="wovBack()">← Back to Talent Roster</a>' +
       '<h1 style="text-align:left;font-size:22px">'+esc(it.name||"?")+'</h1>' +
@@ -240,13 +265,7 @@
       (it.sourceFileId?'<button class="small" id="playbtn" onclick="wovPlayAudio(\''+it.sourceFileId+'\')">🔊 Play recording</button><div id="audiobox" style="margin:10px 0"></div>':'') +
       '<div><span class="badge '+badgeClass(it.status)+'">'+esc(it.status||"Awaiting review")+'</span></div>' +
       
-      // 🎬 1-TAP CALLBACK ACTIVATION BUTTON (ONCE):
-      '<div style="margin:12px 0 16px;">' +
-        '<button id="activateBtn" style="width:100%;background:#1F6FEB;color:#fff;padding:12px;border-radius:12px;font-size:14px;font-weight:700;" onclick="wovActivateCallback('+idx+')">' +
-          '🎬 Activate Callback Session for ' + esc((it.name||"Talent").replace(/\s*\(Take\s*\d+\)/i, "").trim()) +
-        '</button>' +
-      '</div>' +
-
+      sessionStatusHtml +
       dossierHtml +
       progressionHtml +
       feedbackHtml +
@@ -326,6 +345,9 @@
         btn.textContent = "✓ Callback Session ACTIVE for " + cleanName + "!";
         btn.style.background = "#238636"; // Turns solid green!
       }
+      ACTIVE_TALENT = cleanName;
+      localStorage.setItem("wov_active_talent", cleanName);
+      setTimeout(function(){ wovOpen(idx); }, 800); // Refreshes to show the permanent green card!
       var msg = document.getElementById("savemsg");
       if(msg) msg.textContent = "Session active! Shoot in Open Camera and tap your Camera Widget.";
     } catch(err) {
@@ -432,6 +454,10 @@
           return;
         }
         items = (data && data.items) || []; 
+        if(data && data.activeCandidate){
+          ACTIVE_TALENT = data.activeCandidate;
+          localStorage.setItem("wov_active_talent", ACTIVE_TALENT);
+        }
         renderList(); 
       })
       .catch(function(e){ 
