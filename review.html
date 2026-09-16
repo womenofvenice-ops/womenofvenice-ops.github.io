@@ -253,9 +253,58 @@
       sessionStatusHtml = 
         '<div style="margin:12px 0 16px;">' +
           '<button id="activateBtn" style="width:100%;background:#1F6FEB;color:#fff;padding:12px;border-radius:12px;font-size:14px;font-weight:700;" onclick="wovActivateCallback('+idx+')">' +
-            '🎬 Activate Callback Session for ' + esc(cleanName) +
+            '🎬 Activate Session for ' + esc(cleanName) +
           '</button>' +
         '</div>';
+    }
+
+    // 6. TALENT CONTACTS & INTAKE PROFILE CARD
+    var contactHtml = "";
+    if (it.targetFormat || it.instagram || it.phone || it.email || it.intakeNotes) {
+      contactHtml = 
+        '<div class="section-lbl">📱 Talent Contact & Intake Profile</div>' +
+        '<div class="dossier-box" style="background:#fff;border-left:3.5px solid #58A6FF;">' +
+          (it.targetFormat ? '<div class="d-row"><div class="d-title">🎯 Target Ambition</div><b>'+esc(it.targetFormat)+'</b></div>' : '') +
+          (it.instagram ? '<div class="d-row"><div class="d-title">📸 Instagram / Portfolio</div><a href="https://instagram.com/'+esc(it.instagram).replace('@','')+'" target="_blank" style="color:#58A6FF;text-decoration:none;font-weight:600;">'+esc(it.instagram)+'</a></div>' : '') +
+          (it.phone ? '<div class="d-row"><div class="d-title">📞 Phone / WhatsApp</div><a href="tel:'+esc(it.phone)+'" style="color:#1C2B2C;text-decoration:none;font-weight:600;">'+esc(it.phone)+'</a></div>' : '') +
+          (it.email ? '<div class="d-row"><div class="d-title">✉️ Email Address</div><a href="mailto:'+esc(it.email)+'" style="color:#1C2B2C;text-decoration:none;">'+esc(it.email)+'</a></div>' : '') +
+          (it.intakeNotes ? '<div class="d-row"><div class="d-title">📝 Intake Directing Notes</div>'+esc(it.intakeNotes)+'</div>' : '') +
+        '</div>';
+    }
+
+    // 7. HANDLE TALENT AWAITING FIRST TAKE (E.G. VALERIA IS)
+    var isAwaitingFirstVideo = it.isNewIntake || (!it.sourceFileId && !it.dossier);
+    var bodyContentHtml = "";
+
+    if (isAwaitingFirstVideo) {
+      bodyContentHtml = 
+        '<div class="dossier-box" style="background:#FFFBF5;border-left:3.5px solid #C7A463;margin-top:14px;">' +
+          '<div style="font-weight:700;font-size:14px;color:#7A5A1E;margin-bottom:4px;">⏳ Awaiting First Audition Scene</div>' +
+          '<div style="font-size:13px;color:#5A6667;line-height:1.5;">Legal consent waiver signed on file. Ready to record Take #1 in Open Camera!</div>' +
+        '</div>' +
+        '<button class="danger" id="delbtn" onclick="wovDeleteTap('+idx+')">🗑 Delete this profile</button>' +
+        '<div class="status" id="savemsg"></div>';
+    } else {
+      bodyContentHtml = 
+        dossierHtml +
+        progressionHtml +
+        feedbackHtml +
+        hookHtml +
+        '<div class="section-lbl">Portfolio Story Narrative (Editable)</div>' +
+        '<textarea id="storybox" oninput="updateCC()">'+esc(it.draft||"")+'</textarea>' +
+        '<div class="toolrow">' +
+          '<button class="small" onclick="wovCopy()">📋 Copy Story</button>' +
+          '<button class="small" onclick="wovReset('+idx+')">↺ Reset</button>' +
+          '<span class="charcount" id="charcount"></span>' +
+        '</div>' +
+        '<div class="section-lbl">Verbatim Transcript (Her real words)</div>' +
+        '<div class="transcript">'+esc(it.transcript||"(none captured)")+'</div>' +
+        '<div class="btnrow">' +
+          '<button class="edit" id="editbtn" onclick="wovSave('+idx+',\'✏️ Needs edit\')">Needs work</button>' +
+          '<button class="approve" id="approvebtn" onclick="wovSave('+idx+',\'✅ Approved\')">Approve</button>' +
+        '</div>' +
+        '<button class="danger" id="delbtn" onclick="wovDeleteTap('+idx+')">🗑 Delete this profile</button>' +
+        '<div class="status" id="savemsg"></div>';
     }
 
     app.innerHTML =
@@ -266,30 +315,12 @@
       '<div><span class="badge '+badgeClass(it.status)+'">'+esc(it.status||"Awaiting review")+'</span></div>' +
       
       sessionStatusHtml +
-      dossierHtml +
-      progressionHtml +
-      feedbackHtml +
-      hookHtml +
-
-      '<div class="section-lbl">Portfolio Story Narrative (Editable)</div>' +
-      '<textarea id="storybox" oninput="updateCC()">'+esc(it.draft||"")+'</textarea>' +
-      '<div class="toolrow">' +
-        '<button class="small" onclick="wovCopy()">📋 Copy Story</button>' +
-        '<button class="small" onclick="wovReset('+idx+')">↺ Reset</button>' +
-        '<span class="charcount" id="charcount"></span>' +
-      '</div>' +
+      contactHtml +
+      bodyContentHtml;
       
-      '<div class="section-lbl">Verbatim Transcript (Her real words)</div>' +
-      '<div class="transcript">'+esc(it.transcript||"(none captured)")+'</div>' +
-
-      '<div class="btnrow">' +
-        '<button class="edit" id="editbtn" onclick="wovSave('+idx+',\'✏️ Needs edit\')">Needs work</button>' +
-        '<button class="approve" id="approvebtn" onclick="wovSave('+idx+',\'✅ Approved\')">Approve</button>' +
-      '</div>' +
-      '<button class="danger" id="delbtn" onclick="wovDeleteTap('+idx+')">🗑 Delete this profile</button>' +
-      '<div class="status" id="savemsg"></div>';
-      
-    updateCharCount();
+    if (document.getElementById("storybox")) {
+      updateCharCount();
+    }
   };
 
   // Dedicated Crash-Proof Feedback Copier
