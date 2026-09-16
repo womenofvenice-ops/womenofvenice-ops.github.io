@@ -95,7 +95,7 @@
         '<div id="authErr" style="color:var(--red);font-size:12px;margin-top:10px"></div>' +
       '</div>';
   }
-
+  
   window.wovUnlock = function(){
     var input = document.getElementById("keyInput");
     var val = input ? input.value.trim().replace(/^["']|["']$/g, "") : "";
@@ -106,10 +106,59 @@
     loadAll();
   };
 
+// --- 🎬 MULTI-TAKE UNIFIED TALENT GROUPER ---
+  function getGroupedTalent(rawItems) {
+    var grouped = {};
+    var order = [];
+
+    rawItems.forEach(function(it) {
+      // Strip "(Take 1)", "(Take 2)" to find her base name:
+      var clean = (it.name || "Talent").replace(/\s*\(Take\s*\d+\)/i, "").trim();
+      var key = clean.toLowerCase();
+
+      if (!grouped[key]) {
+        grouped[key] = {
+          baseName: clean,
+          latestTake: it,
+          takes: [],
+          instagram: it.instagram || "",
+          email: it.email || "",
+          phone: it.phone || "",
+          targetFormat: it.targetFormat || "",
+          intakeNotes: it.intakeNotes || "",
+          status: it.status || "Awaiting review",
+          isNewIntake: it.isNewIntake || false
+        };
+        order.push(key);
+      }
+
+      grouped[key].takes.push(it);
+
+      // Keep latest take at top and preserve contact details
+      if (new Date(it.date) >= new Date(grouped[key].latestTake.date)) {
+        grouped[key].latestTake = it;
+        grouped[key].status = it.status;
+        if (it.targetFormat) grouped[key].targetFormat = it.targetFormat;
+        if (it.instagram) grouped[key].instagram = it.instagram;
+        if (it.phone) grouped[key].phone = it.phone;
+        if (it.email) grouped[key].email = it.email;
+        if (it.intakeNotes) grouped[key].intakeNotes = it.intakeNotes;
+      }
+    });
+
+    // Sort takes inside each actress: newest take first (Take 2 on top, Take 1 below)
+    order.forEach(function(k) {
+      grouped[k].takes.sort(function(a, b) {
+        return new Date(b.date) - new Date(a.date);
+      });
+    });
+
+    return order.map(function(k) { return grouped[k]; });
+  }
+  
   function renderList(){
     if(!KEY){ renderUnlock(); return; }
 
-    // Render search and filter buttons ONCE so typing never closes the mobile keyboard:
     var topBarEl = document.getElementById("topBar");
     if(!topBarEl){
       app.innerHTML = 
@@ -120,10 +169,12 @@
         '<div id="listContainer"></div>';
     }
 
-    var filtered = items.filter(function(it){
-      var s = (it.status||"").toLowerCase();
+    var allTalent = getGroupedTalent(items);
+
+    var filtered = allTalent.filter(function(t){
+      var s = (t.status||"").toLowerCase();
       var statusOk = filter==="all" ? true : (filter==="approved" ? s.indexOf("approved")>=0 : s.indexOf("approved")<0);
-      var searchOk = !searchQuery || (it.name||"").toLowerCase().indexOf(searchQuery.toLowerCase())>=0;
+      var searchOk = !searchQuery || t.baseName.toLowerCase().indexOf(searchQuery.toLowerCase())>=0;
       return statusOk && searchOk;
     });
 
@@ -136,25 +187,117 @@
     }
     
     var html = '<div class="list">';
-    filtered.forEach(function(it){
-      var realIdx = items.indexOf(it);
-      var d = it.date ? new Date(it.date).toLocaleDateString() : "";
-      
-      var dos = it.dossier || {};
+    filtered.forEach(function(t, tIdx){
+      var d = t.latestTake.date ? new Date(t.latestTake.date).toLocaleDateString() : "";
+      var dos = t.latestTake.dossier || {};
       if (typeof dos === "string") { try { dos = JSON.parse(dos); } catch(e){ dos = {}; } }
-      var arch = (dos.castingDossier && dos.castingDossier.marketArchetype) ? dos.castingDossier.marketArchetype : "";
+      var arch = (dos.castingDossier && dos.castingDossier.marketArchetype) ? dos.castingDossier.marketArchetype : (t.targetFormat || "");
       
-      html += '<div class="card" onclick="wovOpen('+realIdx+')">' +
-        '<div class="name">'+esc(it.name||"?")+'</div>' +
+      // Calculate take count display
+      var takeLabel = t.isNewIntake ? "⏳ Awaiting First Take" : ("🎬 " + t.takes.length + (t.takes.length === 1 ? " Take" : " Takes"));
+
+      html += '<div class="card" onclick="wovOpenTalent('+tIdx+')">' +
+        '<div class="name">'+esc(t.baseName)+'</div>' +
         (arch ? '<span class="archetype-tag">🎭 '+esc(arch)+'</span>' : '') +
+        '<span class="archetype-tag" style="background:#EBF5FF;color:#0969DA;margin-left:4px;">'+takeLabel+'</span>' +
         '<div class="meta">'+d+'</div>' +
-        '<span class="badge '+badgeClass(it.status)+'">'+esc(it.status||"Awaiting review")+'</span>' +
+        '<span class="badge '+badgeClass(t.status)+'">'+esc(t.status||"Awaiting review")+'</span>' +
         '</div>';
     });
     html += '</div>';
     listEl.innerHTML = html;
   }
+window.wovOpenTalent = function(tIdx){
+    var allTalent = getGroupedTalent(items);
+    var t = allTalent[tIdx];
+    if (!t) return;
 
+    // Check if active in cloud:
+    var activeTalentName = (typeof ACTIVE_TALENT !== "undefined" && ACTIVE_TALENT) ? ACTIVE_TALENT : (localStorage.getItem("wov_active_talent") || "");
+    var isActive = activeTalentName && (activeTalentName.toLowerCase() === t.baseName.toLowerCase());
+
+    var sessionStatusHtml = "";
+    if (isActive) {
+      sessionStatusHtml = 
+        '<div style="background:#F0FDF4;border:1.5px solid #22C55E;border-radius:12px;padding:14px;text-align:center;margin:12px 0 16px;">' +
+          '<div style="color:#166534;font-weight:700;font-size:15px;">🟢 SESSION ACTIVE IN CLOUD</div>' +
+          '<div style="color:#15803D;font-size:12.5px;margin-top:4px;">Ready for next take in Open Camera. Tap Camera Widget to offload.</div>' +
+        '</div>';
+    } else {
+      sessionStatusHtml = 
+        '<div style="margin:12px 0 16px;">' +
+          '<button id="activateBtn" style="width:100%;background:#1F6FEB;color:#fff;padding:12px;border-radius:12px;font-size:14px;font-weight:700;" onclick="wovActivateCallbackForName(\''+esc(t.baseName).replace(/'/g, "\\'")+'\','+t.takes.length+')">' +
+            '🎬 Activate Callback Session for ' + esc(t.baseName) +
+          '</button>' +
+        '</div>';
+    }
+
+    // 📱 TALENT CONTACTS CARD
+    var contactHtml = 
+      '<div class="section-lbl">📱 Talent Contact & Intake Profile</div>' +
+      '<div class="dossier-box" style="background:#fff;border-left:3.5px solid #58A6FF;">' +
+        (t.targetFormat ? '<div class="d-row"><div class="d-title">🎯 Target Ambition</div><b>'+esc(t.targetFormat)+'</b></div>' : '') +
+        (t.instagram ? '<div class="d-row"><div class="d-title">📸 Instagram / Portfolio</div><a href="https://instagram.com/'+esc(t.instagram).replace('@','')+'" target="_blank" style="color:#58A6FF;text-decoration:none;font-weight:600;">'+esc(t.instagram)+'</a></div>' : '') +
+        (t.phone ? '<div class="d-row"><div class="d-title">📞 Phone / WhatsApp</div><a href="tel:'+esc(t.phone)+'" style="color:#1C2B2C;text-decoration:none;font-weight:600;">'+esc(t.phone)+'</a></div>' : '') +
+        (t.email ? '<div class="d-row"><div class="d-title">✉️ Email Address</div><a href="mailto:'+esc(t.email)+'" style="color:#1C2B2C;text-decoration:none;">'+esc(t.email)+'</a></div>' : '') +
+        (t.intakeNotes ? '<div class="d-row"><div class="d-title">📝 Intake Directing Notes</div>'+esc(t.intakeNotes)+'</div>' : '') +
+      '</div>';
+
+    // 🎬 MULTI-TAKE TIMELINE (Renders every take inside her profile!)
+    var takesHtml = "";
+    if (t.isNewIntake || t.takes.length === 0) {
+      takesHtml = 
+        '<div class="dossier-box" style="background:#FFFBF5;border-left:3.5px solid #C7A463;margin-top:14px;">' +
+          '<div style="font-weight:700;font-size:14px;color:#7A5A1E;margin-bottom:4px;">⏳ Awaiting First Audition Scene</div>' +
+          '<div style="font-size:13px;color:#5A6667;line-height:1.5;">Legal consent waiver signed on file. Ready to record Take #1 in Open Camera!</div>' +
+        '</div>';
+    } else {
+      t.takes.forEach(function(takeItem, idx){
+        var dos = takeItem.dossier || {};
+        if (typeof dos === "string") { try { dos = JSON.parse(dos); } catch(e){ dos = {}; } }
+        var cast = dos.castingDossier || {};
+        var dir = dos.directorNotes || {};
+        var strat = dos.contentStrategy || {};
+        var takeNum = dos.takeNumber || (t.takes.length - idx);
+
+        takesHtml += 
+          '<div style="margin-top:20px;padding:16px;background:#F9F6F0;border-radius:14px;border:1.5px solid rgba(28,43,44,.1);">' +
+            '<div style="font-weight:700;font-size:16px;color:#A8492E;margin-bottom:4px;">🎬 Take #' + takeNum + ' (' + new Date(takeItem.date).toLocaleDateString() + ')</div>' +
+            (takeItem.sourceFileId ? '<button class="small" onclick="wovPlayAudio(\''+takeItem.sourceFileId+'\')">🔊 Play recording</button>' : '') +
+            
+            // Progression Analysis (If Take 2+)
+            (dos.progressionAnalysis && takeNum > 1 ? 
+              '<div class="dossier-box d-progression" style="margin-top:10px;"><div class="d-title">📈 Progression Evolution</div>'+esc(dos.progressionAnalysis)+'</div>' : '') +
+            
+            // Constructive Critique
+            (dos.talentFeedback ? 
+              '<div class="dossier-box d-feedback" style="margin-top:10px;"><div class="d-title">💌 Critique for Actress</div>'+esc(dos.talentFeedback)+'</div>' : '') +
+
+            // Archetype & Notes
+            '<div class="dossier-box" style="margin-top:10px;">' +
+              '<div class="d-row"><div class="d-title">Market Archetype</div><b>'+esc(cast.marketArchetype||"-")+'</b></div>' +
+              '<div class="d-row"><div class="d-title">⚡ Superpower</div>'+esc(dir.superpower||"-")+'</div>' +
+              '<div class="d-row"><div class="d-title">⚠️ Blindspot</div>'+esc(dir.blindspotToCorrect||"-")+'</div>' +
+            '</div>' +
+
+            // Transcript
+            '<div class="section-lbl">Verbatim Transcript</div>' +
+            '<div class="transcript">'+esc(takeItem.transcript||"(none captured)")+'</div>' +
+          '</div>';
+      });
+    }
+
+    app.innerHTML = 
+      '<a class="back" onclick="wovBack()">← Back to Talent Roster</a>' +
+      '<h1 style="text-align:left;font-size:24px;margin-bottom:4px;">'+esc(t.baseName)+'</h1>' +
+      '<div style="font-size:13px;color:#5A6667;margin-bottom:12px;">🎬 '+t.takes.length+' Takes on file</div>' +
+      sessionStatusHtml +
+      contactHtml +
+      '<div class="section-lbl" style="font-size:14px;margin-top:20px;">🎬 Audition Takes Timeline</div>' +
+      takesHtml +
+      '<button class="danger" style="margin-top:24px;" onclick="wovDeleteTalentAll(\''+esc(t.baseName).replace(/'/g, "\\'")+'\')">🗑 Delete this talent profile</button>';
+  };
+  
   function filterButtons(){
     return '<div class="filterrow">' +
       '<button class="'+(filter==="await"?"on":"")+'" onclick="wovFilter(\'await\')">Needs review</button>' +
@@ -473,6 +616,52 @@
       document.getElementById("savemsg").textContent = "⚠️ " + err;
     }
   };
+
+window.wovActivateCallbackForName = async function(name, takesCount){
+    var btn = document.getElementById("activateBtn");
+    if(btn){ btn.disabled = true; btn.textContent = "Activating Session in Cloud…"; }
+
+    try {
+      await fetch(EXEC, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "activateCallback",
+          key: KEY,
+          name: name,
+          takeCount: takesCount
+        })
+      });
+
+      ACTIVE_TALENT = name;
+      localStorage.setItem("wov_active_talent", name);
+      loadAll();
+    } catch(err) {
+      if(btn){ btn.disabled = false; btn.textContent = "⚠️ Error: " + err; }
+    }
+  };
+
+  window.wovDeleteTalentAll = function(baseName){
+    if(!confirm("Permanently delete " + baseName + " and all her takes?")) return;
+    var toDelete = items.filter(function(it){
+      return (it.name || "").replace(/\s*\(Take\s*\d+\)/i, "").trim().toLowerCase() === baseName.toLowerCase();
+    });
+    
+    var chain = Promise.resolve();
+    toDelete.forEach(function(it){
+      chain = chain.then(function(){
+        return fetch(EXEC, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "storyDelete", key: KEY, rowId: it.rowId })
+        });
+      });
+    });
+    
+    chain.then(function(){ loadAll(); });
+  };  
 
   function loadAll(){
     if(!KEY){ renderUnlock(); return; }
