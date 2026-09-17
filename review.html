@@ -68,19 +68,16 @@
 <script>
 (function(){
   var EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
-  var ACTIVE_TALENT = localStorage.getItem("wov_active_talent") || null;
-  // 1. ROBUST KEY ACQUISITION (URL param takes precedence, persists to localStorage)
   var rawUrlKey = new URLSearchParams(window.location.search).get("key") || "";
   var KEY = (rawUrlKey || localStorage.getItem("wov_review_key") || "").trim().replace(/^["']|["']$/g, "");
-  
-  if (rawUrlKey) {
-    localStorage.setItem("wov_review_key", KEY);
-  }
+  if (rawUrlKey) localStorage.setItem("wov_review_key", KEY);
 
+  var ACTIVE_TALENT = localStorage.getItem("wov_active_talent") || null;
   var app = document.getElementById("app");
   var items = [];
   var filter = "await";
   var searchQuery = "";
+  var currentTalent = null;
 
   function esc(s){ return String(s||"").replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function badgeClass(s){ s=(s||"").toLowerCase(); if(s.indexOf("approved")>=0) return "b-approved"; if(s.indexOf("edit")>=0) return "b-edit"; return "b-await"; }
@@ -95,24 +92,23 @@
         '<div id="authErr" style="color:var(--red);font-size:12px;margin-top:10px"></div>' +
       '</div>';
   }
-  
+
   window.wovUnlock = function(){
     var input = document.getElementById("keyInput");
     var val = input ? input.value.trim().replace(/^["']|["']$/g, "") : "";
-    if(!val){ return; }
+    if(!val) return;
     KEY = val;
     localStorage.setItem("wov_review_key", KEY);
     app.innerHTML = "Authenticating…";
     loadAll();
   };
 
-// --- 🎬 MULTI-TAKE UNIFIED TALENT GROUPER ---
+  // --- 🎬 MULTI-TAKE UNIFIED TALENT GROUPER ---
   function getGroupedTalent(rawItems) {
     var grouped = {};
     var order = [];
 
     rawItems.forEach(function(it) {
-      // Strip "(Take 1)", "(Take 2)" to find her base name:
       var clean = (it.name || "Talent").replace(/\s*\(Take\s*\d+\)/i, "").trim();
       var key = clean.toLowerCase();
 
@@ -134,7 +130,6 @@
 
       grouped[key].takes.push(it);
 
-      // Keep latest take at top and preserve contact details
       if (new Date(it.date) >= new Date(grouped[key].latestTake.date)) {
         grouped[key].latestTake = it;
         grouped[key].status = it.status;
@@ -146,7 +141,6 @@
       }
     });
 
-    // Sort takes inside each actress: newest take first (Take 2 on top, Take 1 below)
     order.forEach(function(k) {
       grouped[k].takes.sort(function(a, b) {
         return new Date(b.date) - new Date(a.date);
@@ -155,7 +149,32 @@
 
     return order.map(function(k) { return grouped[k]; });
   }
+
+  function filterButtons(){
+    return '<div class="filterrow">' +
+      '<button class="'+(filter==="await"?"on":"")+'" onclick="wovFilter(\'await\')">Needs review</button>' +
+      '<button class="'+(filter==="approved"?"on":"")+'" onclick="wovFilter(\'approved\')">Approved</button>' +
+      '<button class="'+(filter==="all"?"on":"")+'" onclick="wovFilter(\'all\')">All</button>' +
+      '</div>';
+  }
+  window.wovFilter = function(f){ filter=f; renderList(); };
+  window.wovSearch = function(v){ searchQuery=v; renderList(); };
   
+  // 1-Tap Search Clear (✕)
+  window.wovClearSearch = function(){
+    searchQuery = "";
+    var box = document.getElementById("searchbox");
+    if(box) box.value = "";
+    renderList();
+  };
+
+  function updateCharCount(){
+    var box = document.getElementById("storybox");
+    var cc = document.getElementById("charcount");
+    if(box && cc) cc.textContent = box.value.length + " chars";
+  }
+  window.updateCC = updateCharCount;
+
   function renderList(){
     if(!KEY){ renderUnlock(); return; }
 
@@ -163,8 +182,11 @@
     if(!topBarEl){
       app.innerHTML = 
         '<div id="topBar">' + filterButtons() +
-        '<input type="text" id="searchbox" placeholder="Search talent by name…" value="' + esc(searchQuery) + '" ' +
-        'oninput="wovSearch(this.value)" style="width:100%;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(28,43,44,.2);font-size:15px;margin-bottom:14px;">' +
+        '<div style="position:relative;margin-bottom:14px;">' +
+          '<input type="text" id="searchbox" placeholder="Search talent by name…" value="' + esc(searchQuery) + '" ' +
+          'oninput="wovSearch(this.value)" style="width:100%;padding:12px 38px 12px 14px;border-radius:14px;border:1.5px solid rgba(28,43,44,.2);font-size:15px;box-sizing:border-box;">' +
+          '<button onclick="wovClearSearch()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--inkS);font-size:16px;cursor:pointer;padding:6px 10px;">✕</button>' +
+        '</div>' +
         '</div>' +
         '<div id="listContainer"></div>';
     }
@@ -187,16 +209,14 @@
     }
     
     var html = '<div class="list">';
-    filtered.forEach(function(t, tIdx){
+    filtered.forEach(function(t){
       var d = t.latestTake.date ? new Date(t.latestTake.date).toLocaleDateString() : "";
       var dos = t.latestTake.dossier || {};
       if (typeof dos === "string") { try { dos = JSON.parse(dos); } catch(e){ dos = {}; } }
       var arch = (dos.castingDossier && dos.castingDossier.marketArchetype) ? dos.castingDossier.marketArchetype : (t.targetFormat || "");
-      
-      // Calculate take count display
       var takeLabel = t.isNewIntake ? "⏳ Awaiting First Take" : ("🎬 " + t.takes.length + (t.takes.length === 1 ? " Take" : " Takes"));
 
-      html += '<div class="card" onclick="wovOpenTalent('+tIdx+')">' +
+      html += '<div class="card" onclick="wovOpenTalentByName(\''+esc(t.baseName).replace(/'/g, "\\'")+'\')">' +
         '<div class="name">'+esc(t.baseName)+'</div>' +
         (arch ? '<span class="archetype-tag">🎭 '+esc(arch)+'</span>' : '') +
         '<span class="archetype-tag" style="background:#EBF5FF;color:#0969DA;margin-left:4px;">'+takeLabel+'</span>' +
@@ -207,12 +227,16 @@
     html += '</div>';
     listEl.innerHTML = html;
   }
-window.wovOpenTalent = function(tIdx){
-    var allTalent = getGroupedTalent(items);
-    var t = allTalent[tIdx];
-    if (!t) return;
 
-    // Check if active in cloud:
+  // Exact Name Match Opener
+  window.wovOpenTalentByName = function(talentName){
+    var allTalent = getGroupedTalent(items);
+    var matched = allTalent.find(function(x){ return x.baseName.toLowerCase() === talentName.toLowerCase(); });
+    if(matched) wovRenderProfile(matched);
+  };
+
+  function wovRenderProfile(t){
+    currentTalent = t;
     var activeTalentName = (typeof ACTIVE_TALENT !== "undefined" && ACTIVE_TALENT) ? ACTIVE_TALENT : (localStorage.getItem("wov_active_talent") || "");
     var isActive = activeTalentName && (activeTalentName.toLowerCase() === t.baseName.toLowerCase());
 
@@ -227,23 +251,24 @@ window.wovOpenTalent = function(tIdx){
       sessionStatusHtml = 
         '<div style="margin:12px 0 16px;">' +
           '<button id="activateBtn" style="width:100%;background:#1F6FEB;color:#fff;padding:12px;border-radius:12px;font-size:14px;font-weight:700;" onclick="wovActivateCallbackForName(\''+esc(t.baseName).replace(/'/g, "\\'")+'\','+t.takes.length+')">' +
-            '🎬 Activate Callback Session for ' + esc(t.baseName) +
+            '🎬 Activate Session for ' + esc(t.baseName) +
           '</button>' +
         '</div>';
     }
 
-    // 📱 TALENT CONTACTS CARD
+    // Direct Actionable Contacts (WhatsApp, Phone, Instagram, Email)
+    var cleanPhone = (t.phone||"").replace(/[^\d+]/g, "");
     var contactHtml = 
       '<div class="section-lbl">📱 Talent Contact & Intake Profile</div>' +
       '<div class="dossier-box" style="background:#fff;border-left:3.5px solid #58A6FF;">' +
         (t.targetFormat ? '<div class="d-row"><div class="d-title">🎯 Target Ambition</div><b>'+esc(t.targetFormat)+'</b></div>' : '') +
-        (t.instagram ? '<div class="d-row"><div class="d-title">📸 Instagram / Portfolio</div><a href="https://instagram.com/'+esc(t.instagram).replace('@','')+'" target="_blank" style="color:#58A6FF;text-decoration:none;font-weight:600;">'+esc(t.instagram)+'</a></div>' : '') +
-        (t.phone ? '<div class="d-row"><div class="d-title">📞 Phone / WhatsApp</div><a href="tel:'+esc(t.phone)+'" style="color:#1C2B2C;text-decoration:none;font-weight:600;">'+esc(t.phone)+'</a></div>' : '') +
-        (t.email ? '<div class="d-row"><div class="d-title">✉️ Email Address</div><a href="mailto:'+esc(t.email)+'" style="color:#1C2B2C;text-decoration:none;">'+esc(t.email)+'</a></div>' : '') +
+        (t.instagram ? '<div class="d-row"><div class="d-title">📸 Instagram / Portfolio</div><a href="https://instagram.com/'+esc(t.instagram).replace('@','')+'" target="_blank" style="color:#58A6FF;text-decoration:none;font-weight:600;">'+esc(t.instagram)+' ↗</a></div>' : '') +
+        (t.phone ? '<div class="d-row"><div class="d-title">📞 Phone & WhatsApp</div><a href="tel:'+cleanPhone+'" style="color:#1C2B2C;text-decoration:none;font-weight:600;">'+esc(t.phone)+'</a> &nbsp;·&nbsp; <a href="https://wa.me/'+cleanPhone.replace('+','')+'" target="_blank" style="color:#22C55E;text-decoration:none;font-weight:600;">💬 Open WhatsApp ↗</a></div>' : '') +
+        (t.email ? '<div class="d-row"><div class="d-title">✉️ Email Address</div><a href="mailto:'+esc(t.email)+'" style="color:#58A6FF;text-decoration:none;font-weight:600;">'+esc(t.email)+' ↗</a></div>' : '') +
         (t.intakeNotes ? '<div class="d-row"><div class="d-title">📝 Intake Directing Notes</div>'+esc(t.intakeNotes)+'</div>' : '') +
       '</div>';
 
-    // 🎬 MULTI-TAKE TIMELINE (Renders every take inside her profile!)
+    // Multi-Take Timeline
     var takesHtml = "";
     if (t.isNewIntake || t.takes.length === 0) {
       takesHtml = 
@@ -257,34 +282,52 @@ window.wovOpenTalent = function(tIdx){
         if (typeof dos === "string") { try { dos = JSON.parse(dos); } catch(e){ dos = {}; } }
         var cast = dos.castingDossier || {};
         var dir = dos.directorNotes || {};
-        var strat = dos.contentStrategy || {};
         var takeNum = dos.takeNumber || (t.takes.length - idx);
+        var fId = takeItem.sourceFileId || "";
 
         takesHtml += 
           '<div style="margin-top:20px;padding:16px;background:#F9F6F0;border-radius:14px;border:1.5px solid rgba(28,43,44,.1);">' +
-            '<div style="font-weight:700;font-size:16px;color:#A8492E;margin-bottom:4px;">🎬 Take #' + takeNum + ' (' + new Date(takeItem.date).toLocaleDateString() + ')</div>' +
-            (takeItem.sourceFileId ? '<button class="small" onclick="wovPlayAudio(\''+takeItem.sourceFileId+'\')">🔊 Play recording</button>' : '') +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
+              '<div style="font-weight:700;font-size:16px;color:#A8492E;">🎬 Take #' + takeNum + '</div>' +
+              '<div style="font-size:12px;color:var(--inkS);">' + new Date(takeItem.date).toLocaleDateString() + '</div>' +
+            '</div>' +
             
-            // Progression Analysis (If Take 2+)
+            // Dedicated Take Audio Player
+            (fId ? '<div style="margin:10px 0;"><button class="small" id="playbtn_'+fId+'" onclick="wovPlayTakeAudio(\''+fId+'\')">🔊 Play recording</button><div id="audiobox_'+fId+'" style="margin-top:8px;"></div></div>' : '') +
+            
             (dos.progressionAnalysis && takeNum > 1 ? 
               '<div class="dossier-box d-progression" style="margin-top:10px;"><div class="d-title">📈 Progression Evolution</div>'+esc(dos.progressionAnalysis)+'</div>' : '') +
             
-            // Constructive Critique
             (dos.talentFeedback ? 
-              '<div class="dossier-box d-feedback" style="margin-top:10px;"><div class="d-title">💌 Critique for Actress</div>'+esc(dos.talentFeedback)+'</div>' : '') +
+              '<div class="dossier-box d-feedback" style="margin-top:10px;"><div class="d-title">💌 Critique for Actress</div><div style="font-size:14px;line-height:1.5;margin-bottom:8px;">'+esc(dos.talentFeedback)+'</div><button class="small" onclick="navigator.clipboard.writeText(\''+esc(dos.talentFeedback).replace(/'/g, "\\'")+'\');alert(\'Feedback copied!\');">📋 Copy Feedback</button></div>' : '') +
 
-            // Archetype & Notes
             '<div class="dossier-box" style="margin-top:10px;">' +
               '<div class="d-row"><div class="d-title">Market Archetype</div><b>'+esc(cast.marketArchetype||"-")+'</b></div>' +
               '<div class="d-row"><div class="d-title">⚡ Superpower</div>'+esc(dir.superpower||"-")+'</div>' +
               '<div class="d-row"><div class="d-title">⚠️ Blindspot</div>'+esc(dir.blindspotToCorrect||"-")+'</div>' +
             '</div>' +
 
-            // Transcript
             '<div class="section-lbl">Verbatim Transcript</div>' +
             '<div class="transcript">'+esc(takeItem.transcript||"(none captured)")+'</div>' +
           '</div>';
       });
+    }
+
+    // Restored Story Narrative & Approve/Edit Section:
+    var storySectionHtml = "";
+    if (!t.isNewIntake && t.takes.length > 0) {
+      storySectionHtml = 
+        '<div class="section-lbl">Portfolio Story Narrative (Editable)</div>' +
+        '<textarea id="storybox" oninput="updateCC()">'+esc(t.latestTake.draft||"")+'</textarea>' +
+        '<div class="toolrow">' +
+          '<button class="small" onclick="wovCopyStory()">📋 Copy Story</button>' +
+          '<button class="small" onclick="wovResetStory()">↺ Reset</button>' +
+          '<span class="charcount" id="charcount"></span>' +
+        '</div>' +
+        '<div class="btnrow">' +
+          '<button class="edit" id="editbtn" onclick="wovSaveTalentStatus(\'✏️ Needs edit\')">Needs work</button>' +
+          '<button class="approve" id="approvebtn" onclick="wovSaveTalentStatus(\'✅ Approved\')">Approve</button>' +
+        '</div>';
     }
 
     app.innerHTML = 
@@ -293,331 +336,84 @@ window.wovOpenTalent = function(tIdx){
       '<div style="font-size:13px;color:#5A6667;margin-bottom:12px;">🎬 '+t.takes.length+' Takes on file</div>' +
       sessionStatusHtml +
       contactHtml +
-      '<div class="section-lbl" style="font-size:14px;margin-top:20px;">🎬 Audition Takes Timeline</div>' +
       takesHtml +
-      '<button class="danger" style="margin-top:24px;" onclick="wovDeleteTalentAll(\''+esc(t.baseName).replace(/'/g, "\\'")+'\')">🗑 Delete this talent profile</button>';
-  };
-  
-  function filterButtons(){
-    return '<div class="filterrow">' +
-      '<button class="'+(filter==="await"?"on":"")+'" onclick="wovFilter(\'await\')">Needs review</button>' +
-      '<button class="'+(filter==="approved"?"on":"")+'" onclick="wovFilter(\'approved\')">Approved</button>' +
-      '<button class="'+(filter==="all"?"on":"")+'" onclick="wovFilter(\'all\')">All</button>' +
-      '</div>';
-  }
-  window.wovFilter = function(f){ filter=f; renderList(); };
-  window.wovSearch = function(v){ searchQuery=v; renderList(); };
+      storySectionHtml +
+      '<button class="danger" style="margin-top:24px;" onclick="wovDeleteTalentAll(\''+esc(t.baseName).replace(/'/g, "\\'")+'\')">🗑 Delete this talent profile</button>' +
+      '<div class="status" id="savemsg"></div>';
 
-  function updateCharCount(){
-    var box=document.getElementById("storybox");
-    var cc=document.getElementById("charcount");
-    if(box && cc) cc.textContent = box.value.length + " chars";
-  }
-
-  window.wovOpen = function(idx){
-    var it = items[idx];
-    var d = it.date ? new Date(it.date).toLocaleString() : "";
-    var dos = it.dossier || {};
-    if (typeof dos === "string") { try { dos = JSON.parse(dos); } catch(e){ dos = {}; } }
-
-    var cast = dos.castingDossier || {};
-    var dir = dos.directorNotes || {};
-    var strat = dos.contentStrategy || {};
-
-    // 1. CASTING PROFILE & PRIVATE COACHING
-    var dossierHtml = "";
-    if(dos.castingDossier){
-      dossierHtml = 
-        '<div class="section-lbl">🎭 Casting Profile & Screen Persona</div>' +
-        '<div class="dossier-box">' +
-          '<div class="d-row"><div class="d-title">Market Archetype</div><b>'+esc(cast.marketArchetype||"-")+'</b></div>' +
-          '<div class="d-row"><div class="d-title">Casting Suitability</div>'+esc(cast.castingFit||"-")+'</div>' +
-          '<div class="d-row"><div class="d-title">Screen Presence</div>'+esc(cast.screenPresence||"-")+'</div>' +
-        '</div>' +
-        
-        '<div class="section-lbl">🎬 Director\'s Private Coaching (For Claudio)</div>' +
-        '<div class="dossier-box d-coach">' +
-          '<div class="d-row"><div class="d-title">⚡ Her Natural Superpower</div>'+esc(dir.superpower||"-")+'</div>' +
-          '<div class="d-row"><div class="d-title">⚠️ Blindspot to Correct</div>'+esc(dir.blindspotToCorrect||"-")+'</div>' +
-          '<div class="d-row"><div class="d-title">🎯 Next Session Directive</div><b>'+esc(dir.nextSessionDirective||"-")+'</b></div>' +
-          '<div class="d-row"><div class="d-title">🎙️ Vocal Delivery Analysis</div>'+esc(dir.vocalDelivery||"-")+'</div>' +
-        '</div>';
-    }
-
-    // 2. MULTI-TAKE PROGRESSION (FOR TAKE 2+)
-    var progressionHtml = "";
-    if(dos.progressionAnalysis && it.name.indexOf("Take 1") < 0){
-      progressionHtml = 
-        '<div class="section-lbl">📈 Multi-Take Progression Analysis</div>' +
-        '<div class="dossier-box d-progression">' +
-          '<div class="d-row"><div class="d-title">Take-Over-Take Evolution</div>'+esc(dos.progressionAnalysis)+'</div>' +
-        '</div>';
-    }
-
-    // 3. CONSTRUCTIVE TALENT FEEDBACK (READY TO SHARE WITH ACTRESS)
-    var feedbackHtml = "";
-    if(dos.talentFeedback){
-      feedbackHtml = 
-        '<div class="section-lbl">💌 Positive Constructive Critique (For Actress)</div>' +
-        '<div class="dossier-box d-feedback">' +
-          '<div style="font-size:14px;line-height:1.6;color:#1C2B2C;margin-bottom:12px">'+esc(dos.talentFeedback)+'</div>' +
-          '<button class="small" onclick="wovCopyFeedback('+idx+')">📋 Copy Feedback to Send Her</button>' +
-        '</div>';
-    }
-
-    // 4. AUDIENCE HOOK & SIGNATURE SOUNDBITE
-    var hookHtml = "";
-    if(strat.viralHook || strat.signatureSoundbite){
-      hookHtml = 
-        '<div class="section-lbl">🔥 Audience Hook & Soundbite</div>' +
-        '<div class="dossier-box d-hook">' +
-          '<div class="d-row"><div class="d-title">Viral Hook (Opening Line for Reel)</div>"'+esc(strat.viralHook||"-")+'"</div>' +
-          '<div class="d-row"><div class="d-title">Verbatim Signature Soundbite</div><div class="soundbite-pill">“'+esc(strat.signatureSoundbite||"-")+'”</div></div>' +
-        '</div>';
-    }
-
-    // 5. SMART CLOUD SESSION STATUS (GREEN CARD IF ACTIVE, BLUE BUTTON IF INACTIVE)
-    var cleanName = (it.name || "Talent").replace(/\s*\(Take\s*\d+\)/i, "").trim();
-    var activeTalentName = (typeof ACTIVE_TALENT !== "undefined" && ACTIVE_TALENT) ? ACTIVE_TALENT : (localStorage.getItem("wov_active_talent") || "");
-    var isActive = activeTalentName && (
-      activeTalentName.toLowerCase() === cleanName.toLowerCase() ||
-      cleanName.toLowerCase().indexOf(activeTalentName.toLowerCase()) >= 0 ||
-      activeTalentName.toLowerCase().indexOf(cleanName.toLowerCase()) >= 0
-    );
-
-    var sessionStatusHtml = "";
-    if (isActive) {
-      sessionStatusHtml = 
-        '<div style="background:#F0FDF4;border:1.5px solid #22C55E;border-radius:12px;padding:14px;text-align:center;margin:12px 0 16px;">' +
-          '<div style="color:#166534;font-weight:700;font-size:15px;">🟢 SESSION ACTIVE IN CLOUD</div>' +
-          '<div style="color:#15803D;font-size:12.5px;margin-top:4px;">Ready for next take in Open Camera. Tap Camera Widget to offload.</div>' +
-        '</div>';
-    } else {
-      sessionStatusHtml = 
-        '<div style="margin:12px 0 16px;">' +
-          '<button id="activateBtn" style="width:100%;background:#1F6FEB;color:#fff;padding:12px;border-radius:12px;font-size:14px;font-weight:700;" onclick="wovActivateCallback('+idx+')">' +
-            '🎬 Activate Session for ' + esc(cleanName) +
-          '</button>' +
-        '</div>';
-    }
-
-    // 6. TALENT CONTACTS & INTAKE PROFILE CARD
-    var contactHtml = "";
-    if (it.targetFormat || it.instagram || it.phone || it.email || it.intakeNotes) {
-      contactHtml = 
-        '<div class="section-lbl">📱 Talent Contact & Intake Profile</div>' +
-        '<div class="dossier-box" style="background:#fff;border-left:3.5px solid #58A6FF;">' +
-          (it.targetFormat ? '<div class="d-row"><div class="d-title">🎯 Target Ambition</div><b>'+esc(it.targetFormat)+'</b></div>' : '') +
-          (it.instagram ? '<div class="d-row"><div class="d-title">📸 Instagram / Portfolio</div><a href="https://instagram.com/'+esc(it.instagram).replace('@','')+'" target="_blank" style="color:#58A6FF;text-decoration:none;font-weight:600;">'+esc(it.instagram)+'</a></div>' : '') +
-          (it.phone ? '<div class="d-row"><div class="d-title">📞 Phone / WhatsApp</div><a href="tel:'+esc(it.phone)+'" style="color:#1C2B2C;text-decoration:none;font-weight:600;">'+esc(it.phone)+'</a></div>' : '') +
-          (it.email ? '<div class="d-row"><div class="d-title">✉️ Email Address</div><a href="mailto:'+esc(it.email)+'" style="color:#1C2B2C;text-decoration:none;">'+esc(it.email)+'</a></div>' : '') +
-          (it.intakeNotes ? '<div class="d-row"><div class="d-title">📝 Intake Directing Notes</div>'+esc(it.intakeNotes)+'</div>' : '') +
-        '</div>';
-    }
-
-    // 7. HANDLE TALENT AWAITING FIRST TAKE (E.G. VALERIA IS)
-    var isAwaitingFirstVideo = it.isNewIntake || (!it.sourceFileId && !it.dossier);
-    var bodyContentHtml = "";
-
-    if (isAwaitingFirstVideo) {
-      bodyContentHtml = 
-        '<div class="dossier-box" style="background:#FFFBF5;border-left:3.5px solid #C7A463;margin-top:14px;">' +
-          '<div style="font-weight:700;font-size:14px;color:#7A5A1E;margin-bottom:4px;">⏳ Awaiting First Audition Scene</div>' +
-          '<div style="font-size:13px;color:#5A6667;line-height:1.5;">Legal consent waiver signed on file. Ready to record Take #1 in Open Camera!</div>' +
-        '</div>' +
-        '<button class="danger" id="delbtn" onclick="wovDeleteTap('+idx+')">🗑 Delete this profile</button>' +
-        '<div class="status" id="savemsg"></div>';
-    } else {
-      bodyContentHtml = 
-        dossierHtml +
-        progressionHtml +
-        feedbackHtml +
-        hookHtml +
-        '<div class="section-lbl">Portfolio Story Narrative (Editable)</div>' +
-        '<textarea id="storybox" oninput="updateCC()">'+esc(it.draft||"")+'</textarea>' +
-        '<div class="toolrow">' +
-          '<button class="small" onclick="wovCopy()">📋 Copy Story</button>' +
-          '<button class="small" onclick="wovReset('+idx+')">↺ Reset</button>' +
-          '<span class="charcount" id="charcount"></span>' +
-        '</div>' +
-        '<div class="section-lbl">Verbatim Transcript (Her real words)</div>' +
-        '<div class="transcript">'+esc(it.transcript||"(none captured)")+'</div>' +
-        '<div class="btnrow">' +
-          '<button class="edit" id="editbtn" onclick="wovSave('+idx+',\'✏️ Needs edit\')">Needs work</button>' +
-          '<button class="approve" id="approvebtn" onclick="wovSave('+idx+',\'✅ Approved\')">Approve</button>' +
-        '</div>' +
-        '<button class="danger" id="delbtn" onclick="wovDeleteTap('+idx+')">🗑 Delete this profile</button>' +
-        '<div class="status" id="savemsg"></div>';
-    }
-
-    app.innerHTML =
-      '<a class="back" onclick="wovBack()">← Back to Talent Roster</a>' +
-      '<h1 style="text-align:left;font-size:22px">'+esc(it.name||"?")+'</h1>' +
-      '<div class="meta" style="margin-bottom:8px">'+esc(d)+(it.sourceFileName?' · '+esc(it.sourceFileName):'')+'</div>' +
-      (it.sourceFileId?'<button class="small" id="playbtn" onclick="wovPlayAudio(\''+it.sourceFileId+'\')">🔊 Play recording</button><div id="audiobox" style="margin:10px 0"></div>':'') +
-      '<div><span class="badge '+badgeClass(it.status)+'">'+esc(it.status||"Awaiting review")+'</span></div>' +
-      
-      sessionStatusHtml +
-      contactHtml +
-      bodyContentHtml;
-      
     if (document.getElementById("storybox")) {
       updateCharCount();
     }
-  };
+  }
 
-  // Dedicated Crash-Proof Feedback Copier
-  window.wovCopyFeedback = function(idx){
-    var it = items[idx];
-    var dos = it.dossier || {};
-    if (typeof dos === "string") { try { dos = JSON.parse(dos); } catch(e){ dos = {}; } }
-    var text = dos.talentFeedback || "";
-    if(!text){ alert("No feedback text available."); return; }
-    
-    navigator.clipboard.writeText(text).then(function(){
-      var msg = document.getElementById("savemsg");
-      if(msg) msg.textContent = "Feedback copied to clipboard ✓";
-      alert("✓ Constructive critique copied! Ready to text or email to the actress.");
-    }).catch(function(){
-      prompt("Copy critique below:", text);
-    });
-  };
-
-  // Dedicated Callback Session Activator
-  window.wovActivateCallback = async function(idx){
-    var it = items[idx];
-    var dos = it.dossier || {};
-    if (typeof dos === "string") { try { dos = JSON.parse(dos); } catch(e){ dos = {}; } }
-
-    var cleanName = (it.name || "Talent").replace(/\s*\(Take\s*\d+\)/i, "").trim();
-    var currentTakeNum = dos.takeNumber || 1;
-    var lastAdj = (dos.directorNotes && dos.directorNotes.nextSessionDirective) ? dos.directorNotes.nextSessionDirective : "";
-    var castFit = (dos.castingDossier && dos.castingDossier.castingFit) ? dos.castingDossier.castingFit : "";
-
-    var btn = document.getElementById("activateBtn");
-    if(btn){
-      btn.disabled = true;
-      btn.textContent = "Activating Callback in Cloud…";
-    }
-
-    try {
-      await fetch(EXEC, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({
-          action: "activateCallback",
-          key: KEY,
-          name: cleanName,
-          targetFormat: castFit,
-          takeCount: currentTakeNum,
-          lastAdjustment: lastAdj
-        })
-      });
-
-      if(btn){
-        btn.textContent = "✓ Callback Session ACTIVE for " + cleanName + "!";
-        btn.style.background = "#238636"; // Turns solid green!
-      }
-      ACTIVE_TALENT = cleanName;
-      localStorage.setItem("wov_active_talent", cleanName);
-      setTimeout(function(){ wovOpen(idx); }, 800); // Refreshes to show the permanent green card!
-      var msg = document.getElementById("savemsg");
-      if(msg) msg.textContent = "Session active! Shoot in Open Camera and tap your Camera Widget.";
-    } catch(err) {
-      if(btn){
-        btn.disabled = false;
-        btn.textContent = "⚠️ Error activating: " + err;
-        btn.style.background = "#B3261E";
-      }
-    }
-  };
-
-  var deleteArmed = null, deleteTimer = null;
-  window.wovDeleteTap = function(idx){
-    var btn = document.getElementById("delbtn");
-    if(deleteArmed === idx){
-      clearTimeout(deleteTimer); deleteArmed = null;
-      wovDelete(idx);
-      return;
-    }
-    deleteArmed = idx;
-    btn.textContent = "⚠️ Tap again to permanently delete";
-    btn.style.background = "#B3261E"; btn.style.color = "#fff";
-    deleteTimer = setTimeout(function(){
-      deleteArmed = null;
-      btn.textContent = "🗑 Delete this profile";
-      btn.style.background = "#fff"; btn.style.color = "#B3261E";
-    }, 4000);
-  };
-
-  window.updateCC = updateCharCount;
-  window.wovBack = function(){ 
-    document.getElementById("app").innerHTML = ""; 
-    renderList(); 
-  };
-  window.wovPlayAudio = async function(fileId){
-    var btn = document.getElementById("playbtn");
-    var box = document.getElementById("audiobox");
-    btn.disabled = true; btn.textContent = "Loading…";
+  // Audio Player
+  window.wovPlayTakeAudio = async function(fileId){
+    var btn = document.getElementById("playbtn_" + fileId);
+    var box = document.getElementById("audiobox_" + fileId);
+    if(btn) { btn.disabled = true; btn.textContent = "Loading audio…"; }
     try{
       var r = await fetch(EXEC + "?action=audioFile&id=" + encodeURIComponent(fileId) + "&key=" + encodeURIComponent(KEY));
       var data = await r.json();
-      if(data.error){ box.textContent = "⚠️ " + data.error; btn.disabled=false; btn.textContent="🔊 Play recording"; return; }
+      if(data.error){ if(box) box.textContent = "⚠️ " + data.error; if(btn){ btn.disabled=false; btn.textContent="🔊 Play recording"; } return; }
       var byteChars = atob(data.audio);
       var byteArr = new Uint8Array(byteChars.length);
       for(var i=0;i<byteChars.length;i++) byteArr[i] = byteChars.charCodeAt(i);
       var blob = new Blob([byteArr], { type: data.mime || "audio/mp4" });
       var url = URL.createObjectURL(blob);
-      box.innerHTML = '<audio controls autoplay src="'+url+'" style="width:100%"></audio>';
-      btn.style.display = "none";
-    }catch(err){ box.textContent = "⚠️ " + err; btn.disabled=false; btn.textContent="🔊 Play recording"; }
+      if(box) box.innerHTML = '<audio controls autoplay src="'+url+'" style="width:100%"></audio>';
+      if(btn) btn.style.display = "none";
+    }catch(err){ if(box) box.textContent = "⚠️ " + err; if(btn){ btn.disabled=false; btn.textContent="🔊 Play recording"; } }
   };
 
-  window.wovReset = function(idx){
-    document.getElementById("storybox").value = items[idx].draft || "";
-    updateCharCount();
-  };
-
-  window.wovCopy = async function(){
+  // Narrative Story Controls
+  window.wovCopyStory = async function(){
     var box = document.getElementById("storybox");
+    if(!box) return;
     try{ await navigator.clipboard.writeText(box.value); }
     catch(e){ box.select(); try{ document.execCommand("copy"); }catch(e2){} }
-    var msg=document.getElementById("savemsg"); if(msg) msg.textContent="Copied ✓";
+    var msg = document.getElementById("savemsg"); if(msg) msg.textContent = "Story copied ✓";
   };
 
-  window.wovSave = async function(idx, status){
-    var it = items[idx];
-    var text = document.getElementById("storybox").value;
-    var eb=document.getElementById("editbtn"), ab=document.getElementById("approvebtn");
-    if(eb) eb.disabled=true; if(ab) ab.disabled=true;
-    document.getElementById("savemsg").textContent = "Saving…";
+  window.wovResetStory = function(){
+    var box = document.getElementById("storybox");
+    if(box && currentTalent && currentTalent.latestTake){
+      box.value = currentTalent.latestTake.draft || "";
+      updateCharCount();
+    }
+  };
+
+  window.wovSaveTalentStatus = async function(status){
+    if(!currentTalent || !currentTalent.latestTake) return;
+    var box = document.getElementById("storybox");
+    var text = box ? box.value : "";
+    var eb = document.getElementById("editbtn"), ab = document.getElementById("approvebtn");
+    if(eb) eb.disabled = true; if(ab) ab.disabled = true;
+    var msg = document.getElementById("savemsg");
+    if(msg) msg.textContent = "Saving…";
+
     try{
-      await fetch(EXEC, { method:"POST", mode:"no-cors",
-        headers:{ "Content-Type":"text/plain;charset=utf-8" },
-        body: JSON.stringify({ action:"storyUpdate", key:KEY, rowId:it.rowId, finalStory:text, status:status }) });
-      it.draft = text; it.status = status;
-      document.getElementById("savemsg").textContent = "✓ Saved";
+      await fetch(EXEC, { 
+        method: "POST", 
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "storyUpdate", key: KEY, rowId: currentTalent.latestTake.rowId, finalStory: text, status: status }) 
+      });
+      currentTalent.latestTake.draft = text;
+      currentTalent.latestTake.status = status;
+      currentTalent.status = status;
+      if(msg) msg.textContent = "✓ Saved";
       setTimeout(function(){ renderList(); }, 700);
     }catch(err){
-      document.getElementById("savemsg").textContent = "⚠️ " + err;
+      if(msg) msg.textContent = "⚠️ " + err;
     }
   };
 
-  window.wovDelete = async function(idx){
-    var it = items[idx];
-    document.getElementById("savemsg").textContent = "Deleting…";
-    try{
-      await fetch(EXEC, { method:"POST", mode:"no-cors",
-        headers:{ "Content-Type":"text/plain;charset=utf-8" },
-        body: JSON.stringify({ action:"storyDelete", key:KEY, rowId:it.rowId }) });
-      loadAll();
-    }catch(err){
-      document.getElementById("savemsg").textContent = "⚠️ " + err;
-    }
+  window.wovBack = function(){ 
+    document.getElementById("app").innerHTML = ""; 
+    renderList(); 
   };
 
-window.wovActivateCallbackForName = async function(name, takesCount){
+  window.wovActivateCallbackForName = async function(name, takesCount){
     var btn = document.getElementById("activateBtn");
     if(btn){ btn.disabled = true; btn.textContent = "Activating Session in Cloud…"; }
 
@@ -626,17 +422,12 @@ window.wovActivateCallbackForName = async function(name, takesCount){
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({
-          action: "activateCallback",
-          key: KEY,
-          name: name,
-          takeCount: takesCount
-        })
+        body: JSON.stringify({ action: "activateCallback", key: KEY, name: name, takeCount: takesCount })
       });
 
       ACTIVE_TALENT = name;
       localStorage.setItem("wov_active_talent", name);
-      loadAll();
+      wovOpenTalentByName(name);
     } catch(err) {
       if(btn){ btn.disabled = false; btn.textContent = "⚠️ Error: " + err; }
     }
@@ -661,11 +452,10 @@ window.wovActivateCallbackForName = async function(name, takesCount){
     });
     
     chain.then(function(){ loadAll(); });
-  };  
+  };
 
   function loadAll(){
     if(!KEY){ renderUnlock(); return; }
-    // Cache-busting parameter &_t guarantees real-time fresh updates
     fetch(EXEC + "?action=storiesList&key=" + encodeURIComponent(KEY) + "&_t=" + Date.now())
       .then(function(r){ return r.json(); })
       .then(function(data){ 
