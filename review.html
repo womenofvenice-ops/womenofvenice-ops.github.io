@@ -37,6 +37,15 @@
   .d-coach{ background:#FFFBF5; border-left:3.5px solid var(--gold); }
   .d-hook{ background:#FDF7F4; border-left:3.5px solid var(--red); }
   .d-feedback{ background:#F0FDF4; border-left:3.5px solid #22C55E; }
+  /* --- 📊 PERFORMANCE TELEMETRY & COMPS STYLING --- */
+  .meter-row{ display:flex; align-items:center; gap:10px; margin-bottom:10px; font-size:12.5px; }
+  .meter-row:last-child{ margin-bottom:0; }
+  .meter-label{ flex:0 0 170px; font-weight:600; color:var(--ink); }
+  .meter-bar{ flex:1; height:8px; background:rgba(28,43,44,.08); border-radius:99px; overflow:hidden; position:relative; }
+  .meter-fill{ height:100%; border-radius:99px; background:linear-gradient(90deg, #A8492E, #E09A73); }
+  .meter-val{ flex:0 0 35px; text-align:right; font-weight:700; font-size:12px; color:var(--red); }
+  .d-format{ background:#FAF5FF; border-left:3.5px solid #8B5CF6; }
+  .d-comps{ background:#FFFBF5; border-left:3.5px solid #D97706; }
   .d-progression{ background:#EFF6FF; border-left:3.5px solid #3B82F6; }
   .soundbite-pill{ font-family:'Playfair Display',Georgia,serif; font-style:italic; font-size:15px; color:var(--red); margin-top:4px; }
 
@@ -284,6 +293,60 @@
         var dir = dos.directorNotes || {};
         var takeNum = dos.takeNumber || (t.takes.length - idx);
         var fId = takeItem.sourceFileId || "";
+  
+    // CONTAINER 1: 📊 PERFORMANCE TELEMETRY RADAR (SCORED 1-100)
+        var radar = dos.performanceRadar || null;
+        var radarHtml = "";
+        if (radar) {
+          radarHtml = 
+            '<div class="section-lbl">📊 Performance Telemetry (1-100)</div>' +
+            '<div class="dossier-box">' +
+              '<div class="meter-row">' +
+                '<div class="meter-label">👁️ Camera Stillness & Presence</div>' +
+                '<div class="meter-bar"><div class="meter-fill" style="width:' + (radar.presenceScore || 80) + '%;"></div></div>' +
+                '<div class="meter-val">' + (radar.presenceScore || 80) + '</div>' +
+              '</div>' +
+              '<div class="meter-row">' +
+                '<div class="meter-label">🎙️ Vocal Resonance & Control</div>' +
+                '<div class="meter-bar"><div class="meter-fill" style="width:' + (radar.vocalScore || 80) + '%;"></div></div>' +
+                '<div class="meter-val">' + (radar.vocalScore || 80) + '</div>' +
+              '</div>' +
+              '<div class="meter-row">' +
+                '<div class="meter-label">🎭 Subtext & Emotional Truth</div>' +
+                '<div class="meter-bar"><div class="meter-fill" style="width:' + (radar.subtextScore || 80) + '%;"></div></div>' +
+                '<div class="meter-val">' + (radar.subtextScore || 80) + '</div>' +
+              '</div>' +
+              '<div class="meter-row">' +
+                '<div class="meter-label">🎯 Target Format Alignment</div>' +
+                '<div class="meter-bar"><div class="meter-fill" style="width:' + (radar.formatFitScore || 80) + '%;"></div></div>' +
+                '<div class="meter-val">' + (radar.formatFitScore || 80) + '</div>' +
+              '</div>' +
+            '</div>';
+        }
+
+        // CONTAINER 2: 🎯 FORMAT-SPECIFIC AMBITION DIAGNOSTIC
+        var fmtDiag = dos.formatDiagnostic || null;
+        var formatDiagHtml = "";
+        if (fmtDiag) {
+          formatDiagHtml = 
+            '<div class="section-lbl">🎯 ' + esc(fmtDiag.focusTitle || "Target Ambition Diagnostic") + '</div>' +
+            '<div class="dossier-box d-format">' +
+              '<div class="d-row"><div class="d-title">Format Evaluation</div>' + esc(fmtDiag.coreFinding || "-") + '</div>' +
+              '<div class="d-row"><div class="d-title">Market / Platform Viability</div><b>' + esc(fmtDiag.viabilityAssessment || "-") + '</b></div>' +
+            '</div>';
+        }
+
+        // CONTAINER 3: 🎬 INDUSTRY REFERENCE COMPS
+        var comps = dos.referenceComps || null;
+        var compsHtml = "";
+        if (comps && (comps.actorComps || comps.directorFit)) {
+          compsHtml = 
+            '<div class="section-lbl">🎬 Industry Reference Comps & Market Fit</div>' +
+            '<div class="dossier-box d-comps">' +
+              (comps.actorComps ? '<div class="d-row"><div class="d-title">Actor Energy Comps</div><b>' + esc(comps.actorComps) + '</b></div>' : '') +
+              (comps.directorFit ? '<div class="d-row"><div class="d-title">Director / Brand Matches</div>' + esc(comps.directorFit) + '</div>' : '') +
+            '</div>';
+        }
 
         takesHtml += 
           '<div style="margin-top:20px;padding:16px;background:#F9F6F0;border-radius:14px;border:1.5px solid rgba(28,43,44,.1);">' +
@@ -294,7 +357,10 @@
             
             // Dedicated Take Audio Player
             (fId ? '<div style="margin:10px 0;"><button class="small" id="playbtn_'+fId+'" onclick="wovPlayTakeAudio(\''+fId+'\')">🔊 Play recording</button><div id="audiobox_'+fId+'" style="margin-top:8px;"></div></div>' : '') +
-            
+            // 📊 THE 3 NEW EXPANDED CONTAINERS:
+            radarHtml +
+            formatDiagHtml +
+            compsHtml +
             (dos.progressionAnalysis && takeNum > 1 ? 
               '<div class="dossier-box d-progression" style="margin-top:10px;"><div class="d-title">📈 Progression Evolution</div>'+esc(dos.progressionAnalysis)+'</div>' : '') +
             
