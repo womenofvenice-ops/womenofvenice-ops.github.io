@@ -400,18 +400,57 @@
       });
     }
 
-    // Restored Story Narrative & Approve/Edit Section:
+    // --- ⏱️ SCENE BEAT MAP & DRAMATIC STRUCTURE (REPLACES PORTFOLIO STORY) ---
     var storySectionHtml = "";
     if (!t.isNewIntake && t.takes.length > 0) {
-      storySectionHtml = 
-        '<div class="section-lbl">Portfolio Story Narrative (Editable)</div>' +
-        '<textarea id="storybox" oninput="updateCC()">'+esc(t.latestTake.draft||"")+'</textarea>' +
-        '<div class="toolrow">' +
-          '<button class="small" onclick="wovCopyStory()">📋 Copy Story</button>' +
-          '<button class="small" onclick="wovResetStory()">↺ Reset</button>' +
-          '<span class="charcount" id="charcount"></span>' +
-        '</div>' +
-        '<div class="btnrow">' +
+      var latestDos = t.latestTake.dossier || {};
+      if (typeof latestDos === "string") { try { latestDos = JSON.parse(latestDos); } catch(e){ latestDos = {}; } }
+      
+      var beatMap = latestDos.temporalBeatMap || [];
+      var premise = latestDos.scenePremise || "";
+      var acoustics = latestDos.acousticMetrics || {};
+
+      var beatsHtml = '<div class="section-lbl" style="margin-top:16px;">⏱️ Scene Beat Breakdown & Dramatic Structure</div>' +
+        '<div class="dossier-box" style="background:#FAFBFB;border-left:3.5px solid #0EA5E9;">';
+
+      if (premise) {
+        beatsHtml += '<div style="font-size:12.5px;color:var(--ink);margin-bottom:8px;"><b>Dramatic Premise:</b> ' + esc(premise) + '</div>';
+      }
+
+      // Acoustic Metrics Telemetry Bar
+      if (acoustics.estimatedWpm || acoustics.dominantVocalRegister) {
+        beatsHtml += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(28,43,44,.08);font-size:11.5px;color:var(--inkS);">' +
+          (acoustics.estimatedWpm ? '<span style="background:rgba(28,43,44,.06);padding:3px 7px;border-radius:6px;">⚡ ~' + esc(acoustics.estimatedWpm) + ' WPM</span>' : '') +
+          (acoustics.pauseFrequency ? '<span style="background:rgba(28,43,44,.06);padding:3px 7px;border-radius:6px;">⏸️ Pauses: ' + esc(acoustics.pauseFrequency) + '</span>' : '') +
+          (acoustics.dominantVocalRegister ? '<span style="background:rgba(28,43,44,.06);padding:3px 7px;border-radius:6px;">🎙️ ' + esc(acoustics.dominantVocalRegister) + '</span>' : '') +
+        '</div>';
+      }
+
+      // Chronological Scene Beats
+      if (beatMap.length > 0) {
+        beatsHtml += '<div style="display:flex;flex-direction:column;gap:8px;">';
+        beatMap.forEach(function(b, bIdx) {
+          beatsHtml += '<div style="background:#fff;padding:10px 12px;border-radius:8px;border:1px solid rgba(28,43,44,.08);display:flex;gap:12px;align-items:flex-start;">' +
+            '<div style="background:#0F172A;color:#38BDF8;font-family:monospace;font-size:11px;font-weight:700;padding:3px 6px;border-radius:5px;white-space:nowrap;letter-spacing:0.5px;">' +
+              esc(b.timestamp || ("Beat " + (bIdx + 1))) +
+            '</div>' +
+            '<div style="flex:1;">' +
+              '<div style="font-weight:700;font-size:12.5px;color:var(--ink);margin-bottom:2px;">' + esc(b.beatTitle || ("Beat #" + (bIdx + 1))) + '</div>' +
+              (b.characterIntent ? '<div style="font-size:12px;color:var(--ink);line-height:1.4;">' + esc(b.characterIntent) + '</div>' : '') +
+              (b.acousticBehavior ? '<div style="font-size:11px;color:var(--inkS);margin-top:3px;font-style:italic;">Acoustics: ' + esc(b.acousticBehavior) + '</div>' : '') +
+            '</div>' +
+          '</div>';
+        });
+        beatsHtml += '</div>';
+      } else {
+        beatsHtml += '<div style="font-size:12px;color:var(--inkS);font-style:italic;">Scene analysis established. Detailed temporal beat map activates on clean takes.</div>';
+      }
+
+      beatsHtml += '</div>';
+
+      // Preserves your Approve & Needs work buttons
+      storySectionHtml = beatsHtml +
+        '<div class="btnrow" style="margin-top:14px;">' +
           '<button class="edit" id="editbtn" onclick="wovSaveTalentStatus(\'✏️ Needs edit\')">Needs work</button>' +
           '<button class="approve" id="approvebtn" onclick="wovSaveTalentStatus(\'✅ Approved\')">Approve</button>' +
         '</div>';
