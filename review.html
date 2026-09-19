@@ -388,16 +388,21 @@
             (dos.progressionAnalysis && takeNum > 1 ? 
               '<div class="dossier-box d-progression" style="margin-top:10px;"><div class="d-title">📈 Progression Evolution</div>' + esc(dos.progressionAnalysis) + '</div>' : '') +
             
-            // 💌 Critique for Actress with 1-Click Email & Copy
-            (dos.talentFeedback ? 
-              '<div class="dossier-box d-feedback" style="margin-top:10px;">' +
+            // 💌 Critique for Actress with 1-Click Email & Copy (Safe & Self-Contained)
+            (dos.talentFeedback ? (function() {
+              var candName = (t && t.name) || (takeItem && takeItem.name) || "Talent";
+              var firstName = candName.split(" ")[0] || "Talent";
+              var candEmail = (t && (t.email || t.contactEmail)) || "";
+
+              return '<div class="dossier-box d-feedback" style="margin-top:10px;">' +
                 '<div class="d-title">💌 Critique for Actress</div>' +
                 '<div id="feedback_text_' + fId + '" style="font-size:14px;line-height:1.5;margin-bottom:10px;">' + esc(dos.talentFeedback) + '</div>' +
                 '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
                   '<button class="small" onclick="navigator.clipboard.writeText(document.getElementById(\'feedback_text_' + fId + '\').innerText);alert(\'Feedback copied!\');">📋 Copy Feedback</button>' +
-                  (t.email ? '<button class="small" style="background:#A8492E;color:#fff;font-weight:700;" onclick="wovEmailCritique(\'' + esc(t.name) + '\',' + takeNum + ',\'' + fId + '\',\'' + esc(t.email) + '\')">✉️ Email Directing Note to ' + esc(t.name.split(" ")[0]) + '</button>' : '') +
+                  (candEmail ? '<button class="small" style="background:#A8492E;color:#fff;font-weight:700;" onclick="wovEmailCritique(\'' + esc(candName) + '\',' + takeNum + ',\'' + fId + '\',\'' + esc(candEmail) + '\')">✉️ Email Directing Note to ' + esc(firstName) + '</button>' : '') +
                 '</div>' +
-              '</div>' : '') +
+              '</div>';
+            })() : '') +
 
             // 🎭 Archetype, Superpower, Blindspot
             '<div class="dossier-box" style="margin-top:10px;">' +
