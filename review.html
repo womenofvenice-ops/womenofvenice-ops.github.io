@@ -23,9 +23,9 @@
   .card .archetype-tag{ display:inline-block; font-size:11px; font-weight:600; color:var(--red); background:#FDF2EE; padding:2px 8px; border-radius:6px; margin-top:4px; }
   .card .meta{ font-size:12px; color:var(--inkS); margin-top:4px; }
   .badge{ display:inline-block; font-size:11px; font-weight:700; padding:3px 10px; border-radius:99px; margin-top:6px; }
-  .b-await{ background:#F3E3C4; color:#7A5A1E; }
-  .b-approved{ background:#CFE3CF; color:#2E5B2E; }
-  .b-edit{ background:#F0D0C8; color:#8A3A28; }
+  .b-approved { background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; font-weight: 700; } /* Gold for Shortlisted */
+  .b-edit     { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; font-weight: 700; } /* Blue for Re-Take Pending */
+  .b-await    { background: #F3F4F6; color: #4B5563; border: 1px solid #E5E7EB; font-weight: 600; } /* Gray for Awaiting Review */
   .back{ display:inline-block; margin-bottom:14px; color:var(--red); font-weight:700; font-size:14px; cursor:pointer; }
   .section-lbl{ font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--peach); font-weight:700; margin:18px 0 8px; }
   
@@ -97,7 +97,12 @@
   var currentTalent = null;
 
   function esc(s){ return String(s||"").replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
-  function badgeClass(s){ s=(s||"").toLowerCase(); if(s.indexOf("approved")>=0) return "b-approved"; if(s.indexOf("edit")>=0) return "b-edit"; return "b-await"; }
+  function badgeClass(s){ 
+    s = (s || "").toLowerCase(); 
+    if(s.indexOf("shortlist") >= 0 || s.indexOf("approved") >= 0) return "b-approved"; 
+    if(s.indexOf("re-take") >= 0 || s.indexOf("edit") >= 0 || s.indexOf("callback") >= 0) return "b-edit"; 
+    return "b-await"; 
+  }
 
   function renderUnlock(){
     app.innerHTML = 
@@ -471,9 +476,9 @@
 
       // Preserves your Approve & Needs work buttons
       storySectionHtml = beatsHtml +
-        '<div class="btnrow" style="margin-top:14px;">' +
-          '<button class="edit" id="editbtn" onclick="wovSaveTalentStatus(\'✏️ Needs edit\')">Needs work</button>' +
-          '<button class="approve" id="approvebtn" onclick="wovSaveTalentStatus(\'✅ Approved\')">Approve</button>' +
+        '<div class="btnrow" style="margin-top:16px;display:flex;gap:10px;">' +
+          '<button class="edit" id="editbtn" style="flex:1;font-weight:700;" onclick="wovSaveTalentStatus(\'🎬 Re-Take Requested\')">🎬 Request Re-Take</button>' +
+          '<button class="approve" id="approvebtn" style="flex:1;font-weight:700;" onclick="wovSaveTalentStatus(\'🌟 Shortlisted\')">🌟 Shortlist Talent</button>' +
         '</div>';
     }
 
