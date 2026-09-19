@@ -622,8 +622,8 @@
   loadAll();
 })();
 
-  /**
- * Triggers the Apps Script backend to email the directing note to the actress.
+ /**
+ * Sends critique email via standard fetch to Apps Script Web App.
  */
 function wovEmailCritique(talentName, takeNum, fId, candidateEmail) {
   var feedbackEl = document.getElementById("feedback_text_" + fId);
@@ -638,18 +638,44 @@ function wovEmailCritique(talentName, takeNum, fId, candidateEmail) {
     return;
   }
 
-  google.script.run
-    .withSuccessHandler(function(res) {
-      if (res && res.ok) {
-        alert("✅ " + res.message);
-      } else {
-        alert("⚠️ " + (res ? res.error : "Failed to send email."));
-      }
-    })
-    .withFailureHandler(function(err) {
-      alert("Network error: " + err);
-    })
-    .wovSendCritiqueEmail(talentName, takeNum, feedbackText, candidateEmail);
+  // Use the Web App URL already defined in your review.html (often GAS_URL or SCRIPT_URL)
+  var apiUrl = (typeof SCRIPT_URL !== "undefined" ? SCRIPT_URL : (typeof GAS_URL !== "undefined" ? GAS_URL : ""));
+  
+  // If your page uses another variable name for the endpoint, fallback to current query param
+  if (!apiUrl) {
+    var urlParams = new URLSearchParams(window.location.search);
+    apiUrl = urlParams.get("api") || "";
+  }
+
+  if (!apiUrl) {
+    alert("⚠️ Missing Web App API endpoint in review.html. Check your SCRIPT_URL variable.");
+    return;
+  }
+
+  var payload = {
+    action: "sendCritiqueEmail",
+    talentName: talentName,
+    takeNumber: takeNum,
+    feedbackText: feedbackText,
+    candidateEmail: candidateEmail
+  };
+
+  fetch(apiUrl, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" }, // text/plain prevents CORS preflight issues with GAS
+    body: JSON.stringify(payload)
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data && data.ok) {
+      alert("✅ " + data.message);
+    } else {
+      alert("⚠️ " + (data ? data.error : "Failed to send email."));
+    }
+  })
+  .catch(function(err) {
+    alert("Network error sending email: " + err);
+  });
 }
   
 </script>
