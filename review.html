@@ -395,7 +395,7 @@
               var candName = (t && t.name) || (takeItem && takeItem.name) || "Talent";
               var firstName = candName.split(" ")[0] || "Talent";
               var candEmail = (t && (t.email || t.contactEmail || t.contact)) || "";
-              var vidUrl = (dos && dos.videoUrl) || ""; // 👈 1. Grabs the video preview link
+              var vidUrl = (dos && dos.videoUrl) || (fId ? "https://drive.google.com/file/d/" + fId + "/preview" : "");
               var domId = "feedback_text_" + (fId ? fId.replace(/[^a-zA-Z0-9_-]/g, "") : ("take_" + takeNum));
               var safeJsName = esc(candName).replace(/'/g, "\\'");
               var safeJsEmail = esc(candEmail).replace(/'/g, "\\'");
