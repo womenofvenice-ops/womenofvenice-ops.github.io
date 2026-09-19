@@ -585,27 +585,61 @@
     }
   };
 
-  window.wovDeleteTalentAll = function(baseName){
-    if(!confirm("Permanently delete " + baseName + " and all her takes?")) return;
-    var toDelete = items.filter(function(it){
-      return (it.name || "").replace(/\s*\(Take\s*\d+\)/i, "").trim().toLowerCase() === baseName.toLowerCase();
-    });
-    
-    var chain = Promise.resolve();
-    toDelete.forEach(function(it){
-      chain = chain.then(function(){
-        return fetch(EXEC, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "storyDelete", key: KEY, rowId: it.rowId })
-        });
-      });
-    });
-    
-    chain.then(function(){ loadAll(); });
-  };
+  window.wovDeleteTalent = function(name) {
+    if (!name) return;
 
+    // 🛡️ CONFIRMATION 1: Initial Intent Check
+    if (!confirm("Delete talent profile: " + name + " and all associated screen test takes?")) {
+      return;
+    }
+
+    // 🛡️ CONFIRMATION 2: High-Friction Final Warning (Prevents Accidental Taps)
+    var finalWarning = "⚠️ FINAL WARNING for " + name + ":\n\n" +
+                       "This will permanently erase all her audition takes, telemetry scores, directing notes, and video records from Google Drive and the database.\n\n" +
+                       "This action CANNOT be undone.\n\n" +
+                       "Are you ABSOLUTELY sure you want to proceed?";
+
+    if (!confirm(finalWarning)) {
+      return; // Cancelled at the second check
+    }
+
+    var apiUrl = (typeof EXEC !== "undefined" && EXEC) || 
+                 window.EXEC || 
+                 "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
+    
+    var authKey = (typeof KEY !== "undefined" && KEY) || window.KEY || localStorage.getItem("wov_review_key") || "";
+
+    var payload = {
+      action: "deleteTalentProfile",
+      key: authKey,
+      name: name
+    };
+
+    fetch(apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data && data.ok) {
+        alert("🗑 " + name + " has been permanently deleted.");
+        // Clear active talent and reload roster
+        currentTalent = null;
+        if (typeof loadAll === "function") {
+          loadAll();
+        } else {
+          window.location.reload();
+        }
+      } else {
+        alert("⚠️ " + (data ? data.error : "Failed to delete talent."));
+      }
+    })
+    .catch(function(err) {
+      alert("Network error deleting talent: " + err);
+    });
+  };
+  
   function loadAll(){
     if(!KEY){ renderUnlock(); return; }
     fetch(EXEC + "?action=storiesList&key=" + encodeURIComponent(KEY) + "&_t=" + Date.now())
