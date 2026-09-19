@@ -385,25 +385,28 @@
             formatDiagHtml +
             compsHtml +
 
-            // 💌 Critique for Actress with 1-Click Email & Copy (Grand Finale - Hardened)
+            // 💌 Critique for Actress with 1-Click Email & Video Playback (Triple-Checked)
             (dos.talentFeedback ? (function() {
               var candName = (t && t.name) || (takeItem && takeItem.name) || "Talent";
               var firstName = candName.split(" ")[0] || "Talent";
               var candEmail = (t && (t.email || t.contactEmail || t.contact)) || "";
+              var vidUrl = (dos && dos.videoUrl) || ""; // 👈 1. Grabs the video preview link
               var domId = "feedback_text_" + (fId ? fId.replace(/[^a-zA-Z0-9_-]/g, "") : ("take_" + takeNum));
               var safeJsName = esc(candName).replace(/'/g, "\\'");
               var safeJsEmail = esc(candEmail).replace(/'/g, "\\'");
+              var safeJsVid = esc(vidUrl).replace(/'/g, "\\'"); // 👈 2. Safely escaped video link
 
               return '<div class="dossier-box d-feedback" style="margin-top:10px;">' +
                 '<div class="d-title">💌 Critique for Actress</div>' +
                 '<div id="' + domId + '" style="font-size:14px;line-height:1.5;margin-bottom:10px;">' + esc(dos.talentFeedback) + '</div>' +
-                '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+                '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
                   '<button class="small" onclick="var el=document.getElementById(\'' + domId + '\'); if(el){ navigator.clipboard.writeText(el.innerText); alert(\'Feedback copied!\'); }">📋 Copy Feedback</button>' +
-                  (candEmail ? '<button class="small" style="background:#A8492E;color:#fff;font-weight:700;" onclick="wovEmailCritique(\'' + safeJsName + '\',' + takeNum + ',\'' + domId + '\',\'' + safeJsEmail + '\')">✉️ Email Directing Note to ' + esc(firstName) + '</button>' : '') +
+                  (candEmail ? '<button class="small" style="background:#A8492E;color:#fff;font-weight:700;" onclick="wovEmailCritique(\'' + safeJsName + '\',' + takeNum + ',\'' + domId + '\',\'' + safeJsEmail + '\',\'' + safeJsVid + '\')">✉️ Email Directing Note to ' + esc(firstName) + '</button>' : '') +
+                  (vidUrl ? '<a href="' + esc(vidUrl) + '" target="_blank" class="small" style="display:inline-block;padding:6px 12px;background:#1C2B2C;color:#fff;text-decoration:none;border-radius:6px;font-size:12px;font-weight:700;">🎬 Watch Video</a>' : '') +
                 '</div>' +
               '</div>';
             })() : '') +
-
+          
             // 🎭 Archetype, Superpower, Blindspot
             '<div class="dossier-box" style="margin-top:10px;">' +
               '<div class="d-row"><div class="d-title">Market Archetype</div><b>' + esc(cast.marketArchetype || "-") + '</b></div>' +
@@ -623,66 +626,10 @@
 })();
 
  /**
- * Sends critique email via standard fetch to Apps Script Web App.
- */
-function wovEmailCritique(talentName, takeNum, fId, candidateEmail) {
-  var feedbackEl = document.getElementById("feedback_text_" + fId);
-  var feedbackText = feedbackEl ? feedbackEl.innerText : "";
-  
-  if (!feedbackText) {
-    alert("No feedback text available to send.");
-    return;
-  }
-  
-  if (!confirm("Send this directing note directly to " + candidateEmail + "?")) {
-    return;
-  }
-
-  // Use the Web App URL already defined in your review.html (often GAS_URL or SCRIPT_URL)
-  var apiUrl = (typeof SCRIPT_URL !== "undefined" ? SCRIPT_URL : (typeof GAS_URL !== "undefined" ? GAS_URL : ""));
-  
-  // If your page uses another variable name for the endpoint, fallback to current query param
-  if (!apiUrl) {
-    var urlParams = new URLSearchParams(window.location.search);
-    apiUrl = urlParams.get("api") || "";
-  }
-
-  if (!apiUrl) {
-    alert("⚠️ Missing Web App API endpoint in review.html. Check your SCRIPT_URL variable.");
-    return;
-  }
-
-  var payload = {
-    action: "sendCritiqueEmail",
-    talentName: talentName,
-    takeNumber: takeNum,
-    feedbackText: feedbackText,
-    candidateEmail: candidateEmail
-  };
-
-  fetch(apiUrl, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" }, // text/plain prevents CORS preflight issues with GAS
-    body: JSON.stringify(payload)
-  })
-  .then(function(res) { return res.json(); })
-  .then(function(data) {
-    if (data && data.ok) {
-      alert("✅ " + data.message);
-    } else {
-      alert("⚠️ " + (data ? data.error : "Failed to send email."));
-    }
-  })
-  .catch(function(err) {
-    alert("Network error sending email: " + err);
-  });
-}
-
- /**
  * Sends critique email via standard fetch to Apps Script Web App (EXEC).
- * Universal endpoint resolution + authentication key binding.
+ * Universal endpoint resolution + authentication key binding + video delivery link.
  */
-function wovEmailCritique(talentName, takeNum, domIdOrFid, candidateEmail) {
+function wovEmailCritique(talentName, takeNum, domIdOrFid, candidateEmail, videoUrl) {
   var feedbackEl = document.getElementById(domIdOrFid) || document.getElementById("feedback_text_" + domIdOrFid);
   var feedbackText = feedbackEl ? feedbackEl.innerText : "";
   
@@ -708,7 +655,8 @@ function wovEmailCritique(talentName, takeNum, domIdOrFid, candidateEmail) {
     talentName: talentName,
     takeNumber: takeNum,
     feedbackText: feedbackText,
-    candidateEmail: candidateEmail
+    candidateEmail: candidateEmail,
+    videoUrl: videoUrl || "" // 👈 Connects the video playback link!
   };
 
   fetch(apiUrl, {
@@ -727,7 +675,7 @@ function wovEmailCritique(talentName, takeNum, domIdOrFid, candidateEmail) {
   .catch(function(err) {
     alert("Network error sending email: " + err);
   });
-} 
+}
   
 </script>
 </body>
