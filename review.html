@@ -84,10 +84,11 @@
 <script>
 (function(){
   var EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
+ window.EXEC = EXEC; // 👈 ADD THIS ONE LINE!
   var rawUrlKey = new URLSearchParams(window.location.search).get("key") || "";
   var KEY = (rawUrlKey || localStorage.getItem("wov_review_key") || "").trim().replace(/^["']|["']$/g, "");
   if (rawUrlKey) localStorage.setItem("wov_review_key", KEY);
-
+ window.KEY = KEY;   // 👈 OPTIONAL: Also makes your auth key globally available
   var ACTIVE_TALENT = localStorage.getItem("wov_active_talent") || null;
   var app = document.getElementById("app");
   var items = [];
@@ -388,18 +389,21 @@
             (dos.progressionAnalysis && takeNum > 1 ? 
               '<div class="dossier-box d-progression" style="margin-top:10px;"><div class="d-title">📈 Progression Evolution</div>' + esc(dos.progressionAnalysis) + '</div>' : '') +
             
-            // 💌 Critique for Actress with 1-Click Email & Copy (Safe & Self-Contained)
+            // 💌 Critique for Actress with 1-Click Email & Copy (Grand Finale - Hardened)
             (dos.talentFeedback ? (function() {
               var candName = (t && t.name) || (takeItem && takeItem.name) || "Talent";
               var firstName = candName.split(" ")[0] || "Talent";
-              var candEmail = (t && (t.email || t.contactEmail)) || "";
+              var candEmail = (t && (t.email || t.contactEmail || t.contact)) || "";
+              var domId = "feedback_text_" + (fId ? fId.replace(/[^a-zA-Z0-9_-]/g, "") : ("take_" + takeNum));
+              var safeJsName = esc(candName).replace(/'/g, "\\'");
+              var safeJsEmail = esc(candEmail).replace(/'/g, "\\'");
 
               return '<div class="dossier-box d-feedback" style="margin-top:10px;">' +
                 '<div class="d-title">💌 Critique for Actress</div>' +
-                '<div id="feedback_text_' + fId + '" style="font-size:14px;line-height:1.5;margin-bottom:10px;">' + esc(dos.talentFeedback) + '</div>' +
+                '<div id="' + domId + '" style="font-size:14px;line-height:1.5;margin-bottom:10px;">' + esc(dos.talentFeedback) + '</div>' +
                 '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
-                  '<button class="small" onclick="navigator.clipboard.writeText(document.getElementById(\'feedback_text_' + fId + '\').innerText);alert(\'Feedback copied!\');">📋 Copy Feedback</button>' +
-                  (candEmail ? '<button class="small" style="background:#A8492E;color:#fff;font-weight:700;" onclick="wovEmailCritique(\'' + esc(candName) + '\',' + takeNum + ',\'' + fId + '\',\'' + esc(candEmail) + '\')">✉️ Email Directing Note to ' + esc(firstName) + '</button>' : '') +
+                  '<button class="small" onclick="var el=document.getElementById(\'' + domId + '\'); if(el){ navigator.clipboard.writeText(el.innerText); alert(\'Feedback copied!\'); }">📋 Copy Feedback</button>' +
+                  (candEmail ? '<button class="small" style="background:#A8492E;color:#fff;font-weight:700;" onclick="wovEmailCritique(\'' + safeJsName + '\',' + takeNum + ',\'' + domId + '\',\'' + safeJsEmail + '\')">✉️ Email Directing Note to ' + esc(firstName) + '</button>' : '') +
                 '</div>' +
               '</div>';
             })() : '') +
