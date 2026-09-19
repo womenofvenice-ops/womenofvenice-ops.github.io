@@ -378,24 +378,37 @@
             
             // Dedicated Take Audio Player
             (fId ? '<div style="margin:10px 0;"><button class="small" id="playbtn_'+fId+'" onclick="wovPlayTakeAudio(\''+fId+'\')">🔊 Play recording</button><div id="audiobox_'+fId+'" style="margin-top:8px;"></div></div>' : '') +
-            // 📊 THE 3 NEW EXPANDED CONTAINERS:
+     
+          // 📊 THE 3 EXPANDED CONTAINERS (Telemetry, Ambition, Comps)
             radarHtml +
             formatDiagHtml +
             compsHtml +
-            (dos.progressionAnalysis && takeNum > 1 ? 
-              '<div class="dossier-box d-progression" style="margin-top:10px;"><div class="d-title">📈 Progression Evolution</div>'+esc(dos.progressionAnalysis)+'</div>' : '') +
-            
-            (dos.talentFeedback ? 
-              '<div class="dossier-box d-feedback" style="margin-top:10px;"><div class="d-title">💌 Critique for Actress</div><div style="font-size:14px;line-height:1.5;margin-bottom:8px;">'+esc(dos.talentFeedback)+'</div><button class="small" onclick="navigator.clipboard.writeText(\''+esc(dos.talentFeedback).replace(/'/g, "\\'")+'\');alert(\'Feedback copied!\');">📋 Copy Feedback</button></div>' : '') +
 
+            // 📈 Progression Analysis (Take 2+)
+            (dos.progressionAnalysis && takeNum > 1 ? 
+              '<div class="dossier-box d-progression" style="margin-top:10px;"><div class="d-title">📈 Progression Evolution</div>' + esc(dos.progressionAnalysis) + '</div>' : '') +
+            
+            // 💌 Critique for Actress with 1-Click Email & Copy
+            (dos.talentFeedback ? 
+              '<div class="dossier-box d-feedback" style="margin-top:10px;">' +
+                '<div class="d-title">💌 Critique for Actress</div>' +
+                '<div id="feedback_text_' + fId + '" style="font-size:14px;line-height:1.5;margin-bottom:10px;">' + esc(dos.talentFeedback) + '</div>' +
+                '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+                  '<button class="small" onclick="navigator.clipboard.writeText(document.getElementById(\'feedback_text_' + fId + '\').innerText);alert(\'Feedback copied!\');">📋 Copy Feedback</button>' +
+                  (t.email ? '<button class="small" style="background:#A8492E;color:#fff;font-weight:700;" onclick="wovEmailCritique(\'' + esc(t.name) + '\',' + takeNum + ',\'' + fId + '\',\'' + esc(t.email) + '\')">✉️ Email Directing Note to ' + esc(t.name.split(" ")[0]) + '</button>' : '') +
+                '</div>' +
+              '</div>' : '') +
+
+            // 🎭 Archetype, Superpower, Blindspot
             '<div class="dossier-box" style="margin-top:10px;">' +
-              '<div class="d-row"><div class="d-title">Market Archetype</div><b>'+esc(cast.marketArchetype||"-")+'</b></div>' +
-              '<div class="d-row"><div class="d-title">⚡ Superpower</div>'+esc(dir.superpower||"-")+'</div>' +
-              '<div class="d-row"><div class="d-title">⚠️ Blindspot</div>'+esc(dir.blindspotToCorrect||"-")+'</div>' +
+              '<div class="d-row"><div class="d-title">Market Archetype</div><b>' + esc(cast.marketArchetype || "-") + '</b></div>' +
+              '<div class="d-row"><div class="d-title">⚡ Superpower</div>' + esc(dir.superpower || "-") + '</div>' +
+              '<div class="d-row"><div class="d-title">⚠️ Blindspot</div>' + esc(dir.blindspotToCorrect || "-") + '</div>' +
             '</div>' +
 
-            '<div class="section-lbl">Verbatim Transcript</div>' +
-            '<div class="transcript">'+esc(takeItem.transcript||"(none captured)")+'</div>' +
+            // 🎙️ Verbatim Transcript (Defensive check across takeItem and dossier)
+            '<div class="section-lbl" style="margin-top:14px;">Verbatim Transcript</div>' +
+            '<div class="transcript">' + esc(takeItem.transcript || dos.transcript || "(none captured)") + '</div>' +
           '</div>';
       });
     }
@@ -603,6 +616,37 @@
 
   loadAll();
 })();
+
+  /**
+ * Triggers the Apps Script backend to email the directing note to the actress.
+ */
+function wovEmailCritique(talentName, takeNum, fId, candidateEmail) {
+  var feedbackEl = document.getElementById("feedback_text_" + fId);
+  var feedbackText = feedbackEl ? feedbackEl.innerText : "";
+  
+  if (!feedbackText) {
+    alert("No feedback text available to send.");
+    return;
+  }
+  
+  if (!confirm("Send this directing note directly to " + candidateEmail + "?")) {
+    return;
+  }
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res && res.ok) {
+        alert("✅ " + res.message);
+      } else {
+        alert("⚠️ " + (res ? res.error : "Failed to send email."));
+      }
+    })
+    .withFailureHandler(function(err) {
+      alert("Network error: " + err);
+    })
+    .wovSendCritiqueEmail(talentName, takeNum, feedbackText, candidateEmail);
+}
+  
 </script>
 </body>
 </html>
