@@ -385,10 +385,6 @@
             formatDiagHtml +
             compsHtml +
 
-            // 📈 Progression Analysis (Take 2+)
-            (dos.progressionAnalysis && takeNum > 1 ? 
-              '<div class="dossier-box d-progression" style="margin-top:10px;"><div class="d-title">📈 Progression Evolution</div>' + esc(dos.progressionAnalysis) + '</div>' : '') +
-            
             // 💌 Critique for Actress with 1-Click Email & Copy (Grand Finale - Hardened)
             (dos.talentFeedback ? (function() {
               var candName = (t && t.name) || (takeItem && takeItem.name) || "Talent";
@@ -681,6 +677,57 @@ function wovEmailCritique(talentName, takeNum, fId, candidateEmail) {
     alert("Network error sending email: " + err);
   });
 }
+
+ /**
+ * Sends critique email via standard fetch to Apps Script Web App (EXEC).
+ * Universal endpoint resolution + authentication key binding.
+ */
+function wovEmailCritique(talentName, takeNum, domIdOrFid, candidateEmail) {
+  var feedbackEl = document.getElementById(domIdOrFid) || document.getElementById("feedback_text_" + domIdOrFid);
+  var feedbackText = feedbackEl ? feedbackEl.innerText : "";
+  
+  if (!feedbackText) {
+    alert("No feedback text available to send.");
+    return;
+  }
+  
+  if (!confirm("Send this directing note directly to " + candidateEmail + "?")) {
+    return;
+  }
+
+  // Uses EXEC directly, with your exact endpoint as a permanent fallback
+  var apiUrl = (typeof EXEC !== "undefined" && EXEC) || 
+               window.EXEC || 
+               "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
+  
+  var authKey = (typeof KEY !== "undefined" && KEY) || window.KEY || localStorage.getItem("wov_review_key") || "";
+
+  var payload = {
+    action: "sendCritiqueEmail",
+    key: authKey,
+    talentName: talentName,
+    takeNumber: takeNum,
+    feedbackText: feedbackText,
+    candidateEmail: candidateEmail
+  };
+
+  fetch(apiUrl, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" }, // Prevents CORS preflight blocks
+    body: JSON.stringify(payload)
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data && data.ok) {
+      alert("✅ " + data.message);
+    } else {
+      alert("⚠️ " + (data ? data.error : "Failed to send email."));
+    }
+  })
+  .catch(function(err) {
+    alert("Network error sending email: " + err);
+  });
+} 
   
 </script>
 </body>
