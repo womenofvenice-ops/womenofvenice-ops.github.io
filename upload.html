@@ -208,10 +208,9 @@
     if (fileInput.files.length > 0) {
       const file = fileInput.files[0];
       const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
-      
-      // Client-Side Safeguard against Mobile Overload
-      if (file.size > 35 * 1024 * 1024) {
-        alert("⚠️ Video file is " + sizeMb + " MB.\nTo prevent mobile timeout, please keep takes under 35 MB (approx. 60–90 seconds in 1080p).");
+// Client-Side Safeguard against Mobile Overload (Pushed to Safe Maximum)
+      if (file.size > 37 * 1024 * 1024) {
+        alert("⚠️ Video file is " + sizeMb + " MB.\nTo ensure fast transfer, please keep takes under 37 MB (approx. 60–90 seconds in 1080p).");        
         fileInput.value = "";
         fileNameDisplay.innerText = "";
         return;
