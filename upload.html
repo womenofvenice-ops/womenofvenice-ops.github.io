@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Self-Tape Submission • Women of Venice Studio</title>
+  <style>
+    :root {
+      --ink: #1C2B2C;
+      --inkS: #5A6667;
+      --red: #A8492E;
+      --gold: #D4AF37;
+      --bg: #F7F5F0;
+      --card: #FFFFFF;
+      --border: rgba(28,43,44,0.12);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      padding: 24px 16px 48px;
+      line-height: 1.5;
+    }
+    .container { max-width: 540px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 28px; }
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--red);
+      background: rgba(168,73,46,0.08);
+      padding: 4px 12px;
+      border-radius: 99px;
+      margin-bottom: 8px;
+    }
+    h1 { font-size: 26px; font-weight: 800; color: var(--ink); letter-spacing: -0.5px; }
+    .subtitle { font-size: 13.5px; color: var(--inkS); margin-top: 4px; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+    }
+    .form-group { margin-bottom: 18px; }
+    label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink); margin-bottom: 6px; }
+    input[type="text"], input[type="email"], select, textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 15px;
+      color: var(--ink);
+      background: #FAFAFA;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--red); background: #FFF; }
+    
+    /* Upload Box */
+    .drop-zone {
+      border: 2px dashed rgba(168,73,46,0.3);
+      border-radius: 12px;
+      padding: 28px 16px;
+      text-align: center;
+      background: #FFFDFB;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.dragover { border-color: var(--red); background: rgba(168,73,46,0.03); }
+    .drop-icon { font-size: 32px; margin-bottom: 8px; }
+    .file-name { font-weight: 700; color: var(--red); margin-top: 8px; font-size: 13px; word-break: break-all; }
+    .file-hint { font-size: 12px; color: var(--inkS); margin-top: 4px; }
+    input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+
+    .btn-submit {
+      width: 100%;
+      background: var(--ink);
+      color: #FFF;
+      border: none;
+      border-radius: 12px;
+      padding: 15px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background 0.2s;
+    }
+    .btn-submit:hover { background: var(--red); }
+    .btn-submit:disabled { background: #CCC; cursor: not-allowed; }
+
+    /* Progress States */
+    #progressBox { display: none; margin-top: 16px; text-align: center; }
+    .progress-bar-bg { width: 100%; height: 8px; background: rgba(0,0,0,0.06); border-radius: 99px; overflow: hidden; margin-bottom: 8px; }
+    .progress-bar-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #A8492E, #E09A73); border-radius: 99px; transition: width 0.3s; }
+    .progress-status { font-size: 12.5px; font-weight: 600; color: var(--inkS); }
+
+    /* Success State */
+    #successBox { display: none; text-align: center; padding: 20px 0; }
+    .success-icon { font-size: 48px; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="badge">Women of Venice • Casting Studio</div>
+    <h1>Self-Tape Submission</h1>
+    <div class="subtitle">Direct-to-Lens Ingestion for CLAUD-IA Director Engine</div>
+  </div>
+
+  <div class="card" id="formCard">
+    <form id="uploadForm">
+      <div class="form-group">
+        <label for="name">Talent Full Name *</label>
+        <input type="text" id="name" required placeholder="e.g. Elena B">
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email Address (For Directing Notes) *</label>
+        <input type="email" id="email" required placeholder="you@example.com">
+      </div>
+
+      <div class="form-group">
+        <label for="targetFormat">Target Ambition Lane *</label>
+        <select id="targetFormat" required>
+          <option value="Indie / Feature Cinema">🎬 Indie / Feature Arthouse Cinema (A24 Lead)</option>
+          <option value="Commercial / Luxury Fashion">💎 Commercial / Luxury Fashion Campaign</option>
+          <option value="Short-Form Narrative Creator">⚡ Short-Form Creator (TikTok / Reels)</option>
+          <option value="Streaming Episodic">📺 Streaming Episodic (Netflix / HBO)</option>
+          <option value="Voice / Narrative Audio">🎙️ Voice & Audio Narrative</option>
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 12px;">
+        <div class="form-group" style="flex: 1;">
+          <label for="takeNum">Session Take #</label>
+          <select id="takeNum">
+            <option value="1">Take #1 (Initial Read)</option>
+            <option value="2">Take #2 (Callback / Adjustment)</option>
+            <option value="3">Take #3 (Fine Tuning)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="notes">Scene / Monologue Context (Optional)</label>
+        <input type="text" id="notes" placeholder="e.g. Maggie confession, dramatic monologue">
+      </div>
+
+      <div class="form-group">
+        <label>Audition Video Take (Max 35 MB) *</label>
+        <div class="drop-zone" id="dropZone">
+          <input type="file" id="videoFile" accept="video/*" required>
+          <div class="drop-icon">🎬</div>
+          <div style="font-weight: 700; font-size: 14px;">Tap to Record or Choose Video</div>
+          <div class="file-hint">Smartphone camera rolls & MP4/MOV accepted</div>
+          <div class="file-name" id="fileNameDisplay"></div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit" id="submitBtn">Submit Take to CLAUD-IA</button>
+
+      <div id="progressBox">
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+        <div class="progress-status" id="progressStatus">Uploading take to studio vault...</div>
+      </div>
+    </form>
+
+    <div id="successBox">
+      <div class="success-icon">✅</div>
+      <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 8px;">Take Successfully Received</h2>
+      <p style="font-size: 14px; color: var(--inkS); line-height: 1.6; margin-bottom: 16px;">
+        Your audition take has been submitted to the studio vault. <b>CLAUD-IA</b> is now decomposing your dramatic beats and analyzing your craft.
+      </p>
+      <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 12px; font-size: 13px; color: #166534; margin-bottom: 18px;">
+        📬 Your <b>Directorial Notes, Timestamps, and Playback Link</b> will arrive in your email inbox within 2 minutes.
+      </div>
+      <button class="btn-submit" onclick="location.reload()">Submit Another Take</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Dedicated Google Apps Script Web App Endpoint
+  const EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
+
+  // URL Parameter Auto-Fill (e.g. ?name=Elena+B&email=speakez14w@gmail.com&take=2)
+  window.addEventListener("DOMContentLoaded", function() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("name")) document.getElementById("name").value = params.get("name");
+    if (params.get("email")) document.getElementById("email").value = params.get("email");
+    if (params.get("take")) document.getElementById("takeNum").value = params.get("take");
+    if (params.get("format")) document.getElementById("targetFormat").value = params.get("format");
+  });
+
+  const fileInput = document.getElementById("videoFile");
+  const fileNameDisplay = document.getElementById("fileNameDisplay");
+  const submitBtn = document.getElementById("submitBtn");
+
+  fileInput.addEventListener("change", function() {
+    if (fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+      
+      // Client-Side Safeguard against Mobile Overload
+      if (file.size > 35 * 1024 * 1024) {
+        alert("⚠️ Video file is " + sizeMb + " MB.\nTo prevent mobile timeout, please keep takes under 35 MB (approx. 60–90 seconds in 1080p).");
+        fileInput.value = "";
+        fileNameDisplay.innerText = "";
+        return;
+      }
+      
+      fileNameDisplay.innerText = "Selected: " + file.name + " (" + sizeMb + " MB)";
+    }
+  });
+
+  document.getElementById("uploadForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    if (!fileInput.files.length) return;
+
+    const file = fileInput.files[0];
+    submitBtn.disabled = true;
+    document.getElementById("progressBox").style.display = "block";
+    const progressFill = document.getElementById("progressFill");
+    const progressStatus = document.getElementById("progressStatus");
+
+    progressFill.style.width = "30%";
+    progressStatus.innerText = "Encoding video for studio transfer...";
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      progressFill.style.width = "65%";
+      progressStatus.innerText = "Streaming take to studio intake vault...";
+
+      const b64Data = evt.target.result.split(",")[1];
+      const payload = {
+        action: "talentSelfServeTake",
+        name: document.getElementById("name").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        targetFormat: document.getElementById("targetFormat").value,
+        takeNum: document.getElementById("takeNum").value,
+        notes: document.getElementById("notes").value.trim(),
+        fileName: file.name,
+        mimeType: file.type || "video/mp4",
+        fileData: b64Data
+      };
+
+      fetch(EXEC, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        progressFill.style.width = "100%";
+        if (data && data.ok) {
+          document.getElementById("uploadForm").style.display = "none";
+          document.getElementById("progressBox").style.display = "none";
+          document.getElementById("successBox").style.display = "block";
+        } else {
+          alert("⚠️ Upload failed: " + (data ? data.error : "Unknown server error"));
+          submitBtn.disabled = false;
+        }
+      })
+      .catch(function(err) {
+        alert("Network error: " + err);
+        submitBtn.disabled = false;
+      });
+    };
+
+    reader.readAsDataURL(file);
+  });
+</script>
+
+</body>
+</html>
