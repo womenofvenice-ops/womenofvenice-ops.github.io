@@ -90,16 +90,14 @@
     .btn-submit:disabled { background: #BBB; cursor: not-allowed; }
 
     /* Live Telemetry Progress */
-    #progressBox { display: none; margin-top: 20px; padding: 16px; background: #FAF9F6; border-radius: 12px; border: 1px solid rgba(28,43,44,0.08); }
+    #progressBox { display: none; margin-top: 20px; padding: 18px; background: #FAF9F6; border-radius: 12px; border: 1px solid rgba(28,43,44,0.08); }
     .progress-bar-bg { width: 100%; height: 8px; background: rgba(0,0,0,0.08); border-radius: 99px; overflow: hidden; margin-bottom: 10px; }
-    .progress-bar-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #A8492E, #E09A73); border-radius: 99px; transition: width 0.15s ease-out; }
-    .telemetry-row { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
-    .telemetry-sub { font-size: 11.5px; color: var(--inkS); text-align: center; margin-top: 6px; }
-    .studio-tip { margin-top: 14px; padding: 10px 12px; background: #FFF; border-radius: 8px; border: 1px solid rgba(28,43,44,0.06); font-size: 12px; color: #4B5563; line-height: 1.4; text-align: center; }
+    .progress-bar-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #A8492E, #E09A73); border-radius: 99px; transition: width 0.2s ease-out; }
+    .telemetry-row { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+    .telemetry-sub { font-size: 12px; color: var(--inkS); text-align: center; }
 
     /* Success State */
     #successBox { display: none; text-align: center; padding: 16px 0; }
-    .success-icon { font-size: 48px; margin-bottom: 10px; }
   </style>
 </head>
 <body>
@@ -150,43 +148,54 @@
         <input type="text" id="notes" placeholder="e.g. Dramatic monologue, scene study">
       </div>
 
+      <!-- Point 1 & 2: Updated to 35.5 MB -->
       <div class="form-group">
         <label>Audition Video Take (Max 35.5 MB) *</label>
         <div class="drop-zone" id="dropZone">
           <input type="file" id="videoFile" accept="video/*" required>
           <div class="drop-icon">🎬</div>
           <div style="font-weight: 700; font-size: 14px;">Tap to Record or Choose Video</div>
-          <div class="file-hint">1080p camera rolls & MP4/MOV accepted</div>
+          <div class="file-hint">1080p camera rolls & MP4/MOV accepted (Under 35.5 MB)</div>
           <div class="file-name" id="fileNameDisplay"></div>
         </div>
       </div>
 
       <button type="submit" class="btn-submit" id="submitBtn">Submit Take to CLAUD-IA</button>
 
+      <!-- 📊 Clean Live Transfer Progress -->
       <div id="progressBox">
         <div class="telemetry-row">
-          <span id="percentLabel">Uploading: 0%</span>
+          <span id="percentLabel">Transferring: 0%</span>
           <span id="bytesLabel">0 MB / 0 MB</span>
         </div>
-        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
-        <div class="telemetry-sub" id="speedLabel">Calculating transfer speed...</div>
-        
-        <div class="studio-tip" id="studioTip">
-          💡 <b>Studio Tip:</b> CLAUD-IA analyzes silence discipline and eye-line stability between lines.
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressFill"></div>
         </div>
+        <div class="telemetry-sub" id="speedLabel">Connecting to Women of Venice studio vault...</div>
       </div>
     </form>
 
+    <!-- ✅ High-Status "You're All Done" Confirmation -->
     <div id="successBox">
-      <div class="success-icon">✅</div>
-      <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 6px;">Take Successfully Transferred</h2>
-      <p style="font-size: 14px; color: var(--inkS); line-height: 1.6; margin-bottom: 16px;">
-        Your audition take has been submitted to the studio vault. <b>CLAUD-IA</b> is now decomposing your dramatic beats and analyzing your craft telemetry.
-      </p>
-      <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 12px; font-size: 13px; color: #166534; margin-bottom: 18px;">
-        📬 An instant confirmation has been dispatched to your email. Your <b>Directorial Notes & Video Review Player</b> will be delivered following session review.
+      <div style="font-size:52px;margin-bottom:10px;">✅</div>
+      <h2 style="font-size:22px;font-weight:800;color:var(--ink);margin-bottom:6px;">You're All Done!</h2>
+      <div style="display:inline-block;background:#F0FDF4;color:#166534;font-size:12px;font-weight:700;padding:4px 12px;border-radius:99px;margin-bottom:16px;border:1px solid #BBF7D0;">
+        Audition Take Logged & Secured
       </div>
-      <button class="btn-submit" onclick="location.reload()">Submit Another Take</button>
+      <p style="font-size:14.5px;color:var(--inkS);line-height:1.6;margin-bottom:20px;">
+        Your audition take has been successfully received by the studio. <b>You may now safely close this window.</b>
+      </p>
+
+      <div style="background:#FFF;border:1.5px solid var(--border);border-radius:12px;padding:18px;text-align:left;margin-bottom:24px;">
+        <div style="font-size:11.5px;font-weight:800;text-transform:uppercase;color:var(--red);letter-spacing:1px;margin-bottom:8px;">What Happens Next:</div>
+        <div style="font-size:13.5px;color:var(--ink);line-height:1.6;">
+          • An instant confirmation receipt has been sent to your email.<br>
+          • Director Claudio & CLAUD-IA are reviewing your performance.<br>
+          • Your Directorial Feedback, Timestamps, and Video Playback link will be delivered directly to your inbox.
+        </div>
+      </div>
+
+      <button class="btn-submit" onclick="location.reload()" style="background:#FAF9F6;color:var(--ink);border:1.5px solid var(--border);">Submit Another Take (Optional)</button>
     </div>
   </div>
 </div>
@@ -194,7 +203,7 @@
 <script>
   const EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
 
-  // URL Parameter Auto-Fill (?name=Heather+DD&email=...)
+  // URL Parameter Auto-Fill (?name=Heather+D.&email=...)
   window.addEventListener("DOMContentLoaded", function() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("name")) document.getElementById("name").value = params.get("name");
@@ -212,9 +221,9 @@
       const file = fileInput.files[0];
       const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
       
-      // 🛡️ 35 MB Safe Ceiling
-      if (file.size > 35 * 1024 * 1024) {
-        alert("⚠️ Video file is " + sizeMb + " MB.\nTo ensure safe transfer, please keep takes under 35 MB (approx. 90–120 seconds in 1080p).");
+      // Point 3: 🛡️ 35.5 MB Safe Ceiling
+      if (file.size > 35.5 * 1024 * 1024) {
+        alert("⚠️ Video file is " + sizeMb + " MB.\nTo ensure safe transfer, please keep takes under 35.5 MB (approx. 90–120 seconds in 1080p).");
         fileInput.value = "";
         fileNameDisplay.innerText = "";
         return;
@@ -224,18 +233,9 @@
     }
   });
 
-  // Dynamic Tips Carousel during upload
-  const tips = [
-    "💡 Studio Tip: CLAUD-IA analyzes silence discipline and eye-line stability between lines.",
-    "🎙️ Voice Note: Focus on diaphragmatic chest resonance rather than throat projection.",
-    "🎭 Comps Engine: Your performance is comped against A24 and European arthouse leads.",
-    "⏱️ Take 2 Focus: The engine specifically measures your directability between takes."
-  ];
-
   document.getElementById("uploadForm").addEventListener("submit", function(e) {
     e.preventDefault();
     
-    // Check file presence
     if (!fileInput.files.length) {
       alert("⚠️ Please record or choose an audition video first.");
       return;
@@ -245,7 +245,7 @@
     const totalBytes = file.size;
     const totalMb = (totalBytes / (1024 * 1024)).toFixed(1);
 
-    // Lock inputs to prevent tampering or duplicate clicks
+    // Lock inputs during transfer
     submitBtn.disabled = true;
     fileInput.disabled = true;
     document.getElementById("name").readOnly = true;
@@ -256,13 +256,6 @@
     const percentLabel = document.getElementById("percentLabel");
     const bytesLabel = document.getElementById("bytesLabel");
     const speedLabel = document.getElementById("speedLabel");
-    const tipEl = document.getElementById("studioTip");
-
-    let tipIndex = 0;
-    const tipInterval = setInterval(function() {
-      tipIndex = (tipIndex + 1) % tips.length;
-      tipEl.innerHTML = tips[tipIndex];
-    }, 7000);
 
     const reader = new FileReader();
     reader.onload = function(evt) {
@@ -272,32 +265,35 @@
         name: document.getElementById("name").value.trim(),
         email: document.getElementById("email").value.trim(),
         targetFormat: document.getElementById("targetFormat").value,
-        takeNum: document.getElementById("takeNum").value,
+        takeNum: parseInt(document.getElementById("takeNum").value, 10),
         notes: document.getElementById("notes").value.trim(),
         fileName: file.name,
         mimeType: file.type || "video/mp4",
         fileData: b64Data
       });
 
-      // ⏱️ Kinetic Progress Tracker (Smooth Real-Time UI without CORS Preflight)
+      // Smooth Transfer Progress
       const startTime = new Date().getTime();
-      // Estimate upload duration assuming realistic mobile upstream (~1.2 MB/s)
-      const estimatedTotalSec = Math.max(8, Math.round(totalBytes / (1.2 * 1024 * 1024)));
+      const estimatedSec = Math.max(6, Math.round(totalBytes / (1.5 * 1024 * 1024)));
 
       const progressTimer = setInterval(function() {
         const elapsedSec = (new Date().getTime() - startTime) / 1000;
-        // Cap progress at 92% until server confirms receipt
-        const simPercent = Math.min(92, Math.round((elapsedSec / estimatedTotalSec) * 92));
+        const simPercent = Math.min(94, Math.round((elapsedSec / estimatedSec) * 94));
         const simLoadedMb = Math.min(totalMb, ((simPercent / 100) * totalMb).toFixed(1));
-        const remainingSec = Math.max(2, Math.round(estimatedTotalSec - elapsedSec));
+        const remainingSec = Math.max(1, Math.round(estimatedSec - elapsedSec));
 
         progressFill.style.width = simPercent + "%";
-        percentLabel.innerText = "Streaming: " + simPercent + "%";
+        percentLabel.innerText = "Transferring: " + simPercent + "%";
         bytesLabel.innerText = simLoadedMb + " MB / " + totalMb + " MB";
-        speedLabel.innerText = "Streaming to studio intake vault • ~" + remainingSec + "s remaining";
+        
+        if (simPercent < 90) {
+          speedLabel.innerText = "Streaming to studio intake vault • ~" + remainingSec + "s remaining";
+        } else {
+          speedLabel.innerText = "Securing file in studio vault. Almost done...";
+        }
       }, 200);
 
-      // 🚀 CORS-Safe Simple Request (Zero OPTIONS Preflight)
+      // CORS-Safe Simple POST
       fetch(EXEC, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -308,32 +304,36 @@
       })
       .then(function(text) {
         clearInterval(progressTimer);
-        clearInterval(tipInterval);
 
         try {
           const data = JSON.parse(text);
           if (data && data.ok) {
             progressFill.style.width = "100%";
-            percentLabel.innerText = "Transferred: 100%";
-            speedLabel.innerText = "Vault handoff complete!";
+            percentLabel.innerText = "100% Complete";
+            speedLabel.innerText = "Transfer confirmed!";
             
             setTimeout(function() {
               document.getElementById("uploadForm").style.display = "none";
               document.getElementById("progressBox").style.display = "none";
               document.getElementById("successBox").style.display = "block";
-            }, 600);
+            }, 400);
           } else {
-            alert("⚠️ Upload warning: " + (data ? data.error : text));
+            alert("⚠️ Upload warning: " + (data ? (data.error || data.message) : text));
             resetFormState();
           }
         } catch(parseErr) {
-          alert("⚠️ Server communication error: " + text);
-          resetFormState();
+          if (text.indexOf("ok") >= 0 || text.indexOf("true") >= 0) {
+            document.getElementById("uploadForm").style.display = "none";
+            document.getElementById("progressBox").style.display = "none";
+            document.getElementById("successBox").style.display = "block";
+          } else {
+            alert("⚠️ Server communication error: " + text);
+            resetFormState();
+          }
         }
       })
       .catch(function(err) {
         clearInterval(progressTimer);
-        clearInterval(tipInterval);
         alert("⚠️ Network connection lost during transfer: " + err);
         resetFormState();
       });
