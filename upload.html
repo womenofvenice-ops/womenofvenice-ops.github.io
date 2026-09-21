@@ -212,9 +212,9 @@
       const file = fileInput.files[0];
       const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
       
-      // 🛡️ 35.5 MB Safe Ceiling
-      if (file.size > 35.5 * 1024 * 1024) {
-        alert("⚠️ Video file is " + sizeMb + " MB.\nTo ensure safe transfer, please keep takes under 35.5 MB (approx. 90–120 seconds in 1080p).");
+      // 🛡️ 35 MB Safe Ceiling
+      if (file.size > 35 * 1024 * 1024) {
+        alert("⚠️ Video file is " + sizeMb + " MB.\nTo ensure safe transfer, please keep takes under 35 MB (approx. 90–120 seconds in 1080p).");
         fileInput.value = "";
         fileNameDisplay.innerText = "";
         return;
@@ -235,7 +235,7 @@
   document.getElementById("uploadForm").addEventListener("submit", function(e) {
     e.preventDefault();
     
-    // 🛡️ Fix 3: Alert if user submits without picking a file
+    // Check file presence
     if (!fileInput.files.length) {
       alert("⚠️ Please record or choose an audition video first.");
       return;
@@ -245,7 +245,7 @@
     const totalBytes = file.size;
     const totalMb = (totalBytes / (1024 * 1024)).toFixed(1);
 
-    // 🛡️ Fix 4: Lock inputs to prevent duplicate submits or mid-stream changes
+    // Lock inputs to prevent tampering or duplicate clicks
     submitBtn.disabled = true;
     fileInput.disabled = true;
     document.getElementById("name").readOnly = true;
@@ -279,59 +279,64 @@
         fileData: b64Data
       });
 
-      const xhr = new XMLHttpRequest();
+      // ⏱️ Kinetic Progress Tracker (Smooth Real-Time UI without CORS Preflight)
       const startTime = new Date().getTime();
+      // Estimate upload duration assuming realistic mobile upstream (~1.2 MB/s)
+      const estimatedTotalSec = Math.max(8, Math.round(totalBytes / (1.2 * 1024 * 1024)));
 
-      xhr.upload.onprogress = function(event) {
-        if (event.lengthComputable) {
-          const loadedMb = (event.loaded / (1024 * 1024)).toFixed(1);
-          const percent = Math.min(99, Math.round((event.loaded / event.total) * 100));
-          progressFill.style.width = percent + "%";
-          percentLabel.innerText = "Streaming: " + percent + "%";
-          bytesLabel.innerText = loadedMb + " MB / " + totalMb + " MB";
+      const progressTimer = setInterval(function() {
+        const elapsedSec = (new Date().getTime() - startTime) / 1000;
+        // Cap progress at 92% until server confirms receipt
+        const simPercent = Math.min(92, Math.round((elapsedSec / estimatedTotalSec) * 92));
+        const simLoadedMb = Math.min(totalMb, ((simPercent / 100) * totalMb).toFixed(1));
+        const remainingSec = Math.max(2, Math.round(estimatedTotalSec - elapsedSec));
 
-          const elapsedSec = (new Date().getTime() - startTime) / 1000;
-          if (elapsedSec > 1) {
-            const speedMbps = ((event.loaded / elapsedSec) / (1024 * 1024)).toFixed(1);
-            const remainingSec = Math.max(1, Math.round((event.total - event.loaded) / (event.loaded / elapsedSec)));
-            speedLabel.innerText = speedMbps + " MB/s • ~" + remainingSec + "s remaining";
-          }
-        }
-      };
+        progressFill.style.width = simPercent + "%";
+        percentLabel.innerText = "Streaming: " + simPercent + "%";
+        bytesLabel.innerText = simLoadedMb + " MB / " + totalMb + " MB";
+        speedLabel.innerText = "Streaming to studio intake vault • ~" + remainingSec + "s remaining";
+      }, 200);
 
-      xhr.onload = function() {
+      // 🚀 CORS-Safe Simple Request (Zero OPTIONS Preflight)
+      fetch(EXEC, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: payload
+      })
+      .then(function(res) {
+        return res.text();
+      })
+      .then(function(text) {
+        clearInterval(progressTimer);
         clearInterval(tipInterval);
-        progressFill.style.width = "100%";
-        percentLabel.innerText = "Transferred: 100%";
-        speedLabel.innerText = "Handing off to studio vault...";
 
-        // 🛡️ Fix 1: Eliminate the False-Positive Catch Trap
         try {
-          const data = JSON.parse(xhr.responseText);
+          const data = JSON.parse(text);
           if (data && data.ok) {
-            document.getElementById("uploadForm").style.display = "none";
-            document.getElementById("progressBox").style.display = "none";
-            document.getElementById("successBox").style.display = "block";
+            progressFill.style.width = "100%";
+            percentLabel.innerText = "Transferred: 100%";
+            speedLabel.innerText = "Vault handoff complete!";
+            
+            setTimeout(function() {
+              document.getElementById("uploadForm").style.display = "none";
+              document.getElementById("progressBox").style.display = "none";
+              document.getElementById("successBox").style.display = "block";
+            }, 600);
           } else {
-            alert("⚠️ Upload rejected: " + (data ? data.error : "Server did not accept file"));
+            alert("⚠️ Upload warning: " + (data ? data.error : text));
             resetFormState();
           }
-        } catch(err) {
-          // If server returned non-JSON text (like "ignored" or an error string)
-          alert("⚠️ Server communication error: " + xhr.responseText);
+        } catch(parseErr) {
+          alert("⚠️ Server communication error: " + text);
           resetFormState();
         }
-      };
-
-      xhr.onerror = function() {
+      })
+      .catch(function(err) {
+        clearInterval(progressTimer);
         clearInterval(tipInterval);
-        alert("⚠️ Network connection lost during transfer. Please check connection and try again.");
+        alert("⚠️ Network connection lost during transfer: " + err);
         resetFormState();
-      };
-
-      xhr.open("POST", EXEC, true);
-      xhr.setRequestHeader("Content-Type", "text/plain;charset=utf-8");
-      xhr.send(payload);
+      });
     };
 
     reader.readAsDataURL(file);
