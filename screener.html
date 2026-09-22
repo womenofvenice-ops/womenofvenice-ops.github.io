@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Casting Screener • Women of Venice Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #1C2B2C;
+      --inkS: #5A6667;
+      --red: #A8492E;
+      --peach: #E09A73;
+      --gold: #D4AF37;
+      --bg: #F7F5F0;
+      --card: #FFFFFF;
+      --border: rgba(28,43,44,0.12);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      padding: 32px 16px 64px;
+      line-height: 1.5;
+    }
+    .container { max-width: 780px; margin: 0 auto; }
+    
+    /* Header Card */
+    .studio-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1.5px solid var(--border);
+    }
+    .studio-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: var(--ink);
+    }
+    .verified-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #F0FDF4;
+      border: 1px solid #BBF7D0;
+      color: #166534;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 99px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .hero-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    }
+    .hero-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .talent-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--red);
+      background: rgba(168,73,46,0.08);
+      padding: 4px 12px;
+      border-radius: 99px;
+    }
+    .talent-ig {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--red);
+      text-decoration: none;
+    }
+    .talent-ig:hover { text-decoration: underline; }
+    h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 34px;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+    .archetype {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--peach);
+      margin-bottom: 16px;
+    }
+    .comps-box {
+      background: #FAF9F6;
+      border-left: 3.5px solid var(--red);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-size: 13.5px;
+      color: var(--ink);
+      line-height: 1.6;
+    }
+
+    /* Video Player Container */
+    .video-card {
+      background: #000;
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      position: relative;
+    }
+    .video-tabs {
+      display: flex;
+      background: #111;
+      padding: 8px;
+      gap: 8px;
+      border-bottom: 1px solid #222;
+      overflow-x: auto;
+    }
+    .v-tab {
+      background: #222;
+      color: #999;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .v-tab.active {
+      background: var(--red);
+      color: #fff;
+    }
+    .video-frame-wrap {
+      position: relative;
+      padding-top: 56.25%; /* 16:9 Aspect Ratio */
+    }
+    .video-frame-wrap iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* Telemetry Radar Section */
+    .telemetry-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .section-title {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--inkS);
+      margin-bottom: 18px;
+    }
+    .meter-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; font-size: 13px; }
+    .meter-lbl { flex: 0 0 190px; font-weight: 700; color: var(--ink); }
+    .meter-bar { flex: 1; height: 8px; background: rgba(28,43,44,0.08); border-radius: 99px; overflow: hidden; }
+    .meter-fill { height: 100%; background: linear-gradient(90deg, #A8492E, #E09A73); border-radius: 99px; }
+    .meter-num { flex: 0 0 35px; text-align: right; font-weight: 800; color: var(--red); font-size: 13px; }
+
+    /* Mobile Responsive Progress Meters */
+    @media (max-width: 480px) {
+      .meter-row { flex-wrap: wrap; gap: 4px; margin-bottom: 14px; }
+      .meter-lbl { flex: 1 0 70%; font-size: 12px; }
+      .meter-num { flex: 0 0 25%; font-size: 12px; text-align: right; }
+      .meter-bar { flex: 1 0 100%; height: 7px; margin-top: 2px; }
+      h1 { font-size: 28px; }
+    }
+
+    /* Directing Note & Directability */
+    .progression-card {
+      background: #FAF5FF;
+      border: 1px solid #E9D5FF;
+      border-left: 4px solid #8B5CF6;
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* Inquiries Footer */
+    .inquire-bar {
+      background: var(--ink);
+      color: #fff;
+      border-radius: 16px;
+      padding: 28px;
+      text-align: center;
+    }
+    .inquire-btn {
+      display: inline-block;
+      background: var(--red);
+      color: #fff;
+      padding: 12px 28px;
+      border-radius: 99px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 14px;
+      margin-top: 14px;
+      transition: background 0.2s;
+    }
+    .inquire-btn:hover { background: #8a3d28; }
+  </style>
+</head>
+<body>
+
+<div class="container" id="app">
+  <div style="text-align:center;padding:60px 0;color:var(--inkS);" id="loadingState">
+    Loading official studio casting brief...
+  </div>
+</div>
+
+<script>
+  const EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
+
+  function esc(s) { 
+    return String(s || "").replace(/[&<>"]/g, function(c) {
+      return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c];
+    }); 
+  }
+
+  function safeScore(val) {
+    const n = Number(val);
+    return (!isNaN(n) && n >= 0 && n <= 100) ? Math.round(n) : 80;
+  }
+
+  window.addEventListener("DOMContentLoaded", function() {
+    const params = new URLSearchParams(window.location.search);
+    const targetName = params.get("name") || params.get("talent") || "";
+
+    if (!targetName) {
+      document.getElementById("app").innerHTML = 
+        '<div style="text-align:center;padding:60px 0;"><h2>⚠️ Missing Talent Parameter</h2><p style="color:var(--inkS);margin-top:8px;">Add ?name=TalentName to the URL to view a casting deck.</p></div>';
+      return;
+    }
+
+    fetch(EXEC + "?action=screener&name=" + encodeURIComponent(targetName))
+      .then(res => res.json())
+      .then(data => {
+        if (!data || !data.ok) {
+          document.getElementById("app").innerHTML = 
+            '<div style="text-align:center;padding:60px 0;"><h2>⚠️ Talent Brief Not Found</h2><p style="color:var(--inkS);margin-top:8px;">' + (data ? esc(data.error) : "No data available") + '</p></div>';
+          return;
+        }
+        renderScreener(data);
+      })
+      .catch(err => {
+        document.getElementById("app").innerHTML = 
+          '<div style="text-align:center;padding:60px 0;"><h2>Network Error</h2><p style="color:var(--inkS);margin-top:8px;">' + esc(err) + '</p></div>';
+      });
+  });
+
+  function renderScreener(talent) {
+    const radar = talent.latestRadar || {};
+    const comps = talent.comps || {};
+    const takes = talent.takes || [];
+    const latestTake = takes[takes.length - 1] || {};
+
+    let tabsHtml = "";
+    if (takes.length > 1) {
+      tabsHtml = '<div class="video-tabs">';
+      takes.forEach((tk, idx) => {
+        const activeClass = idx === (takes.length - 1) ? "active" : "";
+        tabsHtml += `<button class="v-tab ${activeClass}" onclick="switchTakeVideo(${idx})">🎬 Take #${tk.takeNumber}</button>`;
+      });
+      tabsHtml += '</div>';
+    }
+
+    const initialVideo = latestTake.videoUrl || "";
+
+    const pScore = safeScore(radar.presenceScore);
+    const vScore = safeScore(radar.vocalScore);
+    const sScore = safeScore(radar.subtextScore);
+    const fScore = safeScore(radar.formatFitScore);
+
+    const igHandle = talent.instagram ? String(talent.instagram).replace('@', '').trim() : '';
+
+    const html = `
+      <div class="studio-bar">
+        <div class="studio-title">Women of Venice • Casting Studio</div>
+        <div class="verified-pill">✓ Verified CLAUD-IA Telemetry</div>
+      </div>
+
+      <div class="hero-card">
+        <div class="hero-top-row">
+          <div class="talent-badge">${esc(talent.targetAmbition || "Feature Cinema Lead")}</div>
+          ${igHandle ? `<a href="https://instagram.com/${esc(igHandle)}" target="_blank" class="talent-ig">📸 @${esc(igHandle)} ↗</a>` : ''}
+        </div>
+        <h1>${esc(talent.name)}</h1>
+        <div class="archetype">🎭 Archetype: ${esc(talent.marketArchetype || "Dramatic Lead")}</div>
+        
+        <div class="comps-box">
+          <b>Director & Actor Comps:</b> ${esc(comps.actorComps || "Prestige Arthouse Matches")}<br>
+          <span style="font-size:12.5px;color:var(--inkS);">Director Lane: ${esc(comps.directorFit || "A24 / Cannes Arthouse")}</span>
+        </div>
+      </div>
+
+      <div class="video-card">
+        ${tabsHtml}
+        <div class="video-frame-wrap" id="videoWrapper">
+          ${initialVideo ? `<iframe id="playerFrame" src="${esc(initialVideo)}" allowfullscreen></iframe>` : '<div id="videoPlaceholder" style="color:#fff;text-align:center;padding:60px 0;">Video playback processing...</div>'}
+        </div>
+      </div>
+
+      <div class="telemetry-card">
+        <div class="section-title">📊 4-Axis Craft Telemetry (1–100)</div>
+        <div class="meter-row">
+          <div class="meter-lbl">👁️ Camera Stillness & Presence</div>
+          <div class="meter-bar"><div class="meter-fill" style="width:${pScore}%"></div></div>
+          <div class="meter-num">${pScore}</div>
+        </div>
+        <div class="meter-row">
+          <div class="meter-lbl">🎙️ Vocal Resonance & Control</div>
+          <div class="meter-bar"><div class="meter-fill" style="width:${vScore}%"></div></div>
+          <div class="meter-num">${vScore}</div>
+        </div>
+        <div class="meter-row">
+          <div class="meter-lbl">🎭 Subtext & Emotional Depth</div>
+          <div class="meter-bar"><div class="meter-fill" style="width:${sScore}%"></div></div>
+          <div class="meter-num">${sScore}</div>
+        </div>
+        <div class="meter-row">
+          <div class="meter-lbl">🎯 Format Fit & Casting Match</div>
+          <div class="meter-bar"><div class="meter-fill" style="width:${fScore}%"></div></div>
+          <div class="meter-num">${fScore}</div>
+        </div>
+      </div>
+
+      ${latestTake.progression && talent.takesCount > 1 ? `
+        <div class="progression-card">
+          <div style="font-weight:800;color:#6B21A8;margin-bottom:4px;">📈 Multi-Take Directability Delta</div>
+          ${esc(latestTake.progression)}
+        </div>
+      ` : ''}
+
+      <div class="inquire-bar">
+        <h3 style="font-size:20px;font-weight:700;margin-bottom:6px;">Interested in Casting ${esc(talent.name.split(" ")[0])}?</h3>
+        <p style="font-size:13.5px;color:#CBD5E1;max-width:480px;margin:0 auto;">
+          Contact Women of Venice Casting Studio to request high-resolution masters, availability, or to schedule a direct callback session.
+        </p>
+        <a href="mailto:speakez14w@gmail.com?subject=Casting%20Inquiry%20—%20${encodeURIComponent(talent.name)}" class="inquire-btn">
+          ✉️ Inquire for Casting / Representation
+        </a>
+      </div>
+    `;
+
+    document.getElementById("app").innerHTML = html;
+    window._screenerTakes = takes;
+  }
+
+  // Robust Tab Switcher (Fixes the null playerFrame crash)
+  window.switchTakeVideo = function(idx) {
+    const takes = window._screenerTakes || [];
+    const targetTake = takes[idx];
+    if (targetTake && targetTake.videoUrl) {
+      const wrapper = document.getElementById("videoWrapper");
+      let frame = document.getElementById("playerFrame");
+      
+      // If iframe was not present initially, inject it cleanly
+      if (!frame && wrapper) {
+        wrapper.innerHTML = `<iframe id="playerFrame" src="${esc(targetTake.videoUrl)}" allowfullscreen></iframe>`;
+      } else if (frame) {
+        frame.src = targetTake.videoUrl;
+      }
+
+      document.querySelectorAll(".v-tab").forEach((btn, bIdx) => {
+        if (bIdx === idx) btn.classList.add("active");
+        else btn.classList.remove("active");
+      });
+    }
+  };
+</script>
+
+</body>
+</html>
