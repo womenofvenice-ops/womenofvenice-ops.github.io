@@ -323,34 +323,34 @@
 
       const progressTimer = setInterval(function() {
         const elapsedSec = (new Date().getTime() - startTime) / 1000;
-        
-        // 1. Smooth acceleration to 75% (Guaranteed non-reversing forward progress)
-        if (currentPercent < 75) {
-          const calc = Math.round((elapsedSec / (realisticDurationSec * 0.75)) * 75);
-          currentPercent = Math.max(currentPercent, Math.min(75, calc));
-        } 
-        // 2. True geometric decay between 75% and 98% (Never hits a hard stop)
-        else if (currentPercent < 98) {
-          currentPercent += (98.5 - currentPercent) * 0.025;
-        }
+        // ⏱️ Phase 1 & 2 Engine: Smooth 0% -> 100% Transfer + Instant Studio Aperture Handoff
+      const progressTimer = setInterval(function() {
+        const elapsedSec = (new Date().getTime() - startTime) / 1000;
+        currentPercent = Math.min(100, Math.round((elapsedSec / realisticDurationSec) * 100));
 
-        const displayPercent = Math.min(98, Math.floor(currentPercent));
-        const simLoadedMb = Math.min(totalMb, ((displayPercent / 100) * totalMb).toFixed(1));
-
-        progressFill.style.width = displayPercent + "%";
-        percentLabel.innerText = "Transferring: " + displayPercent + "%";
+        const simLoadedMb = Math.min(totalMb, ((currentPercent / 100) * totalMb).toFixed(1));
+        progressFill.style.width = currentPercent + "%";
+        percentLabel.innerText = "Transferring: " + currentPercent + "%";
         bytesLabel.innerText = simLoadedMb + " MB / " + totalMb + " MB";
-        
-        if (displayPercent < 75) {
-          speedLabel.innerHTML = "🟢 Streaming video frames to studio vault...";
-        } else if (displayPercent < 88) {
-          speedLabel.innerHTML = "🟢 Uploading take to Google Drive. Do not close...";
-        } else {
-          // Rotate status messages every 3.5 seconds so user sees continuous activity
-          const msgIndex = Math.floor(elapsedSec / 3.5) % vaultMessages.length;
-          speedLabel.innerHTML = vaultMessages[msgIndex];
+
+        // Phase 2: When transfer hits 100%, immediately switch to the Spinning Studio Aperture
+        if (currentPercent >= 100) {
+          clearInterval(progressTimer);
+          
+          // Hide the progress bar elements safely
+          const pBg = document.querySelector(".progress-bar-bg");
+          const tRow = document.querySelector(".telemetry-row");
+          if (pBg) pBg.style.display = "none";
+          if (tRow) tRow.style.display = "none";
+          if (speedLabel) speedLabel.style.display = "none";
+
+          // Reveal the animated Aperture and Director handoff text
+          const apLoader = document.getElementById("apertureLoader");
+          const hfText = document.getElementById("handoffText");
+          if (apLoader) apLoader.style.display = "block";
+          if (hfText) hfText.style.display = "block";
         }
-      }, 250);
+      }, 200);
 
       // CORS-Safe Simple POST
       fetch(EXEC, {
