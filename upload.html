@@ -97,7 +97,32 @@
     .telemetry-sub { font-size: 12px; color: var(--inkS); text-align: center; }
 
     /* Success State */
+    /* Success State */
     #successBox { display: none; text-align: center; padding: 16px 0; }
+
+    /* 🎬 Cinematic Studio Aperture Pulse */
+    .aperture-loader {
+      display: none;
+      margin: 18px auto 8px;
+      width: 50px;
+      height: 50px;
+      border: 3.5px solid rgba(168, 73, 46, 0.15);
+      border-top-color: var(--red);
+      border-radius: 50%;
+      animation: apertureSpin 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+    }
+    @keyframes apertureSpin {
+      to { transform: rotate(360deg); }
+    }
+    .handoff-text {
+      display: none;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+      text-align: center;
+      margin-top: 8px;
+      letter-spacing: 0.3px;
+    }
   </style>
 </head>
 <body>
@@ -172,6 +197,10 @@
           <div class="progress-bar-fill" id="progressFill"></div>
         </div>
         <div class="telemetry-sub" id="speedLabel">Connecting to Women of Venice studio vault...</div>
+        
+        <!-- 🎬 Added: Phase 2 Aperture & Status -->
+        <div class="aperture-loader" id="apertureLoader"></div>
+        <div class="handoff-text" id="handoffText">Take Transferred. Establishing CLAUD-IA Directorial Session...</div>
       </div>
     </form>
 
