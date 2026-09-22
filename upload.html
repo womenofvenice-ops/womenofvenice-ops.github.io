@@ -96,10 +96,6 @@
     .telemetry-row { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
     .telemetry-sub { font-size: 12px; color: var(--inkS); text-align: center; }
 
-    /* Success State */
-    /* Success State */
-    #successBox { display: none; text-align: center; padding: 16px 0; }
-
     /* 🎬 Cinematic Studio Aperture Pulse */
     .aperture-loader {
       display: none;
@@ -123,6 +119,9 @@
       margin-top: 8px;
       letter-spacing: 0.3px;
     }
+
+    /* Success State */
+    #successBox { display: none; text-align: center; padding: 16px 0; }
   </style>
 </head>
 <body>
@@ -173,7 +172,6 @@
         <input type="text" id="notes" placeholder="e.g. Dramatic monologue, scene study">
       </div>
 
-      <!-- Point 1 & 2: Updated to 35.5 MB -->
       <div class="form-group">
         <label>Audition Video Take (Max 35.5 MB) *</label>
         <div class="drop-zone" id="dropZone">
@@ -190,7 +188,7 @@
       <!-- 📊 Clean Live Transfer Progress -->
       <div id="progressBox">
         <div class="telemetry-row">
-          <span id="percentLabel">Transferring: 0%</span>
+          <span id="percentLabel">Streaming: 0%</span>
           <span id="bytesLabel">0 MB / 0 MB</span>
         </div>
         <div class="progress-bar-bg">
@@ -198,16 +196,16 @@
         </div>
         <div class="telemetry-sub" id="speedLabel">Connecting to Women of Venice studio vault...</div>
         
-        <!-- 🎬 Added: Phase 2 Aperture & Status -->
+        <!-- Phase 2: Directorial Handoff Aperture -->
         <div class="aperture-loader" id="apertureLoader"></div>
         <div class="handoff-text" id="handoffText">Take Transferred. Establishing CLAUD-IA Directorial Session...</div>
       </div>
     </form>
 
-    <!-- ✅ High-Status "You're All Done" Confirmation -->
+    <!-- ✅ High-Status Confirmation -->
     <div id="successBox">
       <div style="font-size:52px;margin-bottom:10px;">✅</div>
-      <h2 style="font-size:22px;font-weight:800;color:var(--ink);margin-bottom:6px;">You're All Done!</h2>
+      <h2 style="font-size:22px;font-weight:800;color:var(--ink);margin-bottom:6px;">You are All Done!</h2>
       <div style="display:inline-block;background:#F0FDF4;color:#166534;font-size:12px;font-weight:700;padding:4px 12px;border-radius:99px;margin-bottom:16px;border:1px solid #BBF7D0;">
         Audition Take Logged & Secured
       </div>
@@ -250,7 +248,7 @@
       const file = fileInput.files[0];
       const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
       
-      // 🛡️ 35.5 MB Safe Ceiling (Maintained per your exact specification)
+      // 🛡️ 35.5 MB Safe Ceiling
       if (file.size > 35.5 * 1024 * 1024) {
         alert("⚠️ Video file is " + sizeMb + " MB.\nTo ensure safe transfer, please keep takes under 35.5 MB (approx. 90–120 seconds in 1080p).");
         fileInput.value = "";
@@ -288,7 +286,6 @@
 
     const reader = new FileReader();
 
-    // 🛡️ Catch device file-lock errors on mobile
     reader.onerror = function() {
       alert("⚠️ Could not read the video file from your device storage. Please retry.");
       resetFormState();
@@ -308,43 +305,29 @@
         fileData: b64Data
       });
 
-      // ⏱️ True Asymptotic Never-Freeze Engine
+      // ⏱️ Phase 1: Smooth 0% -> 100% Transfer
       const startTime = new Date().getTime();
-      const realisticDurationSec = Math.max(16, Math.round(totalBytes / (0.55 * 1024 * 1024)));
-      let currentPercent = 4;
-
-      // Active vault status messages rotating during the final cloud processing phase
-      const vaultMessages = [
-        "⏳ Securing take in studio intake vault...",
-        "⚙️ Registering audition with Director Claudio...",
-        "🔒 Confirming file integrity in cloud vault...",
-        "🎬 Almost ready. Finalizing intake session..."
-      ];
+      const estimatedSec = Math.max(8, Math.round(totalBytes / (0.85 * 1024 * 1024)));
+      let currentPercent = 0;
 
       const progressTimer = setInterval(function() {
         const elapsedSec = (new Date().getTime() - startTime) / 1000;
-        // ⏱️ Phase 1 & 2 Engine: Smooth 0% -> 100% Transfer + Instant Studio Aperture Handoff
-      const progressTimer = setInterval(function() {
-        const elapsedSec = (new Date().getTime() - startTime) / 1000;
-        currentPercent = Math.min(100, Math.round((elapsedSec / realisticDurationSec) * 100));
+        currentPercent = Math.min(100, Math.round((elapsedSec / estimatedSec) * 100));
 
         const simLoadedMb = Math.min(totalMb, ((currentPercent / 100) * totalMb).toFixed(1));
         progressFill.style.width = currentPercent + "%";
-        percentLabel.innerText = "Transferring: " + currentPercent + "%";
+        percentLabel.innerText = "Streaming: " + currentPercent + "%";
         bytesLabel.innerText = simLoadedMb + " MB / " + totalMb + " MB";
 
-        // Phase 2: When transfer hits 100%, immediately switch to the Spinning Studio Aperture
+        // Phase 2: When transfer hits 100%, immediately show the Aperture
         if (currentPercent >= 100) {
           clearInterval(progressTimer);
-          
-          // Hide the progress bar elements safely
           const pBg = document.querySelector(".progress-bar-bg");
           const tRow = document.querySelector(".telemetry-row");
           if (pBg) pBg.style.display = "none";
           if (tRow) tRow.style.display = "none";
           if (speedLabel) speedLabel.style.display = "none";
-
-          // Reveal the animated Aperture and Director handoff text
+          
           const apLoader = document.getElementById("apertureLoader");
           const hfText = document.getElementById("handoffText");
           if (apLoader) apLoader.style.display = "block";
@@ -367,17 +350,11 @@
         try {
           const data = JSON.parse(text);
           if (data && data.ok) {
-            // Snap to 100% on confirmation and turn green
-            progressFill.style.width = "100%";
-            progressFill.style.background = "linear-gradient(90deg, #166534, #22C55E)";
-            percentLabel.innerText = "100% Complete";
-            speedLabel.innerHTML = "✅ Transfer verified by studio!";
-            
             setTimeout(function() {
               document.getElementById("uploadForm").style.display = "none";
               document.getElementById("progressBox").style.display = "none";
               document.getElementById("successBox").style.display = "block";
-            }, 500);
+            }, 600);
           } else {
             alert("⚠️ Upload warning: " + (data ? (data.error || data.message) : text));
             resetFormState();
@@ -409,7 +386,23 @@
     document.getElementById("name").readOnly = false;
     document.getElementById("email").readOnly = false;
     document.getElementById("progressBox").style.display = "none";
+
+    // 🛡️ DOM Reset: Guarantees clean retry state if an error occurs
+    const pBg = document.querySelector(".progress-bar-bg");
+    const tRow = document.querySelector(".telemetry-row");
+    const speedLabel = document.getElementById("speedLabel");
+    const apLoader = document.getElementById("apertureLoader");
+    const hfText = document.getElementById("handoffText");
+    const progressFill = document.getElementById("progressFill");
+
+    if (pBg) pBg.style.display = "block";
+    if (tRow) tRow.style.display = "flex";
+    if (speedLabel) speedLabel.style.display = "block";
+    if (apLoader) apLoader.style.display = "none";
+    if (hfText) hfText.style.display = "none";
+    if (progressFill) progressFill.style.width = "0%";
   }
+  
 </script>
 
 </body>
