@@ -182,6 +182,11 @@
           <div class="file-name" id="fileNameDisplay"></div>
         </div>
       </div>
+      
+<!-- 🛡️ Invisible Bot Honeypot (Hidden from humans, catches bots) -->
+      <div style="display:none !important;" aria-hidden="true">
+        <input type="text" id="studioSecurity" tabindex="-1" autocomplete="off">
+      </div>
 
       <button type="submit" class="btn-submit" id="submitBtn">Submit Take to CLAUD-IA</button>
 
@@ -300,6 +305,7 @@
         targetFormat: document.getElementById("targetFormat").value,
         takeNum: parseInt(document.getElementById("takeNum").value, 10),
         notes: document.getElementById("notes").value.trim(),
+        studioSecurity: document.getElementById("studioSecurity").value, // 👈 Bot Trap
         fileName: file.name,
         mimeType: file.type || "video/mp4",
         fileData: b64Data
