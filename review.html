@@ -277,7 +277,15 @@
           '</button>' +
         '</div>';
     }
-
+   // 🔗 1-Click Public Producer Screener Link
+    var screenerUrl = "https://womenofvenice.com/screener.html?name=" + encodeURIComponent(t.baseName);
+    var screenerBtnHtml = 
+      '<div style="margin:10px 0 16px;">' +
+        '<button class="small" style="width:100%;background:#1C2B2C;color:#FFFFFF;padding:10px;border-radius:10px;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;" onclick="navigator.clipboard.writeText(\'' + screenerUrl + '\');alert(\'📋 Public Screener Link Copied!\\n\\nYou can now paste and send this to directors, producers, or agents:\\n' + screenerUrl + '\');">' +
+          '🔗 Copy Producer Screener Link' +
+        '</button>' +
+      '</div>';
+    
     // Direct Actionable Contacts (WhatsApp, Phone, Instagram, Email)
     var cleanPhone = (t.phone||"").replace(/[^\d+]/g, "");
     var contactHtml = 
@@ -490,6 +498,7 @@
       '<h1 style="text-align:left;font-size:24px;margin-bottom:4px;">'+esc(t.baseName)+'</h1>' +
       '<div style="font-size:13px;color:#5A6667;margin-bottom:12px;">🎬 '+t.takes.length+' Takes on file</div>' +
       sessionStatusHtml +
+      screenerBtnHtml + 
       contactHtml +
       takesHtml +
       storySectionHtml +
