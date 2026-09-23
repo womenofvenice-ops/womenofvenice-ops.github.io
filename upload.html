@@ -201,6 +201,15 @@
         <!-- Phase 2: Directorial Handoff Aperture -->
         <div class="aperture-loader" id="apertureLoader"></div>
         <div class="handoff-text" id="handoffText">Take Transferred. Establishing CLAUD-IA Directorial Session...</div>
+        <!-- ⚡ Mobile Sleep Advisory (Keep screen awake) -->
+        <div class="wake-notice" style="margin-top:14px;padding:10px 14px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;font-size:12px;color:#92400E;display:flex;align-items:center;gap:10px;text-align:left;line-height:1.4;">
+          <span style="font-size:18px;">⚡</span>
+          <div>
+            <b>Keep Screen Active:</b> Do not lock your phone or switch apps until the take is vaulted.
+          </div>
+        </div>
+      </div>
+    </form>
       </div>
     </form>
 
@@ -276,6 +285,8 @@
 
     // Lock inputs during transfer
     submitBtn.disabled = true;
+    requestWakeLock(); // 👈 Prevents screen from sleeping
+    window.addEventListener('beforeunload', preventTabClose); // 👈 Prevents accidental swipe-to-close
     fileInput.disabled = true;
     document.getElementById("name").readOnly = true;
     document.getElementById("email").readOnly = true;
@@ -349,7 +360,9 @@
       })
       .then(function(text) {
         clearInterval(progressTimer);
-
+ // ⚡ Release screen lock & allow tab closing (Transfer is complete)
+        releaseWakeLock();
+        window.removeEventListener('beforeunload', preventTabClose);
         try {
           const data = JSON.parse(text);
           if (data && data.ok) {
@@ -384,6 +397,9 @@
   });
 
   function resetFormState() {
+    // ⚡ Release screen wake lock & allow tab closing on reset
+    releaseWakeLock();
+    window.removeEventListener('beforeunload', preventTabClose);
     submitBtn.disabled = false;
     fileInput.disabled = false;
     document.getElementById("name").readOnly = false;
