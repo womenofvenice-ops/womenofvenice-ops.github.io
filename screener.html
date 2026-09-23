@@ -453,13 +453,8 @@ function renderScreener(talent) {
         </div>
       ` : ''}
 
-      <!-- 📝 Directorial Session Critique (With Paragraph Formatting) -->
-      ${styledCritique ? `
-        <div class="telemetry-card" style="background:#FAF8F5;">
-          <div class="section-title">📝 Studio Directorial Critique</div>
-          <div style="font-size:14.5px;line-height:1.7;color:var(--ink);white-space:pre-line;">${styledCritique}</div>
-        </div>
-      ` : ''}
+      <!-- Studio Directorial Critique (Bilingual Safe) -->
+      ${critiqueCardHtml}
 
       <!-- 📈 Multi-Take Directability Delta -->
       ${latestTake.progression && talent.takesCount > 1 ? `
