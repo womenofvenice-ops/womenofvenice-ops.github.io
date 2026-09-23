@@ -489,6 +489,26 @@ function renderScreener(talent) {
 
 // 👆 YOUR function renderScreener(talent) ENDS RIGHT ABOVE HERE! 👆
 
+  // 🌐 Language Switcher (Toggles between English & Local Native Critique)
+  window.toggleCritiqueLang = function(lang) {
+    const enEl = document.getElementById("critiqueTextEN");
+    const locEl = document.getElementById("critiqueTextLocal");
+    const btnEn = document.getElementById("btnLangEN");
+    const btnLoc = document.getElementById("btnLangLocal");
+
+    if (lang === 'en') {
+      if (enEl) enEl.style.display = 'block';
+      if (locEl) locEl.style.display = 'none';
+      if (btnEn) btnEn.classList.add('active');
+      if (btnLoc) btnLoc.classList.remove('active');
+    } else {
+      if (enEl) enEl.style.display = 'none';
+      if (locEl) locEl.style.display = 'block';
+      if (btnEn) btnEn.classList.remove('active');
+      if (btnLoc) btnLoc.classList.add('active');
+    }
+  };
+
   // Robust Tab Switcher for Multi-Take Video Players
   window.switchTakeVideo = function(idx) {
     const takes = window._screenerTakes || [];
