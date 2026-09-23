@@ -351,7 +351,6 @@
     // Check if a local translation exists
     const hasTranslation = isNonEnglish && rawCritiqueLocal && (rawCritiqueLocal !== rawCritiqueEN);
     const defaultToLocal = hasTranslation; // 👈 Native language is now the DEFAULT!
-
     const timestampRegex = /\[?(\d{1,2}:\d{2}(?:\s*(?:-|–|to)\s*\d{1,2}:\d{2})?)\]?/g;
     const badgeSpan = '<span style="background:#0F172A;color:#38BDF8;padding:2px 6px;border-radius:4px;font-family:monospace;font-weight:700;font-size:12.5px;">$1</span>';
     
@@ -378,9 +377,6 @@
           '<div id="critiqueTextEN" style="' + (!defaultToLocal ? 'display:block;' : 'display:none;') + 'font-size:14.5px;line-height:1.7;color:var(--ink);white-space:pre-line;">' + styledCritiqueEN + '</div>' +
         '</div>';
     }
-
-    const timestampRegex = /\[?(\d{1,2}:\d{2}(?:\s*(?:-|–|to)\s*\d{1,2}:\d{2})?)\]?/g;
-    const badgeSpan = '<span style="background:#0F172A;color:#38BDF8;padding:2px 6px;border-radius:4px;font-family:monospace;font-weight:700;font-size:12.5px;">$1</span>';
     
     const styledCritiqueEN = rawCritiqueEN.replace(timestampRegex, badgeSpan);
     const styledCritiqueLocal = rawCritiqueLocal.replace(timestampRegex, badgeSpan);
