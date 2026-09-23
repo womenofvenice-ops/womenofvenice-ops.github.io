@@ -342,10 +342,42 @@
     const fScore = safeScore(radar.formatFitScore);
     const igHandle = talent.instagram ? String(talent.instagram).replace('@', '').trim() : '';
 
-    // 3. Bilingual Critique Engine (EN + Detected Local Language)
+    // 🌐 Native-First Bilingual Engine
     const detectedLang = latestTake.detectedLanguage || "English";
+    const isNonEnglish = detectedLang.toLowerCase() !== "english" && detectedLang.toLowerCase() !== "en";
     const rawCritiqueEN = esc(latestTake.talentFeedback || "");
     const rawCritiqueLocal = esc(latestTake.talentFeedbackLocal || rawCritiqueEN);
+    
+    // Check if a local translation exists
+    const hasTranslation = isNonEnglish && rawCritiqueLocal && (rawCritiqueLocal !== rawCritiqueEN);
+    const defaultToLocal = hasTranslation; // 👈 Native language is now the DEFAULT!
+
+    const timestampRegex = /\[?(\d{1,2}:\d{2}(?:\s*(?:-|–|to)\s*\d{1,2}:\d{2})?)\]?/g;
+    const badgeSpan = '<span style="background:#0F172A;color:#38BDF8;padding:2px 6px;border-radius:4px;font-family:monospace;font-weight:700;font-size:12.5px;">$1</span>';
+    
+    const styledCritiqueEN = rawCritiqueEN.replace(timestampRegex, badgeSpan);
+    const styledCritiqueLocal = rawCritiqueLocal.replace(timestampRegex, badgeSpan);
+
+    // Pre-build Critique Card: Defaults to Native Language (ITA) with EN as secondary
+    let critiqueCardHtml = "";
+    if (styledCritiqueEN || styledCritiqueLocal) {
+      const langLabel = esc(detectedLang.slice(0,3).toUpperCase());
+      
+      critiqueCardHtml = 
+        '<div class="telemetry-card" style="background:#FAF8F5;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">' +
+            '<div class="section-title" style="margin-bottom:0;">📝 Studio Directorial Critique</div>' +
+            (hasTranslation ? 
+              '<div class="lang-switcher">' +
+                '<button class="lang-btn ' + (defaultToLocal ? 'active' : '') + '" id="btnLangLocal" onclick="toggleCritiqueLang(\'local\')">' + langLabel + '</button>' +
+                '<button class="lang-btn ' + (!defaultToLocal ? 'active' : '') + '" id="btnLangEN" onclick="toggleCritiqueLang(\'en\')">EN</button>' +
+              '</div>' : '') +
+          '</div>' +
+          // Native text visible by default; English hidden until clicked
+          '<div id="critiqueTextLocal" style="' + (defaultToLocal ? 'display:block;' : 'display:none;') + 'font-size:14.5px;line-height:1.7;color:var(--ink);white-space:pre-line;">' + styledCritiqueLocal + '</div>' +
+          '<div id="critiqueTextEN" style="' + (!defaultToLocal ? 'display:block;' : 'display:none;') + 'font-size:14.5px;line-height:1.7;color:var(--ink);white-space:pre-line;">' + styledCritiqueEN + '</div>' +
+        '</div>';
+    }
 
     const timestampRegex = /\[?(\d{1,2}:\d{2}(?:\s*(?:-|–|to)\s*\d{1,2}:\d{2})?)\]?/g;
     const badgeSpan = '<span style="background:#0F172A;color:#38BDF8;padding:2px 6px;border-radius:4px;font-family:monospace;font-weight:700;font-size:12.5px;">$1</span>';
