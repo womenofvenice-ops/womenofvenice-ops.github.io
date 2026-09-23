@@ -226,6 +226,32 @@
       transition: background 0.2s;
     }
     .inquire-btn:hover { background: #8a3d28; }
+    .inquire-btn:hover { background: #8a3d28; }
+
+    /* Language Toggle Pill */
+    .lang-switcher {
+      display: inline-flex;
+      background: rgba(28,43,44,0.08);
+      padding: 3px;
+      border-radius: 99px;
+      gap: 4px;
+    }
+    .lang-btn {
+      border: none;
+      background: transparent;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 99px;
+      cursor: pointer;
+      color: var(--inkS);
+      transition: all 0.2s;
+    }
+    .lang-btn.active {
+      background: var(--ink);
+      color: #fff;
+    }
+  </style>
   </style>
 </head>
 <body>
@@ -310,11 +336,19 @@ function renderScreener(talent) {
     const fScore = safeScore(radar.formatFitScore);
     const igHandle = talent.instagram ? String(talent.instagram).replace('@', '').trim() : '';
 
-    // FIX: Escape HTML first, then apply timestamp badges, with pre-line support
-    const rawCritique = esc(latestTake.talentFeedback || "");
-    const styledCritique = rawCritique.replace(/\[?(\d{1,2}:\d{2}(?:\s*(?:-|–|to)\s*\d{1,2}:\d{2})?)\]?/g, 
-      '<span style="background:#0F172A;color:#38BDF8;padding:2px 6px;border-radius:4px;font-family:monospace;font-weight:700;font-size:12.5px;">$1</span>'
-    );
+    // Bilingual Critique Engine (EN + Detected Local Language)
+    const detectedLang = latestTake.detectedLanguage || "English";
+    const rawCritiqueEN = esc(latestTake.talentFeedback || "");
+    const rawCritiqueLocal = esc(latestTake.talentFeedbackLocal || rawCritiqueEN);
+
+    // Format timestamps [00:16] in both languages
+    const timestampRegex = /\[?(\d{1,2}:\d{2}(?:\s*(?:-|–|to)\s*\d{1,2}:\d{2})?)\]?/g;
+    const badgeSpan = '<span style="background:#0F172A;color:#38BDF8;padding:2px 6px;border-radius:4px;font-family:monospace;font-weight:700;font-size:12.5px;">$1</span>';
+    
+    const styledCritiqueEN = rawCritiqueEN.replace(timestampRegex, badgeSpan);
+    const styledCritiqueLocal = rawCritiqueLocal.replace(timestampRegex, badgeSpan);
+
+    const hasTranslation = rawCritiqueLocal && (rawCritiqueLocal !== rawCritiqueEN);
 
     // Safe talent name for greetings
     const safeFirstName = esc((talent.name || "Talent").split(" ")[0]);
