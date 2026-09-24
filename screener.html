@@ -352,6 +352,32 @@
     const vScore = safeScore(radar.vocalScore);
     const sScore = safeScore(radar.subtextScore);
     const fScore = safeScore(radar.formatFitScore);
+
+    // 🚀 Detect Creator Mode vs. Cinema Mode
+    const ambitionStr = String(talent.targetAmbition || "");
+    const isCreator = ambitionStr.indexOf("Short-Form") >= 0 || ambitionStr.indexOf("Creator") >= 0;
+
+    // Dynamic Labels: Adapts between Cinema and Social Media Virality
+    const radarTitle = isCreator ? "📊 Viral Retention Radar (1–100)" : "📊 4-Axis Craft Telemetry (1–100)";
+    const lbl1 = isCreator ? "⚡ 3-Second Hook Velocity" : "👁️ Camera Stillness & Presence";
+    const lbl2 = isCreator ? "🎙️ Acoustic Punch & Pacing" : "🎙️ Vocal Resonance & Control";
+    const lbl3 = isCreator ? "🤝 Parasocial Intimacy" : "🎭 Subtext & Emotional Depth";
+    const lbl4 = isCreator ? "📈 Algorithmic Virality & Loop" : "🎯 Format Fit & Casting Match";
+
+    const compsTitle = isCreator ? "🔥 Digital Creator Comps:" : "🎭 Director & Actor Comps:";
+    const compsSub = isCreator ? "Target Brand & Platform Lane:" : "Director Lane:";
+
+    const assessTitle = isCreator ? "💼 Brand Deal & Viral Retention Audit" : "🎬 Directorial Craft Assessment";
+    const superTitle = isCreator ? "⚡ Viral Magnet Asset" : "⚡ Natural Superpower";
+    const blindTitle = isCreator ? "⚠️ Viewer Retention Drop-off Risk" : "⚠️ Performance Adjustment Focus";
+    const viabTitle = isCreator ? "🎯 Sponsorship & Ad Conversion Viability" : "🎯 Platform & Market Viability";
+
+    const ctaTitle = isCreator ? `Interested in Sponsoring ${safeFirstName}?` : `Interested in Casting ${safeFirstName}?`;
+    const ctaDesc = isCreator 
+      ? `Contact Women of Venice Studio to request creator media kits, engagement metrics, or to book a sponsored campaign.`
+      : `Contact Women of Venice Casting Studio to request high-resolution masters, availability, or to schedule a direct callback session.`;
+    const ctaBtnText = isCreator ? "💼 Inquire for Brand Deal / Sponsorship" : "✉️ Inquire for Casting / Representation";
+    const ctaSubject = isCreator ? `Brand%20Sponsorship%20Inquiry%20—%20${encodeURIComponent(talent.name || 'Creator')}` : `Casting%20Inquiry%20—%20${encodeURIComponent(talent.name || 'Talent')}`;
     const igHandle = talent.instagram ? String(talent.instagram).replace('@', '').trim() : '';
 
     // 3. 🌐 Native-First Bilingual Engine (Single Clean Declaration)
