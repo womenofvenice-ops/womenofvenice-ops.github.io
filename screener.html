@@ -6,7 +6,7 @@
   <title>Casting Screener • Women of Venice Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
       --ink: #1C2B2C;
@@ -25,10 +25,11 @@
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       padding: 32px 16px 64px;
       line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
     }
     .container { max-width: 780px; margin: 0 auto; }
     
-    /* Header Card */
+    /* Header Bar */
     .studio-bar {
       display: flex;
       justify-content: space-between;
@@ -36,6 +37,8 @@
       margin-bottom: 24px;
       padding-bottom: 16px;
       border-bottom: 1.5px solid var(--border);
+      flex-wrap: wrap;
+      gap: 12px;
     }
     .studio-title {
       font-family: 'Playfair Display', Georgia, serif;
@@ -44,6 +47,26 @@
       letter-spacing: 0.5px;
       color: var(--ink);
     }
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .pdf-btn {
+      background: var(--ink);
+      color: #fff;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: background 0.2s ease;
+    }
+    .pdf-btn:hover { background: #334445; }
     .verified-pill {
       display: inline-flex;
       align-items: center;
@@ -55,10 +78,10 @@
       font-weight: 700;
       padding: 4px 10px;
       border-radius: 99px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
     }
 
+    /* Hero Talent Card */
     .hero-card {
       background: var(--card);
       border: 1px solid var(--border);
@@ -79,7 +102,7 @@
       display: inline-block;
       font-size: 11px;
       font-weight: 800;
-      letter-spacing: 2px;
+      letter-spacing: 1.5px;
       text-transform: uppercase;
       color: var(--red);
       background: rgba(168,73,46,0.08);
@@ -117,7 +140,7 @@
       line-height: 1.6;
     }
 
-    /* Video Player Container */
+    /* Video Player & Take Tabs */
     .video-card {
       background: #000;
       border-radius: 16px;
@@ -144,6 +167,7 @@
       font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
+      transition: all 0.2s ease;
     }
     .v-tab.active {
       background: var(--red);
@@ -179,21 +203,12 @@
       margin-bottom: 18px;
     }
     .meter-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; font-size: 13px; }
-    .meter-lbl { flex: 0 0 190px; font-weight: 700; color: var(--ink); }
+    .meter-lbl { flex: 0 0 240px; font-weight: 700; color: var(--ink); }
     .meter-bar { flex: 1; height: 8px; background: rgba(28,43,44,0.08); border-radius: 99px; overflow: hidden; }
     .meter-fill { height: 100%; background: linear-gradient(90deg, #A8492E, #E09A73); border-radius: 99px; }
     .meter-num { flex: 0 0 35px; text-align: right; font-weight: 800; color: var(--red); font-size: 13px; }
 
-    /* Mobile Responsive Progress Meters */
-    @media (max-width: 480px) {
-      .meter-row { flex-wrap: wrap; gap: 4px; margin-bottom: 14px; }
-      .meter-lbl { flex: 1 0 70%; font-size: 12px; }
-      .meter-num { flex: 0 0 25%; font-size: 12px; text-align: right; }
-      .meter-bar { flex: 1 0 100%; height: 7px; margin-top: 2px; }
-      h1 { font-size: 28px; }
-    }
-
-    /* Directing Note & Directability */
+    /* Multi-Take Progression Delta Card */
     .progression-card {
       background: #FAF5FF;
       border: 1px solid #E9D5FF;
@@ -226,21 +241,8 @@
       transition: background 0.2s;
     }
     .inquire-btn:hover { background: #8a3d28; }
-/* 📄 High-Status 1-Page PDF / Print Styles */
-    @media print {
-      body { background: #fff !important; color: #000 !important; padding: 0 !important; }
-      .container { max-width: 100% !important; }
-      .video-card, .inquire-bar, .v-tab, .lang-switcher, #pdfExportBtn { display: none !important; }
-      .hero-card, .telemetry-card, .progression-card { 
-        box-shadow: none !important; 
-        border: 1px solid #ccc !important; 
-        page-break-inside: avoid;
-        margin-bottom: 16px !important;
-      }
-      .studio-bar { border-bottom: 2px solid #000 !important; }
-      .verified-pill { border: 1px solid #000 !important; color: #000 !important; }
-    }
-    /* 🌐 Bilingual Language Switcher */
+
+    /* Bilingual Switcher */
     .lang-switcher {
       display: inline-flex;
       background: rgba(28,43,44,0.06);
@@ -263,14 +265,61 @@
       background: var(--ink);
       color: #fff;
     }
+
+    /* Mobile Responsive Meters */
+    @media (max-width: 600px) {
+      .meter-row { flex-wrap: wrap; gap: 4px; margin-bottom: 14px; }
+      .meter-lbl { flex: 1 0 70%; font-size: 12px; }
+      .meter-num { flex: 0 0 25%; font-size: 12px; text-align: right; }
+      .meter-bar { flex: 1 0 100%; height: 7px; margin-top: 2px; }
+      h1 { font-size: 28px; }
+    }
+
+    /* 📄 High-Status 1-Page PDF / Print Stylesheet */
+    @media print {
+      body {
+        background: #fff !important;
+        color: #111 !important;
+        padding: 0 !important;
+        font-size: 11.5px !important;
+      }
+      .container { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+      .video-card, .inquire-bar, .v-tab, .lang-switcher, #pdfExportBtn {
+        display: none !important;
+      }
+      .studio-bar {
+        border-bottom: 2px solid #000 !important;
+        margin-bottom: 14px !important;
+        padding-bottom: 8px !important;
+      }
+      .verified-pill {
+        border: 1px solid #166534 !important;
+        color: #166534 !important;
+      }
+      .hero-card, .telemetry-card, .progression-card {
+        box-shadow: none !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 8px !important;
+        padding: 14px 18px !important;
+        margin-bottom: 12px !important;
+        page-break-inside: avoid !important;
+      }
+      h1 { font-size: 24px !important; margin-bottom: 4px !important; }
+      .archetype { font-size: 13px !important; margin-bottom: 10px !important; }
+      .comps-box { padding: 8px 12px !important; font-size: 11px !important; }
+      .section-title { margin-bottom: 10px !important; font-size: 10.5px !important; }
+      .meter-row { margin-bottom: 8px !important; }
+      .meter-lbl { font-size: 11px !important; flex: 0 0 260px !important; }
+      .meter-bar { height: 6px !important; }
+      .meter-num { font-size: 11px !important; }
+    }
   </style>
 </head>
 <body>
 
-<!-- 🛡️ CRITICAL MOUNT POINT: Must exist in HTML before script runs! -->
 <div class="container" id="app">
   <div style="text-align:center;padding:60px 0;color:var(--inkS);" id="loadingState">
-    Loading official studio casting brief...
+    Loading official studio dossier...
   </div>
 </div>
 
@@ -278,18 +327,16 @@
   const EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
 
   function esc(s) { 
-    return String(s || "").replace(/[&<>"]/g, function(c) {
-      return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c];
+    return String(s || "").replace(/[&<>"']/g, function(c) {
+      return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
     }); 
   }
 
- function safeScore(val) {
+  function safeScore(val) {
     const n = Number(val);
-    // Returns real number if between 1 and 100; otherwise returns null
     return (!isNaN(n) && n > 0 && n <= 100) ? Math.round(n) : null;
   }
 
-  // 🛡️ Fail-safe container resolver: Never returns null!
   function getAppEl() {
     return document.getElementById("app") || document.querySelector(".container") || document.body;
   }
@@ -301,7 +348,7 @@
 
     if (!targetName) {
       container.innerHTML = 
-        '<div style="text-align:center;padding:60px 0;"><h2>⚠️ Missing Talent Parameter</h2><p style="color:var(--inkS);margin-top:8px;">Add ?name=TalentName to the URL to view a casting deck.</p></div>';
+        '<div style="text-align:center;padding:60px 0;"><h2>⚠️ Missing Talent Parameter</h2><p style="color:var(--inkS);margin-top:8px;">Add ?name=TalentName to the URL to view a portfolio or media kit.</p></div>';
       return;
     }
 
@@ -310,54 +357,63 @@
       .then(data => {
         if (!data || !data.ok) {
           container.innerHTML = 
-            '<div style="text-align:center;padding:60px 0;"><h2>⚠️ Talent Brief Not Found</h2><p style="color:var(--inkS);margin-top:8px;">' + (data ? esc(data.error) : "No data available") + '</p></div>';
+            '<div style="text-align:center;padding:60px 0;"><h2>⚠️ Talent Brief Not Found</h2><p style="color:var(--inkS);margin-top:8px;">' + (data ? esc(data.error) : "No record available") + '</p></div>';
           return;
         }
         renderScreener(data);
       })
       .catch(err => {
         container.innerHTML = 
-          '<div style="text-align:center;padding:60px 0;"><h2>Network Error</h2><p style="color:var(--inkS);margin-top:8px;">' + esc(err) + '</p></div>';
+          '<div style="text-align:center;padding:60px 0;"><h2>Network Error</h2><p style="color:var(--inkS);margin-top:8px;">' + esc(err.message || err) + '</p></div>';
       });
   });
 
   function renderScreener(talent) {
+    // 🛡️ 1. SAFE NAMES FIRST: Eliminates ReferenceError Temporal Dead Zone (TDZ)
+    const rawTalentName = String(talent.name || "Talent").trim();
+    const safeTalentName = esc(rawTalentName);
+    const safeFirstName = esc(rawTalentName.split(" ")[0]);
+
+    // 🚀 2. ROBUST CREATOR AMBITION DETECTION (Regex + Query fallback)
+    const params = new URLSearchParams(window.location.search);
+    const ambitionStr = String(talent.targetAmbition || params.get("format") || params.get("mode") || "").toLowerCase();
+    const isCreator = /short-form|creator|tiktok|reels|ugc|influencer/i.test(ambitionStr);
+
     const radar = talent.latestRadar || {};
     const comps = talent.comps || {};
-    const takes = talent.takes || [];
-    const latestTake = takes[takes.length - 1] || {};
-    const dirNotes = latestTake.directorNotes || {};
-    const fmtDiag = latestTake.formatDiag || {};
-    const beatMap = latestTake.temporalBeatMap || latestTake.beatMap || [];
+    const takes = Array.isArray(talent.takes) && talent.takes.length > 0 ? talent.takes : [{}];
+    const initialTakeIdx = takes.length - 1;
 
-    // 1. Build Multi-Take Tabs
-    let tabsHtml = "";
-    if (takes.length > 1) {
-      tabsHtml = '<div class="video-tabs">';
-      takes.forEach((tk, idx) => {
-        const activeClass = idx === (takes.length - 1) ? "active" : "";
-        tabsHtml += '<button class="v-tab ' + activeClass + '" onclick="switchTakeVideo(' + idx + ')">🎬 Take #' + (tk.takeNumber || (idx + 1)) + '</button>';
-      });
-      tabsHtml += '</div>';
-    }
+    // Cache state on window for dynamic, lossless take switching
+    window._screenerState = {
+      talent: talent,
+      takes: takes,
+      currentTakeIdx: initialTakeIdx,
+      isCreator: isCreator,
+      safeFirstName: safeFirstName,
+      rawTalentName: rawTalentName
+    };
 
-    // 2. Pre-build Video Embed (Zero Nested Backticks = Zero 404 Errors)
-    const initialVideo = latestTake.videoUrl || "";
-    let videoEmbedHtml = '<div id="videoPlaceholder" style="color:#fff;text-align:center;padding:60px 0;font-size:14px;">Video playback processing or awaiting first upload...</div>';
-    if (initialVideo && String(initialVideo).indexOf("http") === 0) {
-      videoEmbedHtml = '<iframe id="playerFrame" src="' + esc(initialVideo) + '" allowfullscreen></iframe>';
-    }
-
+    // 3. TELEMETRY SCORES & CONTEXTUAL INDEX TIERING
     const pScore = safeScore(radar.presenceScore);
     const vScore = safeScore(radar.vocalScore);
     const sScore = safeScore(radar.subtextScore);
     const fScore = safeScore(radar.formatFitScore);
 
-    // 🚀 Detect Creator Mode vs. Cinema Mode
-    const ambitionStr = String(talent.targetAmbition || "");
-    const isCreator = ambitionStr.indexOf("Short-Form") >= 0 || ambitionStr.indexOf("Creator") >= 0;
+    function getHookTier(score) {
+      if (score >= 88) return "Top 5% Hook Velocity (Low Drop-Off Risk)";
+      if (score >= 79) return "Top 15% Strong Front-End Retention";
+      if (score >= 68) return "Average Hook Velocity (Moderate Friction)";
+      return "High Front-End Drop-Off Risk";
+    }
+    const hookContext = isCreator && pScore ? ` · ${getHookTier(pScore)}` : "";
 
-    // Dynamic Labels: Adapts between Cinema and Social Media Virality
+    // 4. ADAPTIVE LABELS (Cinema vs. Creator Economy)
+    const studioTitle = isCreator ? "Women of Venice • Creator Lab" : "Women of Venice • Casting Studio";
+    const verifiedBadge = isCreator 
+      ? "✓ Verified by CLAUD-IA Labs · Algorithmic Retention Audit" 
+      : "✓ Verified CLAUD-IA Telemetry";
+
     const radarTitle = isCreator ? "📊 Viral Retention Radar (1–100)" : "📊 4-Axis Craft Telemetry (1–100)";
     const lbl1 = isCreator ? "⚡ 3-Second Hook Velocity" : "👁️ Camera Stillness & Presence";
     const lbl2 = isCreator ? "🎙️ Acoustic Punch & Pacing" : "🎙️ Vocal Resonance & Control";
@@ -367,191 +423,254 @@
     const compsTitle = isCreator ? "🔥 Digital Creator Comps:" : "🎭 Director & Actor Comps:";
     const compsSub = isCreator ? "Target Brand & Platform Lane:" : "Director Lane:";
 
-    const assessTitle = isCreator ? "💼 Brand Deal & Viral Retention Audit" : "🎬 Directorial Craft Assessment";
-    const superTitle = isCreator ? "⚡ Viral Magnet Asset" : "⚡ Natural Superpower";
-    const blindTitle = isCreator ? "⚠️ Viewer Retention Drop-off Risk" : "⚠️ Performance Adjustment Focus";
-    const viabTitle = isCreator ? "🎯 Sponsorship & Ad Conversion Viability" : "🎯 Platform & Market Viability";
-
     const ctaTitle = isCreator ? `Interested in Sponsoring ${safeFirstName}?` : `Interested in Casting ${safeFirstName}?`;
     const ctaDesc = isCreator 
       ? `Contact Women of Venice Studio to request creator media kits, engagement metrics, or to book a sponsored campaign.`
       : `Contact Women of Venice Casting Studio to request high-resolution masters, availability, or to schedule a direct callback session.`;
     const ctaBtnText = isCreator ? "💼 Inquire for Brand Deal / Sponsorship" : "✉️ Inquire for Casting / Representation";
-    const ctaSubject = isCreator ? `Brand%20Sponsorship%20Inquiry%20—%20${encodeURIComponent(talent.name || 'Creator')}` : `Casting%20Inquiry%20—%20${encodeURIComponent(talent.name || 'Talent')}`;
+    const ctaSubject = isCreator 
+      ? `Brand%20Sponsorship%20Inquiry%20—%20${encodeURIComponent(rawTalentName)}` 
+      : `Casting%20Inquiry%20—%20${encodeURIComponent(rawTalentName)}`;
+
     const igHandle = talent.instagram ? String(talent.instagram).replace('@', '').trim() : '';
 
-    // 3. 🌐 Native-First Bilingual Engine (Single Clean Declaration)
-    const detectedLang = latestTake.detectedLanguage || "English";
-    const isNonEnglish = detectedLang.toLowerCase() !== "english" && detectedLang.toLowerCase() !== "en";
-    const rawCritiqueEN = esc(latestTake.talentFeedback || "");
-    const rawCritiqueLocal = esc(latestTake.talentFeedbackLocal || rawCritiqueEN);
-    
-    const hasTranslation = isNonEnglish && rawCritiqueLocal && (rawCritiqueLocal !== rawCritiqueEN);
-    const defaultToLocal = hasTranslation; // Native language is DEFAULT on load
-
-    const timestampRegex = /\[?(\d{1,2}:\d{2}(?:\s*(?:-|–|to)\s*\d{1,2}:\d{2})?)\]?/g;
-    const badgeSpan = '<span style="background:#0F172A;color:#38BDF8;padding:2px 6px;border-radius:4px;font-family:monospace;font-weight:700;font-size:12.5px;">$1</span>';
-    
-    const styledCritiqueEN = rawCritiqueEN.replace(timestampRegex, badgeSpan);
-    const styledCritiqueLocal = rawCritiqueLocal.replace(timestampRegex, badgeSpan);
-
-    // Pre-build Critique Card (Defaults to Native Language with EN Secondary)
-    let critiqueCardHtml = "";
-    if (styledCritiqueEN || styledCritiqueLocal) {
-      const langLabel = esc(detectedLang.slice(0,3).toUpperCase());
-      
-      critiqueCardHtml = 
-        '<div class="telemetry-card" style="background:#FAF8F5;">' +
-          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">' +
-            '<div class="section-title" style="margin-bottom:0;">📝 Studio Directorial Critique</div>' +
-            (hasTranslation ? 
-              '<div class="lang-switcher">' +
-                '<button class="lang-btn ' + (defaultToLocal ? 'active' : '') + '" id="btnLangLocal" onclick="toggleCritiqueLang(\'local\')">' + langLabel + '</button>' +
-                '<button class="lang-btn ' + (!defaultToLocal ? 'active' : '') + '" id="btnLangEN" onclick="toggleCritiqueLang(\'en\')">EN</button>' +
-              '</div>' : '') +
-          '</div>' +
-          '<div id="critiqueTextLocal" style="' + (defaultToLocal ? 'display:block;' : 'display:none;') + 'font-size:14.5px;line-height:1.7;color:var(--ink);white-space:pre-line;">' + styledCritiqueLocal + '</div>' +
-          '<div id="critiqueTextEN" style="' + (!defaultToLocal ? 'display:block;' : 'display:none;') + 'font-size:14.5px;line-height:1.7;color:var(--ink);white-space:pre-line;">' + styledCritiqueEN + '</div>' +
-        '</div>';
-    }
-
-    // 4. Pre-build Directorial Assessment Card
-    let dirNotesHtml = "";
-    if (dirNotes.superpower || dirNotes.blindspotToCorrect || fmtDiag.viabilityAssessment) {
-      dirNotesHtml = 
-        '<div class="telemetry-card" style="border-left: 4px solid var(--red);">' +
-          '<div class="section-title">🎬 Directorial Craft Assessment</div>' +
-          (dirNotes.superpower ? '<div style="margin-bottom:12px;"><div style="font-size:11.5px;font-weight:800;color:var(--ink);text-transform:uppercase;">⚡ Natural Superpower</div><div style="font-size:14px;color:var(--inkS);margin-top:2px;line-height:1.5;">' + esc(dirNotes.superpower) + '</div></div>' : '') +
-          (dirNotes.blindspotToCorrect ? '<div style="margin-bottom:12px;"><div style="font-size:11.5px;font-weight:800;color:var(--red);text-transform:uppercase;">⚠️ Performance Adjustment Focus</div><div style="font-size:14px;color:var(--inkS);margin-top:2px;line-height:1.5;">' + esc(dirNotes.blindspotToCorrect) + '</div></div>' : '') +
-          (fmtDiag.viabilityAssessment ? '<div><div style="font-size:11.5px;font-weight:800;color:var(--ink);text-transform:uppercase;">🎯 Platform & Market Viability</div><div style="font-size:14px;color:var(--ink);font-weight:600;margin-top:2px;">' + esc(fmtDiag.viabilityAssessment) + '</div></div>' : '') +
-        '</div>';
-    }
-
-    // 5. Pre-build Multi-Take Directability Progression
-    let progressionHtml = "";
-    if (latestTake.progression && talent.takesCount > 1) {
-      progressionHtml = 
-        '<div class="progression-card">' +
-          '<div style="font-weight:800;color:#6B21A8;margin-bottom:4px;">📈 Multi-Take Directability Delta</div>' +
-          '<div style="font-size:14px;color:var(--ink);line-height:1.5;">' + esc(latestTake.progression) + '</div>' +
-        '</div>';
-    }
-
-    // 6. Pre-build Scene Beat Breakdown Cards
-    let beatMapHtml = "";
-    if (beatMap.length > 0) {
-      beatMapHtml = 
-        '<div class="telemetry-card">' +
-          '<div class="section-title">⏱️ Scene Beat Breakdown & Structure</div>' +
-          '<div style="display:flex;flex-direction:column;gap:8px;">';
-      beatMap.forEach((b, bIdx) => {
-        beatMapHtml += 
-          '<div style="background:#fff;padding:10px 12px;border-radius:8px;border:1px solid rgba(28,43,44,0.08);display:flex;gap:12px;align-items:flex-start;">' +
-            '<div style="background:#0F172A;color:#38BDF8;font-family:monospace;font-size:11px;font-weight:700;padding:3px 6px;border-radius:5px;white-space:nowrap;">' +
-              esc(b.timestamp || ("Beat " + (bIdx + 1))) +
-            '</div>' +
-            '<div style="flex:1;">' +
-              '<div style="font-weight:700;font-size:13px;color:var(--ink);">' + esc(b.beatTitle || ("Beat #" + (bIdx + 1))) + '</div>' +
-              (b.characterIntent ? '<div style="font-size:12px;color:var(--inkS);margin-top:2px;">' + esc(b.characterIntent) + '</div>' : '') +
-            '</div>' +
-          '</div>';
+    // 5. TABS SETUP
+    let tabsHtml = "";
+    if (takes.length > 1) {
+      tabsHtml = '<div class="video-tabs">';
+      takes.forEach((tk, idx) => {
+        const activeClass = idx === initialTakeIdx ? "active" : "";
+        tabsHtml += `<button class="v-tab ${activeClass}" id="vTab-${idx}" onclick="switchTakeVideo(${idx})">🎬 Take #${tk.takeNumber || (idx + 1)}</button>`;
       });
-      beatMapHtml += '</div></div>';
+      tabsHtml += '</div>';
     }
 
-    // Safe names
-    const safeFirstName = esc((talent.name || "Talent").split(" ")[0]);
-    const safeTalentName = esc(talent.name || "Talent");
-
-    // Clean, un-nested Master HTML template
+    // 6. MASTER TEMPLATE MOUNT
     const html = `
       <div class="studio-bar">
-        <div class="studio-title">Women of Venice • Casting Studio</div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <button id="pdfExportBtn" onclick="window.print()" style="background:#1C2B2C;color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;">📄 Export PDF</button>
-          <div class="verified-pill">✓ Verified CLAUD-IA Telemetry</div>
+        <div class="studio-title">${studioTitle}</div>
+        <div class="header-actions">
+          <button id="pdfExportBtn" class="pdf-btn" onclick="window.print()">📄 Export PDF Deck</button>
+          <div class="verified-pill">${verifiedBadge}</div>
         </div>
       </div>
 
-      <!-- Hero Header -->
+      <!-- Hero Card -->
       <div class="hero-card">
         <div class="hero-top-row">
-          <div class="talent-badge">${esc(talent.targetAmbition || "Feature Cinema Lead")}</div>
-          ${igHandle ? `<a href="https://instagram.com/${esc(igHandle)}" target="_blank" class="talent-ig">📸 @${esc(igHandle)} ↗</a>` : ''}
+          <div class="talent-badge">${esc(talent.targetAmbition || (isCreator ? "Short-Form Creator" : "Feature Cinema Lead"))}</div>
+          ${igHandle ? `<a href="https://instagram.com/${esc(igHandle)}" target="_blank" rel="noopener noreferrer" class="talent-ig">📸 @${esc(igHandle)} ↗</a>` : ''}
         </div>
         <h1>${safeTalentName}</h1>
-        <div class="archetype">🎭 Archetype: ${esc(talent.marketArchetype || "Dramatic Lead")}</div>
+        <div class="archetype">🎭 Archetype: ${esc(talent.marketArchetype || (isCreator ? "Viral Relatable Host" : "Dramatic Lead"))}</div>
         
         <div class="comps-box">
-          <b>Director & Actor Comps:</b> ${esc(comps.actorComps || "Prestige Arthouse Matches")}<br>
-          <span style="font-size:12.5px;color:var(--inkS);">Director Lane: ${esc(comps.directorFit || "A24 / Cannes Arthouse")}</span>
+          <b>${compsTitle}</b> ${esc(comps.actorComps || (isCreator ? "Digital Creator Matches" : "Prestige Arthouse Matches"))}<br>
+          <span style="font-size:12.5px;color:var(--inkS);">${compsSub} ${esc(comps.directorFit || (isCreator ? "UGC / Brand Deals" : "A24 / Cannes Arthouse"))}</span>
         </div>
       </div>
 
-      <!-- Audition Video Player -->
+      <!-- Video Player Card -->
       <div class="video-card">
         ${tabsHtml}
-        <div class="video-frame-wrap" id="videoWrapper">
-          ${videoEmbedHtml}
-        </div>
+        <div class="video-frame-wrap" id="videoWrapper"></div>
       </div>
 
-      <!-- 4-Axis Telemetry Radar -->
+      <!-- Adaptive Telemetry Radar -->
       <div class="telemetry-card">
-        <div class="section-title">📊 4-Axis Craft Telemetry (1–100)</div>
+        <div class="section-title">${radarTitle}</div>
         <div class="meter-row">
-          <div class="meter-lbl">👁️ Camera Stillness & Presence</div>
+          <div class="meter-lbl">${lbl1}<span style="font-size:11px;font-weight:600;color:var(--inkS);">${hookContext}</span></div>
           <div class="meter-bar"><div class="meter-fill" style="width:${pScore || 0}%"></div></div>
           <div class="meter-num">${pScore !== null ? pScore : "In Review"}</div>
         </div>
         <div class="meter-row">
-          <div class="meter-lbl">🎙️ Vocal Resonance & Control</div>
+          <div class="meter-lbl">${lbl2}</div>
           <div class="meter-bar"><div class="meter-fill" style="width:${vScore || 0}%"></div></div>
           <div class="meter-num">${vScore !== null ? vScore : "In Review"}</div>
         </div>
         <div class="meter-row">
-          <div class="meter-lbl">🎭 Subtext & Emotional Depth</div>
+          <div class="meter-lbl">${lbl3}</div>
           <div class="meter-bar"><div class="meter-fill" style="width:${sScore || 0}%"></div></div>
           <div class="meter-num">${sScore !== null ? sScore : "In Review"}</div>
         </div>
         <div class="meter-row">
-          <div class="meter-lbl">🎯 Format Fit & Casting Match</div>
+          <div class="meter-lbl">${lbl4}</div>
           <div class="meter-bar"><div class="meter-fill" style="width:${fScore || 0}%"></div></div>
           <div class="meter-num">${fScore !== null ? fScore : "In Review"}</div>
         </div>
       </div>
 
-      <!-- Directorial Assessment -->
-      ${dirNotesHtml}
+      <!-- Dynamic Take Section: Updates Synchronously on Tab Switch -->
+      <div id="dynamicTakeContainer"></div>
 
-      <!-- Studio Directorial Critique -->
-      ${critiqueCardHtml}
+      <!-- Multi-Take Directability Delta (Permanent if multiple takes exist) -->
+      ${renderProgressionHtml(talent)}
 
-      <!-- Multi-Take Directability Delta -->
-      ${progressionHtml}
-
-      <!-- Scene Beat Breakdown -->
-      ${beatMapHtml}
-
-      <!-- Inquiries Footer -->
+      <!-- Adaptive Conversion Footer -->
       <div class="inquire-bar">
-        <h3 style="font-size:20px;font-weight:700;margin-bottom:6px;">Interested in Casting ${safeFirstName}?</h3>
-        <p style="font-size:13.5px;color:#CBD5E1;max-width:480px;margin:0 auto;">
-          Contact Women of Venice Casting Studio to request high-resolution masters, availability, or to schedule a direct callback session.
-        </p>
-        <a href="mailto:speakez14w@gmail.com?subject=Casting%20Inquiry%20—%20${encodeURIComponent(talent.name || 'Talent')}" class="inquire-btn">
-          ✉️ Inquire for Casting / Representation
+        <h3 style="font-size:20px;font-weight:700;margin-bottom:6px;">${ctaTitle}</h3>
+        <p style="font-size:13.5px;color:#CBD5E1;max-width:520px;margin:0 auto;">${ctaDesc}</p>
+        <a href="mailto:speakez14w@gmail.com?subject=${ctaSubject}" class="inquire-btn">
+          ${ctaBtnText}
         </a>
       </div>
     `;
 
-    // 🛡️ Fail-safe DOM Mount (Never throws null)
-    const mountPoint = document.getElementById("app") || document.querySelector(".container") || document.body;
-    mountPoint.innerHTML = html;
-    window._screenerTakes = takes;
+    const container = getAppEl();
+    container.innerHTML = html;
+
+    // Render the initial take content (Video, Critique, Director Notes, Beats)
+    switchTakeVideo(initialTakeIdx);
   }
 
-  // 🌐 Language Switcher (Toggles between English & Local Native Critique)
+  // 🔄 HELPER: Multi-take delta progression
+  function renderProgressionHtml(talent) {
+    const takes = talent.takes || [];
+    const latestTake = takes[takes.length - 1] || {};
+    if (latestTake.progression && (talent.takesCount > 1 || takes.length > 1)) {
+      return `
+        <div class="progression-card">
+          <div style="font-weight:800;color:#6B21A8;margin-bottom:4px;">📈 Multi-Take Directability Delta</div>
+          <div style="font-size:14px;color:var(--ink);line-height:1.5;">${esc(latestTake.progression)}</div>
+        </div>`;
+    }
+    return "";
+  }
+
+  // 🔄 SYNCHRONIZED TAKE SWITCHER: Updates Video, Critique, Notes, and Beat Breakdown
+  window.switchTakeVideo = function(idx) {
+    const state = window._screenerState;
+    if (!state || !state.takes) return;
+
+    const takes = state.takes;
+    const targetTake = takes[idx] || takes[takes.length - 1] || {};
+    state.currentTakeIdx = idx;
+
+    // 1. Update Video Frame or Empty State
+    const wrapper = document.getElementById("videoWrapper");
+    if (wrapper) {
+      if (targetTake.videoUrl && String(targetTake.videoUrl).indexOf("http") === 0) {
+        wrapper.innerHTML = `<iframe id="playerFrame" src="${esc(targetTake.videoUrl)}" allowfullscreen></iframe>`;
+      } else {
+        wrapper.innerHTML = `
+          <div id="videoPlaceholder" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94A3B8;padding:20px;text-align:center;">
+            <div style="font-size:32px;margin-bottom:8px;">⏳</div>
+            <div style="font-size:14px;font-weight:600;">Playback Processing for Take #${targetTake.takeNumber || (idx + 1)}</div>
+            <div style="font-size:12px;color:#64748B;margin-top:4px;">Master video file is currently synchronizing with streaming CDN.</div>
+          </div>`;
+      }
+    }
+
+    // 2. Synchronize Tab Highlights
+    document.querySelectorAll(".v-tab").forEach((btn, bIdx) => {
+      btn.classList.toggle("active", bIdx === idx);
+    });
+
+    // 3. Render Take-Specific Critique, Notes, & Beat Map
+    const dynamicContainer = document.getElementById("dynamicTakeContainer");
+    if (dynamicContainer) {
+      dynamicContainer.innerHTML = buildTakeContentHtml(targetTake, state.isCreator, idx, takes.length);
+    }
+  };
+
+  // 📝 SUB-RENDERER: Generates synchronized critique and assessment for the active take
+  function buildTakeContentHtml(tk, isCreator, idx, totalTakes) {
+    const dirNotes = tk.directorNotes || {};
+    const fmtDiag = tk.formatDiag || {};
+    const beatMap = tk.temporalBeatMap || tk.beatMap || [];
+    const takeLabel = totalTakes > 1 ? ` (Take #${tk.takeNumber || (idx + 1)})` : "";
+
+    // Titles
+    const assessTitle = (isCreator ? "💼 Brand Deal & Viral Retention Audit" : "🎬 Directorial Craft Assessment") + takeLabel;
+    const superTitle = isCreator ? "⚡ Viral Magnet Asset" : "⚡ Natural Superpower";
+    const blindTitle = isCreator ? "⚠️ Viewer Retention Drop-off Risk" : "⚠️ Performance Adjustment Focus";
+    const viabTitle = isCreator ? "🎯 Sponsorship & Ad Conversion Viability" : "🎯 Platform & Market Viability";
+
+    // Directorial Assessment Box
+    let dirNotesHtml = "";
+    if (dirNotes.superpower || dirNotes.blindspotToCorrect || fmtDiag.viabilityAssessment) {
+      dirNotesHtml = `
+        <div class="telemetry-card" style="border-left: 4px solid var(--red);">
+          <div class="section-title">${assessTitle}</div>
+          ${dirNotes.superpower ? `
+            <div style="margin-bottom:12px;">
+              <div style="font-size:11.5px;font-weight:800;color:var(--ink);text-transform:uppercase;">${superTitle}</div>
+              <div style="font-size:14px;color:var(--inkS);margin-top:2px;line-height:1.5;">${esc(dirNotes.superpower)}</div>
+            </div>` : ''}
+          ${dirNotes.blindspotToCorrect ? `
+            <div style="margin-bottom:12px;">
+              <div style="font-size:11.5px;font-weight:800;color:var(--red);text-transform:uppercase;">${blindTitle}</div>
+              <div style="font-size:14px;color:var(--inkS);margin-top:2px;line-height:1.5;">${esc(dirNotes.blindspotToCorrect)}</div>
+            </div>` : ''}
+          ${fmtDiag.viabilityAssessment ? `
+            <div>
+              <div style="font-size:11.5px;font-weight:800;color:var(--ink);text-transform:uppercase;">${viabTitle}</div>
+              <div style="font-size:14px;color:var(--ink);font-weight:600;margin-top:2px;">${esc(fmtDiag.viabilityAssessment)}</div>
+            </div>` : ''}
+        </div>`;
+    }
+
+    // Bilingual Critique Box
+    const detectedLang = tk.detectedLanguage || "English";
+    const isNonEnglish = detectedLang.toLowerCase() !== "english" && detectedLang.toLowerCase() !== "en";
+    const rawCritiqueEN = esc(tk.talentFeedback || "");
+    const rawCritiqueLocal = esc(tk.talentFeedbackLocal || rawCritiqueEN);
+    const hasTranslation = isNonEnglish && rawCritiqueLocal && (rawCritiqueLocal !== rawCritiqueEN);
+    const defaultToLocal = hasTranslation;
+
+    const timestampRegex = /\[?(\d{1,2}:\d{2}(?:\s*(?:-|–|to)\s*\d{1,2}:\d{2})?)\]?/g;
+    const badgeSpan = '<span style="background:#0F172A;color:#38BDF8;padding:2px 6px;border-radius:4px;font-family:monospace;font-weight:700;font-size:12px;">$1</span>';
+    const styledCritiqueEN = rawCritiqueEN.replace(timestampRegex, badgeSpan);
+    const styledCritiqueLocal = rawCritiqueLocal.replace(timestampRegex, badgeSpan);
+
+    let critiqueCardHtml = "";
+    if (styledCritiqueEN || styledCritiqueLocal) {
+      const langLabel = esc(detectedLang.slice(0, 3).toUpperCase());
+      const critiqueHeading = (isCreator ? "📋 Studio Retention & Script Critique" : "📝 Studio Directorial Critique") + takeLabel;
+
+      critiqueCardHtml = `
+        <div class="telemetry-card" style="background:#FAF8F5;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <div class="section-title" style="margin-bottom:0;">${critiqueHeading}</div>
+            ${hasTranslation ? `
+              <div class="lang-switcher">
+                <button class="lang-btn ${defaultToLocal ? 'active' : ''}" id="btnLangLocal" onclick="toggleCritiqueLang('local')">${langLabel}</button>
+                <button class="lang-btn ${!defaultToLocal ? 'active' : ''}" id="btnLangEN" onclick="toggleCritiqueLang('en')">EN</button>
+              </div>` : ''}
+          </div>
+          <div id="critiqueTextLocal" style="${defaultToLocal ? 'display:block;' : 'display:none;'}font-size:14.5px;line-height:1.7;color:var(--ink);white-space:pre-line;">${styledCritiqueLocal}</div>
+          <div id="critiqueTextEN" style="${!defaultToLocal ? 'display:block;' : 'display:none;'}font-size:14.5px;line-height:1.7;color:var(--ink);white-space:pre-line;">${styledCritiqueEN}</div>
+        </div>`;
+    }
+
+    // Scene / Pacing Beat Breakdown Box
+    let beatMapHtml = "";
+    if (beatMap.length > 0) {
+      const beatTitle = (isCreator ? "⏱️ Algorithmic Pacing & Hook Beats" : "⏱️ Scene Beat Breakdown & Structure") + takeLabel;
+      beatMapHtml = `
+        <div class="telemetry-card">
+          <div class="section-title">${beatTitle}</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">`;
+      beatMap.forEach((b, bIdx) => {
+        beatMapHtml += `
+          <div style="background:#fff;padding:10px 12px;border-radius:8px;border:1px solid rgba(28,43,44,0.08);display:flex;gap:12px;align-items:flex-start;">
+            <div style="background:#0F172A;color:#38BDF8;font-family:monospace;font-size:11px;font-weight:700;padding:3px 6px;border-radius:5px;white-space:nowrap;">
+              ${esc(b.timestamp || ("Beat " + (bIdx + 1)))}
+            </div>
+            <div style="flex:1;">
+              <div style="font-weight:700;font-size:13px;color:var(--ink);">${esc(b.beatTitle || ("Beat #" + (bIdx + 1)))}</div>
+              ${b.characterIntent ? `<div style="font-size:12px;color:var(--inkS);margin-top:2px;">${esc(b.characterIntent)}</div>` : ''}
+            </div>
+          </div>`;
+      });
+      beatMapHtml += `</div></div>`;
+    }
+
+    return dirNotesHtml + critiqueCardHtml + beatMapHtml;
+  }
+
+  // 🌐 BILINGUAL CRITIQUE TOGGLE
   window.toggleCritiqueLang = function(lang) {
     const enEl = document.getElementById("critiqueTextEN");
     const locEl = document.getElementById("critiqueTextLocal");
@@ -568,27 +687,6 @@
       if (locEl) locEl.style.display = 'block';
       if (btnEn) btnEn.classList.remove('active');
       if (btnLoc) btnLoc.classList.add('active');
-    }
-  };
-
-  // Robust Tab Switcher for Multi-Take Video Players
-  window.switchTakeVideo = function(idx) {
-    const takes = window._screenerTakes || [];
-    const targetTake = takes[idx];
-    if (targetTake && targetTake.videoUrl) {
-      const wrapper = document.getElementById("videoWrapper");
-      let frame = document.getElementById("playerFrame");
-      
-      if (!frame && wrapper) {
-        wrapper.innerHTML = '<iframe id="playerFrame" src="' + esc(targetTake.videoUrl) + '" allowfullscreen></iframe>';
-      } else if (frame) {
-        frame.src = targetTake.videoUrl;
-      }
-
-      document.querySelectorAll(".v-tab").forEach((btn, bIdx) => {
-        if (bIdx === idx) btn.classList.add("active");
-        else btn.classList.remove("active");
-      });
     }
   };
 </script>
