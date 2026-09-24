@@ -226,7 +226,20 @@
       transition: background 0.2s;
     }
     .inquire-btn:hover { background: #8a3d28; }
-
+/* 📄 High-Status 1-Page PDF / Print Styles */
+    @media print {
+      body { background: #fff !important; color: #000 !important; padding: 0 !important; }
+      .container { max-width: 100% !important; }
+      .video-card, .inquire-bar, .v-tab, .lang-switcher, #pdfExportBtn { display: none !important; }
+      .hero-card, .telemetry-card, .progression-card { 
+        box-shadow: none !important; 
+        border: 1px solid #ccc !important; 
+        page-break-inside: avoid;
+        margin-bottom: 16px !important;
+      }
+      .studio-bar { border-bottom: 2px solid #000 !important; }
+      .verified-pill { border: 1px solid #000 !important; color: #000 !important; }
+    }
     /* 🌐 Bilingual Language Switcher */
     .lang-switcher {
       display: inline-flex;
@@ -428,7 +441,10 @@
     const html = `
       <div class="studio-bar">
         <div class="studio-title">Women of Venice • Casting Studio</div>
-        <div class="verified-pill">✓ Verified CLAUD-IA Telemetry</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button id="pdfExportBtn" onclick="window.print()" style="background:#1C2B2C;color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;">📄 Export PDF</button>
+          <div class="verified-pill">✓ Verified CLAUD-IA Telemetry</div>
+        </div>
       </div>
 
       <!-- Hero Header -->
