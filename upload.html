@@ -156,13 +156,8 @@
         </select>
       </div>
 
-      <!-- 🎬 Session Take: Auto-Sequenced by Studio Engine -->
+      <!-- Hidden auto-sequenced take tracker -->
       <input type="hidden" id="takeNum" value="">
-      <div style="margin-bottom: 16px;">
-        <span style="font-size: 11.5px; font-weight: 700; color: var(--inkS); background: rgba(28,43,44,0.06); padding: 4px 10px; border-radius: 6px;">
-          🎬 Take Sequencing: Automatic (Next chronological take)
-        </span>
-      </div>
 
       <div class="form-group">
         <label for="notes">Scene / Monologue Context (Optional)</label>
@@ -240,7 +235,27 @@
 
 <script>
   const EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
+// ⚡ Screen Wake Lock Helpers (Prevents phone from sleeping during upload)
+  let wakeLock = null;
+  async function requestWakeLock() {
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLock = await navigator.wakeLock.request('screen');
+      }
+    } catch(e) {}
+  }
 
+  function releaseWakeLock() {
+    if (wakeLock) {
+      wakeLock.release().catch(function() {});
+      wakeLock = null;
+    }
+  }
+
+  function preventTabClose(e) {
+    e.preventDefault();
+    e.returnValue = 'Upload in progress. Are you sure you want to leave?';
+  }
   // URL Parameter Auto-Fill (?name=Heather+D.&email=...)
   window.addEventListener("DOMContentLoaded", function() {
     const params = new URLSearchParams(window.location.search);
