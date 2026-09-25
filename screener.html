@@ -544,7 +544,7 @@
     return "";
   }
 
-  // Robust Tab Switcher for Multi-Take Video Players with Direct Pop-Out Link
+  // 🔄 SYNCHRONIZED TAKE SWITCHER: Updates Video, Critique, Notes, and Beat Breakdown
   window.switchTakeVideo = function(idx) {
     const state = window._screenerState;
     if (!state || !state.takes) return;
@@ -553,6 +553,7 @@
     const targetTake = takes[idx] || takes[takes.length - 1] || {};
     state.currentTakeIdx = idx;
 
+    // 1. Update Video Frame or Empty State + Direct Pop-Out Link
     const wrapper = document.getElementById("videoWrapper");
     const directLinkWrap = document.getElementById("videoDirectLinkWrap");
 
@@ -572,18 +573,10 @@
             <div style="font-size:12px;color:#64748B;margin-top:4px;">Master video file is currently synchronizing with streaming CDN.</div>
           </div>`;
       }
-      if (directLinkWrap) directLinkWrap.innerHTML = "";
+      if (directLinkWrap) {
+        directLinkWrap.innerHTML = "";
+      }
     }
-
-    document.querySelectorAll(".v-tab").forEach((btn, bIdx) => {
-      btn.classList.toggle("active", bIdx === idx);
-    });
-
-    const dynamicContainer = document.getElementById("dynamicTakeContainer");
-    if (dynamicContainer) {
-      dynamicContainer.innerHTML = buildTakeContentHtml(targetTake, state.isCreator, idx, takes.length);
-    }
-  };
 
     // 2. Synchronize Tab Highlights
     document.querySelectorAll(".v-tab").forEach((btn, bIdx) => {
