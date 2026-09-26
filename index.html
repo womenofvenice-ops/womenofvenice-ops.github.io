@@ -96,6 +96,18 @@
     .cta-buttons a.btn-secondary { background: transparent; color: #FAF8F5; border: 1.5px solid rgba(250,248,245,0.4); font-family: 'Inter', Arial, sans-serif; font-weight: 600; font-size: 14px; padding: 12px 22px; border-radius: 30px; text-decoration: none; transition: 0.2s; }
     .cta-buttons a.btn-secondary:hover { border-color: var(--red); color: var(--peach); }
     .casting-note { font-family: 'Inter', Arial, sans-serif; font-size: 11.5px; color: rgba(250,248,245,0.65) !important; margin-top: 16px; }
+    /* 📱 Mobile & Tablet Responsive Layout for CLAUD-IA Casting Lab */
+    @media (max-width: 768px) {
+      .casting-section { padding: 32px 16px; margin: 40px 0; }
+      .casting-header h2 { font-size: 26px; }
+      .casting-subtitle { font-size: 14px; }
+      .casting-grid { 
+        grid-template-columns: 1fr; /* 👈 Stacks cards 1 below the other */
+        gap: 16px; 
+        margin-bottom: 24px; 
+      }
+      .casting-card { padding: 20px 18px; }
+    }
     .gallery-grid { margin-top: 24px; }
     .grid-sizer, .gallery-item { width: 33.333%; padding: 8px; }
     .gallery-item { margin-bottom: 8px; background: var(--card-bg); border-radius: 12px; overflow: hidden;
