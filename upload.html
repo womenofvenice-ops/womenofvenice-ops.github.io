@@ -155,7 +155,12 @@
           <option value="Voice / Narrative Audio">🎙️ Voice & Audio Narrative</option>
         </select>
       </div>
-
+<!-- 📸 Social Handle Input (Crucial for Creator Media Kits) -->
+      <div class="form-group">
+        <label for="talentSocial">Instagram or TikTok Handle (Optional)</label>
+        <input type="text" id="talentSocial" placeholder="@yourhandle" autocomplete="off">
+      </div>
+      
       <!-- Hidden auto-sequenced take tracker -->
       <input type="hidden" id="takeNum" value="">
 
@@ -205,9 +210,7 @@
         </div>
       </div>
     </form>
-      </div>
-    </form>
-
+     
     <!-- ✅ High-Status Confirmation -->
     <div id="successBox">
       <div style="font-size:52px;margin-bottom:10px;">✅</div>
@@ -263,6 +266,9 @@
     if (params.get("email")) document.getElementById("email").value = params.get("email");
     if (params.get("take")) document.getElementById("takeNum").value = params.get("take");
     if (params.get("format")) document.getElementById("targetFormat").value = params.get("format");
+    if (params.get("social") || params.get("handle")) {
+  document.getElementById("talentSocial").value = params.get("social") || params.get("handle");
+}
   });
 
   const fileInput = document.getElementById("videoFile");
@@ -326,8 +332,9 @@
         name: document.getElementById("name").value.trim(),
         email: document.getElementById("email").value.trim(),
         targetFormat: document.getElementById("targetFormat").value,
-        takeNum: document.getElementById("takeNum").value ? parseInt(document.getElementById("takeNum").value, 10) : 0,        
-        notes: document.getElementById("notes").value.trim(),
+socialHandle: document.getElementById("talentSocial") ? document.getElementById("talentSocial").value.trim() : "",
+takeNum: document.getElementById("takeNum").value ? parseInt(document.getElementById("takeNum").value, 10) : 0,        
+notes: document.getElementById("notes").value.trim(),
         studioSecurity: document.getElementById("studioSecurity").value, // 👈 Bot Trap
         fileName: file.name,
         mimeType: file.type || "video/mp4",
