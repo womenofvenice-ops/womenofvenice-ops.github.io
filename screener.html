@@ -404,15 +404,15 @@
     const params = new URLSearchParams(window.location.search);
     const ambitionStr = String(talent.targetAmbition || params.get("format") || params.get("mode") || "").toLowerCase();
     const isCreator = /short-form|creator|tiktok|reels|ugc|influencer/i.test(ambitionStr);
-    // 💳 Pro Brand Kit Monetization Gate (?pro=true or talent.isPro)
-    const isPro = params.get("pro") === "true" || talent.isPro === true || sessionStorage.getItem("wov_unlocked_" + safeTalentName) === "true";
+   
+    // 💳 Pro Brand Kit Monetization Gate (Survives browser restarts)
+    const isPro = params.get("pro") === "true" || talent.isPro === true || localStorage.getItem("wov_unlocked_" + safeTalentName) === "true";
     if (isPro) {
-      sessionStorage.setItem("wov_unlocked_" + safeTalentName, "true");
+      localStorage.setItem("wov_unlocked_" + safeTalentName, "true");
     }
-    // Remember current talent name in case she leaves for Stripe checkout
-    sessionStorage.setItem("wov_current_talent", rawTalentName);
+    localStorage.setItem("wov_screener_talent", rawTalentName);
     
-    const stripePaymentUrl = "https://buy.stripe.com/YOUR_STRIPE_LINK"; // 👈 Your Stripe Payment Link
+    const stripePaymentUrl = "https://buy.stripe.com/YOUR_STRIPE_LINK"; // 👈 Replace with your Stripe/PayPal link
 
     const radar = talent.latestRadar || {};
     const comps = talent.comps || {};
