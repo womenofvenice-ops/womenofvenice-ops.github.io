@@ -345,10 +345,29 @@
   window.addEventListener("DOMContentLoaded", function() {
     const params = new URLSearchParams(window.location.search);
     
-    // 🛡️ Post-Stripe Session Memory: Recovers candidate name if returning from ?pro=true
-    let targetName = params.get("name") || params.get("talent") || "";
-    if (!targetName && params.get("pro") === "true") {
-      targetName = sessionStorage.getItem("wov_current_talent") || "";
+    // 🛡️ Persistent Memory: Survives 3D Secure mobile banking app handoffs
+    let targetName = params.get("name") || 
+                     params.get("talent") || 
+                     localStorage.getItem("wov_screener_talent") || 
+                     "";
+
+    // Remember name in localStorage whenever present
+    if (params.get("name") || params.get("talent")) {
+      localStorage.setItem("wov_screener_talent", targetName);
+    }
+
+    // 🔄 Auto-repair address bar if returning from Stripe with only ?pro=true
+    if (!params.get("name") && targetName && window.history.replaceState) {
+      const cleanUrl = window.location.pathname + '?name=' + encodeURIComponent(targetName) + (params.get("pro") ? '&pro=true' : '');
+      window.history.replaceState({}, '', cleanUrl);
+    }
+
+    const container = getAppEl();
+
+    if (!targetName) {
+      container.innerHTML = 
+        '<div style="text-align:center;padding:60px 0;"><h2>⚠️ Missing Talent Parameter</h2><p style="color:var(--inkS);margin-top:8px;">Add ?name=TalentName to the URL to view a casting deck.</p></div>';
+      return;
     }
     
     const container = getAppEl();
