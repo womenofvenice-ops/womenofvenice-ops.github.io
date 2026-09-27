@@ -397,14 +397,16 @@
     const ambitionStr = String(talent.targetAmbition || params.get("format") || params.get("mode") || "").toLowerCase();
     const isCreator = /short-form|creator|tiktok|reels|ugc|influencer/i.test(ambitionStr);
    
-    // 💳 Pro Brand Kit Monetization Gate (Survives browser restarts)
-    const isPro = params.get("pro") === "true" || talent.isPro === true || localStorage.getItem("wov_unlocked_" + safeTalentName) === "true";
+    // 💳 Pro Brand Kit Monetization Gate (Survives browser restarts & bank 3DS handoffs)
+    const isPro = params.get("pro") === "true" || talent.isPro === true || localStorage.getItem("wov_unlocked_" + rawTalentName) === "true";
     if (isPro) {
-      localStorage.setItem("wov_unlocked_" + safeTalentName, "true");
+      localStorage.setItem("wov_unlocked_" + rawTalentName, "true");
     }
     localStorage.setItem("wov_screener_talent", rawTalentName);
     
-    const stripePaymentUrl = "https://buy.stripe.com/YOUR_STRIPE_LINK"; // 👈 Replace with your Stripe/PayPal link
+    // 🛡️ Trackable Stripe Checkout Link (Attaches name to Stripe receipt)
+    const baseStripeUrl = "https://buy.stripe.com/YOUR_STRIPE_LINK"; // 👈 Replace with your actual Stripe Link
+    const stripePaymentUrl = baseStripeUrl + "?client_reference_id=" + encodeURIComponent(rawTalentName);
 
     const radar = talent.latestRadar || {};
     const comps = talent.comps || {};
@@ -478,8 +480,7 @@
         <div class="studio-title">${studioTitle}</div>
         <div class="header-actions">
           ${isCreator && !isPro ? `
-            <a href="${stripePaymentUrl}" target="_blank" 
-               onclick="localStorage.setItem('wov_screener_talent', '${safeTalentName}')" 
+            <a href="${stripePaymentUrl}" 
                class="pdf-btn" style="background:var(--red);text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
               💼 Unlock Pro Media Kit (€29)
             </a>
@@ -507,7 +508,7 @@
         </div>
       </div>
 
-   <!-- Video Player Card with Direct Player Link -->
+      <!-- Video Player Card with Direct Player Link -->
       <div class="video-card">
         <div style="display:flex;justify-content:space-between;align-items:center;background:#111;padding:8px 14px;border-bottom:1px solid #222;flex-wrap:wrap;gap:8px;">
           <div style="display:flex;gap:8px;align-items:center;overflow-x:auto;">
@@ -553,8 +554,7 @@
           <p style="font-size: 13.5px; color: #CBD5E1; max-width: 520px; margin: 0 auto 18px; line-height: 1.6;">
             Brands reject 70% of creator pitches because they fear audience drop-off. Unlock your third-party audited 1-page PDF media sheet to prove your 3-second hook retention.
           </p>
-          <a href="${stripePaymentUrl}" target="_blank" 
-             onclick="localStorage.setItem('wov_screener_talent', '${safeTalentName}')" 
+          <a href="${stripePaymentUrl}" 
              style="display: inline-block; background: var(--red); color: #FFF; padding: 12px 28px; border-radius: 99px; text-decoration: none; font-weight: 800; font-size: 14px; transition: background 0.2s;">
             💼 Unlock Verified Brand Deck (PDF) — €29
           </a>
