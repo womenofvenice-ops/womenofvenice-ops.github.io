@@ -485,11 +485,21 @@
       <div class="studio-bar">
         <div class="studio-title">${studioTitle}</div>
         <div class="header-actions">
-          <button id="pdfExportBtn" class="pdf-btn" onclick="window.print()">📄 Export PDF Deck</button>
+          ${isCreator && !isPro ? `
+            <a href="${stripePaymentUrl}" target="_blank" 
+               onclick="localStorage.setItem('wov_screener_talent', '${safeTalentName}')" 
+               class="pdf-btn" style="background:var(--red);text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
+              💼 Unlock Pro Media Kit (€29)
+            </a>
+          ` : `
+            <button id="pdfExportBtn" class="pdf-btn" onclick="window.print()">
+              ${isCreator ? '📄 Export Verified PDF Kit' : '📄 Export PDF Deck'}
+            </button>
+          `}
           <div class="verified-pill">${verifiedBadge}</div>
         </div>
       </div>
-
+      
       <!-- Hero Card -->
       <div class="hero-card">
         <div class="hero-top-row">
@@ -540,6 +550,27 @@
           <div class="meter-num">${fScore !== null ? fScore : "In Review"}</div>
         </div>
       </div>
+
+      <!-- 💼 Creator Pro Monetization Accelerator (Shown only to non-pro creators) -->
+      ${isCreator && !isPro ? `
+        <div class="telemetry-card" style="background: linear-gradient(135deg, #1C2B2C, #2A3B3C); color: #FFF; border: 1.5px solid var(--peach); padding: 26px 20px; text-align: center; margin-bottom: 24px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);">
+          <div style="font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--peach); margin-bottom: 6px;">
+            ⚡ Creator Monetization Accelerator
+          </div>
+          <h3 style="font-size: 21px; font-weight: 800; margin-bottom: 8px; color: #FFF;">Command €1,000–€3,000 for Your Next Brand Deal</h3>
+          <p style="font-size: 13.5px; color: #CBD5E1; max-width: 520px; margin: 0 auto 18px; line-height: 1.6;">
+            Brands reject 70% of creator pitches because they fear audience drop-off. Unlock your third-party audited 1-page PDF media sheet to prove your 3-second hook retention.
+          </p>
+          <a href="${stripePaymentUrl}" target="_blank" 
+             onclick="localStorage.setItem('wov_screener_talent', '${safeTalentName}')" 
+             style="display: inline-block; background: var(--red); color: #FFF; padding: 12px 28px; border-radius: 99px; text-decoration: none; font-weight: 800; font-size: 14px; transition: background 0.2s;">
+            💼 Unlock Verified Brand Deck (PDF) — €29
+          </a>
+          <div style="font-size: 11px; color: #94A3B8; margin-top: 10px;">
+            ✓ Instant PDF unlock · Studio certification seal · Commercial brand comps included
+          </div>
+        </div>
+      ` : ''}
 
       <!-- Dynamic Take Section: Updates Synchronously on Tab Switch -->
       <div id="dynamicTakeContainer"></div>
