@@ -344,12 +344,18 @@
 
   window.addEventListener("DOMContentLoaded", function() {
     const params = new URLSearchParams(window.location.search);
-    const targetName = params.get("name") || params.get("talent") || "";
+    
+    // 🛡️ Post-Stripe Session Memory: Recovers candidate name if returning from ?pro=true
+    let targetName = params.get("name") || params.get("talent") || "";
+    if (!targetName && params.get("pro") === "true") {
+      targetName = sessionStorage.getItem("wov_current_talent") || "";
+    }
+    
     const container = getAppEl();
 
     if (!targetName) {
       container.innerHTML = 
-        '<div style="text-align:center;padding:60px 0;"><h2>⚠️ Missing Talent Parameter</h2><p style="color:var(--inkS);margin-top:8px;">Add ?name=TalentName to the URL to view a portfolio or media kit.</p></div>';
+        '<div style="text-align:center;padding:60px 0;"><h2>⚠️ Missing Talent Parameter</h2><p style="color:var(--inkS);margin-top:8px;">Add ?name=TalentName to the URL to view a casting deck.</p></div>';
       return;
     }
 
@@ -379,6 +385,15 @@
     const params = new URLSearchParams(window.location.search);
     const ambitionStr = String(talent.targetAmbition || params.get("format") || params.get("mode") || "").toLowerCase();
     const isCreator = /short-form|creator|tiktok|reels|ugc|influencer/i.test(ambitionStr);
+    // 💳 Pro Brand Kit Monetization Gate (?pro=true or talent.isPro)
+    const isPro = params.get("pro") === "true" || talent.isPro === true || sessionStorage.getItem("wov_unlocked_" + safeTalentName) === "true";
+    if (isPro) {
+      sessionStorage.setItem("wov_unlocked_" + safeTalentName, "true");
+    }
+    // Remember current talent name in case she leaves for Stripe checkout
+    sessionStorage.setItem("wov_current_talent", rawTalentName);
+    
+    const stripePaymentUrl = "https://buy.stripe.com/YOUR_STRIPE_LINK"; // 👈 Your Stripe Payment Link
 
     const radar = talent.latestRadar || {};
     const comps = talent.comps || {};
