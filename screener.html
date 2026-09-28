@@ -338,6 +338,7 @@
     return (!isNaN(n) && n > 0 && n <= 100) ? Math.round(n) : null;
   }
 
+// 🛡️ Safe Container Resolver: NEVER returns null
   function getAppEl() {
     return document.getElementById("app") || document.querySelector(".container") || document.body;
   }
@@ -345,20 +346,24 @@
   window.addEventListener("DOMContentLoaded", function() {
     const params = new URLSearchParams(window.location.search);
     
-    // 🛡️ Safe Parameter Resolution: Only recovers from localStorage if returning from Stripe (?pro=true)
-    let targetName = params.get("name") || params.get("talent") || "";
-    if (!targetName && params.get("pro")) {
-      targetName = localStorage.getItem("wov_screener_talent") || "";
+    // 🛡️ 1. Safe Parameter Resolution: Recovers candidate name if returning from Stripe (?pro=true)
+    let rawName = params.get("name") || params.get("talent") || "";
+    let targetName = String(rawName).trim();
+    
+    const isProReturn = params.get("pro") === "true" || params.get("pro") === "1";
+
+    if (!targetName && isProReturn) {
+      targetName = String(localStorage.getItem("wov_screener_talent") || "").trim();
     }
 
-    // Remember candidate in localStorage whenever explicitly viewed
-    if (params.get("name") || params.get("talent")) {
+    // 🛡️ 2. Cache candidate in localStorage whenever explicitly viewed
+    if (targetName) {
       localStorage.setItem("wov_screener_talent", targetName);
     }
 
-    // 🔄 Auto-repair address bar on return from Stripe
-    if (!params.get("name") && targetName && window.history.replaceState) {
-      const cleanUrl = window.location.pathname + '?name=' + encodeURIComponent(targetName) + (params.get("pro") ? '&pro=true' : '');
+    // 🔄 3. Auto-repair address bar on return from Stripe checkout
+    if (!rawName && targetName && window.history.replaceState) {
+      const cleanUrl = window.location.pathname + '?name=' + encodeURIComponent(targetName) + (isProReturn ? '&pro=true' : '');
       window.history.replaceState({}, '', cleanUrl);
     }
 
@@ -385,7 +390,7 @@
           '<div style="text-align:center;padding:60px 0;"><h2>Network Error</h2><p style="color:var(--inkS);margin-top:8px;">' + esc(err.message || err) + '</p></div>';
       });
   });
-
+  
   function renderScreener(talent) {
     // 🛡️ 1. SAFE NAMES FIRST: Eliminates ReferenceError Temporal Dead Zone (TDZ)
     const rawTalentName = String(talent.name || "Talent").trim();
