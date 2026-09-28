@@ -390,7 +390,6 @@
           '<div style="text-align:center;padding:60px 0;"><h2>Network Error</h2><p style="color:var(--inkS);margin-top:8px;">' + esc(err.message || err) + '</p></div>';
       });
   });
-  
   function renderScreener(talent) {
     // 🛡️ 1. SAFE NAMES FIRST: Eliminates ReferenceError Temporal Dead Zone (TDZ)
     const rawTalentName = String(talent.name || "Talent").trim();
@@ -402,23 +401,37 @@
     const ambitionStr = String(talent.targetAmbition || params.get("format") || params.get("mode") || "").toLowerCase();
     const isCreator = /short-form|creator|tiktok|reels|ugc|influencer/i.test(ambitionStr);
    
-    // 💳 Pro Brand Kit Monetization Gate (Survives browser restarts & bank 3DS handoffs)
-    const isPro = params.get("pro") === "true" || talent.isPro === true || localStorage.getItem("wov_unlocked_" + rawTalentName) === "true";
-    if (isPro) {
-      localStorage.setItem("wov_unlocked_" + rawTalentName, "true");
-    }
-    localStorage.setItem("wov_screener_talent", rawTalentName);
+    // 🛡️ 3. PRO MONETIZATION GATE (Safe against Safari Private Mode & Instagram Browser crashes)
+    let isProStored = false;
+    try {
+      isProStored = localStorage.getItem("wov_unlocked_" + rawTalentName) === "true";
+    } catch (eStorage) {}
+
+    const isPro = params.get("pro") === "true" || params.get("pro") === "1" || talent.isPro === true || isProStored;
     
-    // 🛡️ Trackable Stripe Checkout Link (Attaches name to Stripe receipt)
+    if (isPro) {
+      try { localStorage.setItem("wov_unlocked_" + rawTalentName, "true"); } catch (eStorage) {}
+    }
+    try { localStorage.setItem("wov_screener_talent", rawTalentName); } catch (eStorage) {}
+    
+    // 🛡️ 4. TRACKABLE STRIPE PAYMENT LINK (Attaches candidate name to Stripe receipt)
     const baseStripeUrl = "https://buy.stripe.com/YOUR_STRIPE_LINK"; // 👈 Replace with your actual Stripe Link
     const stripePaymentUrl = baseStripeUrl + "?client_reference_id=" + encodeURIComponent(rawTalentName);
+
+    window.wovPrepCheckout = function() {
+      try { localStorage.setItem("wov_screener_talent", rawTalentName); } catch (eStorage) {}
+    };
 
     const radar = talent.latestRadar || {};
     const comps = talent.comps || {};
     const takes = Array.isArray(talent.takes) && talent.takes.length > 0 ? talent.takes : [{}];
     const initialTakeIdx = takes.length - 1;
+    const latestTake = takes[initialTakeIdx] || {};
+    const dirNotes = latestTake.directorNotes || {};
+    const fmtDiag = latestTake.formatDiag || {};
+    const beatMap = latestTake.temporalBeatMap || latestTake.beatMap || [];
 
-    // Cache state on window for dynamic, lossless take switching
+    // Cache state on window for dynamic take switching
     window._screenerState = {
       talent: talent,
       takes: takes,
@@ -428,182 +441,235 @@
       rawTalentName: rawTalentName
     };
 
-    // 3. TELEMETRY SCORES & CONTEXTUAL INDEX TIERING
+    // 5. TELEMETRY SCORES & CONTEXTUAL INDEX TIERING
     const pScore = safeScore(radar.presenceScore);
     const vScore = safeScore(radar.vocalScore);
     const sScore = safeScore(radar.subtextScore);
     const fScore = safeScore(radar.formatFitScore);
-
-    function getHookTier(score) {
-      if (score >= 88) return "Top 5% Hook Velocity (Low Drop-Off Risk)";
-      if (score >= 79) return "Top 15% Strong Front-End Retention";
-      if (score >= 68) return "Average Hook Velocity (Moderate Friction)";
-      return "High Front-End Drop-Off Risk";
-    }
-    const hookContext = isCreator && pScore ? ` · ${getHookTier(pScore)}` : "";
-
-    // 4. ADAPTIVE LABELS (Cinema vs. Creator Economy)
-    const studioTitle = isCreator ? "Women of Venice • Creator Lab" : "Women of Venice • Casting Studio";
-    const verifiedBadge = isCreator 
-      ? "✓ Verified by CLAUD-IA Labs · Algorithmic Retention Audit" 
-      : "✓ Verified CLAUD-IA Telemetry";
-
-    const radarTitle = isCreator ? "📊 Viral Retention Radar (1–100)" : "📊 4-Axis Craft Telemetry (1–100)";
-    const lbl1 = isCreator ? "⚡ 3-Second Hook Velocity" : "👁️ Camera Stillness & Presence";
-    const lbl2 = isCreator ? "🎙️ Acoustic Punch & Pacing" : "🎙️ Vocal Resonance & Control";
-    const lbl3 = isCreator ? "🤝 Parasocial Intimacy" : "🎭 Subtext & Emotional Depth";
-    const lbl4 = isCreator ? "📈 Algorithmic Virality & Loop" : "🎯 Format Fit & Casting Match";
-
-    const compsTitle = isCreator ? "🔥 Digital Creator Comps:" : "🎭 Director & Actor Comps:";
-    const compsSub = isCreator ? "Target Brand & Platform Lane:" : "Director Lane:";
-
-    const ctaTitle = isCreator ? `Interested in Sponsoring ${safeFirstName}?` : `Interested in Casting ${safeFirstName}?`;
-    const ctaDesc = isCreator 
-      ? `Contact Women of Venice Studio to request creator media kits, engagement metrics, or to book a sponsored campaign.`
-      : `Contact Women of Venice Casting Studio to request high-resolution masters, availability, or to schedule a direct callback session.`;
-    const ctaBtnText = isCreator ? "💼 Inquire for Brand Deal / Sponsorship" : "✉️ Inquire for Casting / Representation";
-    const ctaSubject = isCreator 
-      ? `Brand%20Sponsorship%20Inquiry%20—%20${encodeURIComponent(rawTalentName)}` 
-      : `Casting%20Inquiry%20—%20${encodeURIComponent(rawTalentName)}`;
-
     const igHandle = talent.instagram ? String(talent.instagram).replace('@', '').trim() : '';
 
-    // 5. TABS SETUP
+    // 6. MULTI-TAKE TABS
     let tabsHtml = "";
     if (takes.length > 1) {
       tabsHtml = '<div class="video-tabs">';
       takes.forEach((tk, idx) => {
         const activeClass = idx === initialTakeIdx ? "active" : "";
-        tabsHtml += `<button class="v-tab ${activeClass}" id="vTab-${idx}" onclick="switchTakeVideo(${idx})">🎬 Take #${tk.takeNumber || (idx + 1)}</button>`;
+        tabsHtml += '<button class="v-tab ' + activeClass + '" onclick="switchTakeVideo(' + idx + ')">🎬 Take #' + (tk.takeNumber || (idx + 1)) + '</button>';
       });
       tabsHtml += '</div>';
     }
 
-    // 6. MASTER TEMPLATE MOUNT
+    // 7. PRE-BUILD VIDEO EMBED
+    const initialVideo = latestTake.videoUrl || "";
+    let videoEmbedHtml = '<div id="videoPlaceholder" style="color:#fff;text-align:center;padding:60px 0;font-size:14px;">Video playback processing or awaiting upload...</div>';
+    if (initialVideo && String(initialVideo).indexOf("http") === 0) {
+      videoEmbedHtml = '<iframe id="playerFrame" src="' + esc(initialVideo) + '" allowfullscreen></iframe>';
+    }
+
+    // 8. BILINGUAL CRITIQUE ENGINE
+    const detectedLang = latestTake.detectedLanguage || "English";
+    const isNonEnglish = detectedLang.toLowerCase() !== "english" && detectedLang.toLowerCase() !== "en";
+    const rawCritiqueEN = esc(latestTake.talentFeedback || "");
+    const rawCritiqueLocal = esc(latestTake.talentFeedbackLocal || rawCritiqueEN);
+    
+    const hasTranslation = isNonEnglish && rawCritiqueLocal && (rawCritiqueLocal !== rawCritiqueEN);
+    const defaultToLocal = hasTranslation;
+
+    const timestampRegex = /\[?(\d{1,2}:\d{2}(?:\s*(?:-|–|to)\s*\d{1,2}:\d{2})?)\]?/g;
+    const badgeSpan = '<span style="background:#0F172A;color:#38BDF8;padding:2px 6px;border-radius:4px;font-family:monospace;font-weight:700;font-size:12.5px;">$1</span>';
+    
+    const styledCritiqueEN = rawCritiqueEN.replace(timestampRegex, badgeSpan);
+    const styledCritiqueLocal = rawCritiqueLocal.replace(timestampRegex, badgeSpan);
+
+    let critiqueCardHtml = "";
+    if (styledCritiqueEN || styledCritiqueLocal) {
+      const langLabel = esc(detectedLang.slice(0,3).toUpperCase());
+      critiqueCardHtml = 
+        '<div class="telemetry-card" style="background:#FAF8F5;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">' +
+            '<div class="section-title" style="margin-bottom:0;">📝 Studio Directorial Critique</div>' +
+            (hasTranslation ? 
+              '<div class="lang-switcher">' +
+                '<button class="lang-btn ' + (defaultToLocal ? 'active' : '') + '" id="btnLangLocal" onclick="toggleCritiqueLang(\'local\')">' + langLabel + '</button>' +
+                '<button class="lang-btn ' + (!defaultToLocal ? 'active' : '') + '" id="btnLangEN" onclick="toggleCritiqueLang(\'en\')">EN</button>' +
+              '</div>' : '') +
+          '</div>' +
+          '<div id="critiqueTextLocal" style="' + (defaultToLocal ? 'display:block;' : 'display:none;') + 'font-size:14.5px;line-height:1.7;color:var(--ink);white-space:pre-line;">' + styledCritiqueLocal + '</div>' +
+          '<div id="critiqueTextEN" style="' + (!defaultToLocal ? 'display:block;' : 'display:none;') + 'font-size:14.5px;line-height:1.7;color:var(--ink);white-space:pre-line;">' + styledCritiqueEN + '</div>' +
+        '</div>';
+    }
+
+    // 9. PRE-BUILD DIRECTORIAL ASSESSMENT
+    let dirNotesHtml = "";
+    if (dirNotes.superpower || dirNotes.blindspotToCorrect || fmtDiag.viabilityAssessment) {
+      dirNotesHtml = 
+        '<div class="telemetry-card" style="border-left: 4px solid var(--red);">' +
+          '<div class="section-title">🎬 Directorial Craft Assessment</div>' +
+          (dirNotes.superpower ? '<div style="margin-bottom:12px;"><div style="font-size:11.5px;font-weight:800;color:var(--ink);text-transform:uppercase;">⚡ Natural Superpower</div><div style="font-size:14px;color:var(--inkS);margin-top:2px;line-height:1.5;">' + esc(dirNotes.superpower) + '</div></div>' : '') +
+          (dirNotes.blindspotToCorrect ? '<div style="margin-bottom:12px;"><div style="font-size:11.5px;font-weight:800;color:var(--red);text-transform:uppercase;">⚠️ Performance Adjustment Focus</div><div style="font-size:14px;color:var(--inkS);margin-top:2px;line-height:1.5;">' + esc(dirNotes.blindspotToCorrect) + '</div></div>' : '') +
+          (fmtDiag.viabilityAssessment ? '<div><div style="font-size:11.5px;font-weight:800;color:var(--ink);text-transform:uppercase;">🎯 Platform & Market Viability</div><div style="font-size:14px;color:var(--ink);font-weight:600;margin-top:2px;">' + esc(fmtDiag.viabilityAssessment) + '</div></div>' : '') +
+        '</div>';
+    }
+
+    // 10. PRE-BUILD MULTI-TAKE PROGRESSION
+    let progressionHtml = "";
+    if (latestTake.progression && talent.takesCount > 1) {
+      progressionHtml = 
+        '<div class="progression-card">' +
+          '<div style="font-weight:800;color:#6B21A8;margin-bottom:4px;">📈 Multi-Take Directability Delta</div>' +
+          '<div style="font-size:14px;color:var(--ink);line-height:1.5;">' + esc(latestTake.progression) + '</div>' +
+        '</div>';
+    }
+
+    // 11. PRE-BUILD BEAT BREAKDOWN CARDS
+    let beatMapHtml = "";
+    if (beatMap.length > 0) {
+      beatMapHtml = 
+        '<div class="telemetry-card">' +
+          '<div class="section-title">⏱️ Scene Beat Breakdown & Structure</div>' +
+          '<div style="display:flex;flex-direction:column;gap:8px;">';
+      beatMap.forEach((b, bIdx) => {
+        beatMapHtml += 
+          '<div style="background:#fff;padding:10px 12px;border-radius:8px;border:1px solid rgba(28,43,44,0.08);display:flex;gap:12px;align-items:flex-start;">' +
+            '<div style="background:#0F172A;color:#38BDF8;font-family:monospace;font-size:11px;font-weight:700;padding:3px 6px;border-radius:5px;white-space:nowrap;">' +
+              esc(b.timestamp || ("Beat " + (bIdx + 1))) +
+            '</div>' +
+            '<div style="flex:1;">' +
+              '<div style="font-weight:700;font-size:13px;color:var(--ink);">' + esc(b.beatTitle || ("Beat #" + (bIdx + 1))) + '</div>' +
+              (b.characterIntent ? '<div style="font-size:12px;color:var(--inkS);margin-top:2px;">' + esc(b.characterIntent) + '</div>' : '') +
+            '</div>' +
+          '</div>';
+      });
+      beatMapHtml += '</div></div>';
+    }
+
+    // 12. PRE-BUILD DYNAMIC PAYWALL CARD
+    let paywallHtml = "";
+    if (!isPro) {
+      if (isCreator) {
+        paywallHtml = 
+          '<div class="telemetry-card" style="background:linear-gradient(135deg,#1C2B2C,#2A3B3C);color:#FFF;border:1.5px solid var(--peach);padding:26px 20px;text-align:center;margin-bottom:24px;box-shadow:0 8px 30px rgba(0,0,0,0.2);">' +
+            '<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--peach);margin-bottom:6px;">⚡ Creator Monetization Accelerator</div>' +
+            '<h3 style="font-size:21px;font-weight:800;margin-bottom:8px;color:#FFF;">Command €1,000–€3,000 for Your Next Brand Deal</h3>' +
+            '<p style="font-size:13.5px;color:#CBD5E1;max-width:520px;margin:0 auto 18px;line-height:1.6;">Brands reject 70% of creator pitches because they fear audience drop-off. Unlock your third-party audited 1-page PDF media sheet to prove your 3-second hook retention.</p>' +
+            '<a href="' + stripePaymentUrl + '" onclick="wovPrepCheckout()" target="_blank" style="display:inline-block;background:var(--red);color:#FFF;padding:12px 28px;border-radius:99px;text-decoration:none;font-weight:800;font-size:14px;transition:background 0.2s;">💼 Unlock Verified Brand Deck (PDF) — €29</a>' +
+            '<div style="font-size:11px;color:#94A3B8;margin-top:10px;">✓ Instant PDF unlock · Studio certification seal · Commercial brand comps included</div>' +
+          '</div>';
+      } else {
+        paywallHtml = 
+          '<div class="telemetry-card" style="background:linear-gradient(135deg,#1C2B2C,#2A3B3C);color:#FFF;border:1.5px solid var(--peach);padding:26px 20px;text-align:center;margin-bottom:24px;box-shadow:0 8px 30px rgba(0,0,0,0.2);">' +
+            '<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--peach);margin-bottom:6px;">🎭 Official Casting Representation Kit</div>' +
+            '<h3 style="font-size:21px;font-weight:800;margin-bottom:8px;color:#FFF;">Verified 1-Page Casting Deck for Agents & Producers</h3>' +
+            '<p style="font-size:13.5px;color:#CBD5E1;max-width:520px;margin:0 auto 18px;line-height:1.6;">Unlock your verified, studio-certified PDF casting summary featuring your 4-axis craft telemetry, silence discipline scores, and European arthouse director comps.</p>' +
+            '<a href="' + stripePaymentUrl + '" onclick="wovPrepCheckout()" target="_blank" style="display:inline-block;background:var(--red);color:#FFF;padding:12px 28px;border-radius:99px;text-decoration:none;font-weight:800;font-size:14px;transition:background 0.2s;">📄 Unlock Official Casting Deck (PDF) — €29</a>' +
+            '<div style="font-size:11px;color:#94A3B8;margin-top:10px;">✓ Instant PDF export · Women of Venice studio seal · Producer comp matches</div>' +
+          '</div>';
+      }
+    }
+
+    // 🛡️ 13. FLATTENED HEADER ACTION BUTTON (Zero Nested Backticks!)
+    let headerActionBtnHtml = "";
+    if (!isPro) {
+      headerActionBtnHtml = 
+        '<a href="' + stripePaymentUrl + '" onclick="wovPrepCheckout()" target="_blank" style="background:var(--red);color:#fff;padding:6px 14px;border-radius:6px;font-size:11.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">' +
+          '🔒 Unlock PDF (€29)' +
+        '</a>';
+    } else {
+      headerActionBtnHtml = 
+        '<button onclick="window.print()" style="background:#1C2B2C;color:#fff;padding:6px 14px;border-radius:6px;font-size:11.5px;font-weight:700;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">' +
+          '📄 Export PDF Deck' +
+        '</button>';
+    }
+
+    // Master Un-Nested HTML Template
     const html = `
       <div class="studio-bar">
-        <div class="studio-title">${studioTitle}</div>
-        <div class="header-actions">
-          ${isCreator && !isPro ? `
-            <a href="${stripePaymentUrl}" 
-               class="pdf-btn" style="background:var(--red);text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
-              💼 Unlock Pro Media Kit (€29)
-            </a>
-          ` : `
-            <button id="pdfExportBtn" class="pdf-btn" onclick="window.print()">
-              ${isCreator ? '📄 Export Verified PDF Kit' : '📄 Export PDF Deck'}
-            </button>
-          `}
-          <div class="verified-pill">${verifiedBadge}</div>
+        <div class="studio-title">Women of Venice • Casting Studio</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          ${headerActionBtnHtml}
+          <div class="verified-pill">✓ Verified Telemetry</div>
         </div>
       </div>
-      
-      <!-- Hero Card -->
+
+      <!-- Hero Header -->
       <div class="hero-card">
         <div class="hero-top-row">
-          <div class="talent-badge">${esc(talent.targetAmbition || (isCreator ? "Short-Form Creator" : "Feature Cinema Lead"))}</div>
-          ${igHandle ? `<a href="https://instagram.com/${esc(igHandle)}" target="_blank" rel="noopener noreferrer" class="talent-ig">📸 @${esc(igHandle)} ↗</a>` : ''}
+          <div class="talent-badge">${esc(talent.targetAmbition || "Feature Cinema Lead")}</div>
+          ${igHandle ? `<a href="https://instagram.com/${esc(igHandle)}" target="_blank" class="talent-ig">📸 @${esc(igHandle)} ↗</a>` : ''}
         </div>
         <h1>${safeTalentName}</h1>
-        <div class="archetype">🎭 Archetype: ${esc(talent.marketArchetype || (isCreator ? "Viral Relatable Host" : "Dramatic Lead"))}</div>
+        <div class="archetype">🎭 Archetype: ${esc(talent.marketArchetype || "Dramatic Lead")}</div>
         
         <div class="comps-box">
-          <b>${compsTitle}</b> ${esc(comps.actorComps || (isCreator ? "Digital Creator Matches" : "Prestige Arthouse Matches"))}<br>
-          <span style="font-size:12.5px;color:var(--inkS);">${compsSub} ${esc(comps.directorFit || (isCreator ? "UGC / Brand Deals" : "A24 / Cannes Arthouse"))}</span>
+          <b>Director & Actor Comps:</b> ${esc(comps.actorComps || "Prestige Arthouse Matches")}<br>
+          <span style="font-size:12.5px;color:var(--inkS);">Director Lane: ${esc(comps.directorFit || "A24 / Cannes Arthouse")}</span>
         </div>
       </div>
 
-      <!-- Video Player Card with Direct Player Link -->
+      <!-- Audition Video Player -->
       <div class="video-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;background:#111;padding:8px 14px;border-bottom:1px solid #222;flex-wrap:wrap;gap:8px;">
-          <div style="display:flex;gap:8px;align-items:center;overflow-x:auto;">
-            ${tabsHtml}
-          </div>
-          <div id="videoDirectLinkWrap"></div>
+        ${tabsHtml}
+        <div class="video-frame-wrap" id="videoWrapper">
+          ${videoEmbedHtml}
         </div>
-        <div class="video-frame-wrap" id="videoWrapper"></div>
       </div>
-      
-      <!-- Adaptive Telemetry Radar -->
+
+      <!-- 💼 Dynamic Monetization Paywall Banner -->
+      ${paywallHtml}
+
+      <!-- 4-Axis Telemetry Radar -->
       <div class="telemetry-card">
-        <div class="section-title">${radarTitle}</div>
+        <div class="section-title">📊 4-Axis Craft Telemetry (1–100)</div>
         <div class="meter-row">
-          <div class="meter-lbl">${lbl1}<span style="font-size:11px;font-weight:600;color:var(--inkS);">${hookContext}</span></div>
-          <div class="meter-bar"><div class="meter-fill" style="width:${pScore || 0}%"></div></div>
-          <div class="meter-num">${pScore !== null ? pScore : "In Review"}</div>
+          <div class="meter-lbl">👁️ Camera Stillness & Presence</div>
+          <div class="meter-bar"><div class="meter-fill" style="width:${pScore}%"></div></div>
+          <div class="meter-num">${pScore}</div>
         </div>
         <div class="meter-row">
-          <div class="meter-lbl">${lbl2}</div>
-          <div class="meter-bar"><div class="meter-fill" style="width:${vScore || 0}%"></div></div>
-          <div class="meter-num">${vScore !== null ? vScore : "In Review"}</div>
+          <div class="meter-lbl">🎙️ Vocal Resonance & Control</div>
+          <div class="meter-bar"><div class="meter-fill" style="width:${vScore}%"></div></div>
+          <div class="meter-num">${vScore}</div>
         </div>
         <div class="meter-row">
-          <div class="meter-lbl">${lbl3}</div>
-          <div class="meter-bar"><div class="meter-fill" style="width:${sScore || 0}%"></div></div>
-          <div class="meter-num">${sScore !== null ? sScore : "In Review"}</div>
+          <div class="meter-lbl">🎭 Subtext & Emotional Depth</div>
+          <div class="meter-bar"><div class="meter-fill" style="width:${sScore}%"></div></div>
+          <div class="meter-num">${sScore}</div>
         </div>
         <div class="meter-row">
-          <div class="meter-lbl">${lbl4}</div>
-          <div class="meter-bar"><div class="meter-fill" style="width:${fScore || 0}%"></div></div>
-          <div class="meter-num">${fScore !== null ? fScore : "In Review"}</div>
+          <div class="meter-lbl">🎯 Format Fit & Casting Match</div>
+          <div class="meter-bar"><div class="meter-fill" style="width:${fScore}%"></div></div>
+          <div class="meter-num">${fScore}</div>
         </div>
       </div>
 
-      <!-- 💼 Creator Pro Monetization Accelerator (Shown only to non-pro creators) -->
-      ${isCreator && !isPro ? `
-        <div class="telemetry-card" style="background: linear-gradient(135deg, #1C2B2C, #2A3B3C); color: #FFF; border: 1.5px solid var(--peach); padding: 26px 20px; text-align: center; margin-bottom: 24px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);">
-          <div style="font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--peach); margin-bottom: 6px;">
-            ⚡ Creator Monetization Accelerator
-          </div>
-          <h3 style="font-size: 21px; font-weight: 800; margin-bottom: 8px; color: #FFF;">Command €1,000–€3,000 for Your Next Brand Deal</h3>
-          <p style="font-size: 13.5px; color: #CBD5E1; max-width: 520px; margin: 0 auto 18px; line-height: 1.6;">
-            Brands reject 70% of creator pitches because they fear audience drop-off. Unlock your third-party audited 1-page PDF media sheet to prove your 3-second hook retention.
-          </p>
-          <a href="${stripePaymentUrl}" 
-             style="display: inline-block; background: var(--red); color: #FFF; padding: 12px 28px; border-radius: 99px; text-decoration: none; font-weight: 800; font-size: 14px; transition: background 0.2s;">
-            💼 Unlock Verified Brand Deck (PDF) — €29
-          </a>
-          <div style="font-size: 11px; color: #94A3B8; margin-top: 10px;">
-            ✓ Instant PDF unlock · Studio certification seal · Commercial brand comps included
-          </div>
-        </div>
-      ` : ''}
+      <!-- Directorial Assessment -->
+      ${dirNotesHtml}
 
-      <!-- Dynamic Take Section: Updates Synchronously on Tab Switch -->
-      <div id="dynamicTakeContainer"></div>
+      <!-- Studio Directorial Critique -->
+      ${critiqueCardHtml}
 
-      <!-- Multi-Take Directability Delta (Permanent if multiple takes exist) -->
-      ${renderProgressionHtml(talent)}
+      <!-- Multi-Take Directability Delta -->
+      ${progressionHtml}
 
-      <!-- Adaptive Conversion Footer -->
+      <!-- Scene Beat Breakdown -->
+      ${beatMapHtml}
+
+      <!-- Inquiries Footer -->
       <div class="inquire-bar">
-        <h3 style="font-size:20px;font-weight:700;margin-bottom:6px;">${ctaTitle}</h3>
-        <p style="font-size:13.5px;color:#CBD5E1;max-width:520px;margin:0 auto;">${ctaDesc}</p>
-        <a href="mailto:speakez14w@gmail.com?subject=${ctaSubject}" class="inquire-btn">
-          ${ctaBtnText}
+        <h3 style="font-size:20px;font-weight:700;margin-bottom:6px;">Interested in Casting ${safeFirstName}?</h3>
+        <p style="font-size:13.5px;color:#CBD5E1;max-width:480px;margin:0 auto;">
+          Contact Women of Venice Casting Studio to request high-resolution masters, availability, or to schedule a direct callback session.
+        </p>
+        <a href="mailto:speakez14w@gmail.com?subject=Casting%20Inquiry%20—%20${encodeURIComponent(talent.name || 'Talent')}" class="inquire-btn">
+          ✉️ Inquire for Casting / Representation
         </a>
       </div>
     `;
 
-    const container = getAppEl();
-    container.innerHTML = html;
-
-    // Render the initial take content (Video, Critique, Director Notes, Beats)
-    switchTakeVideo(initialTakeIdx);
-  }
-
-  // 🔄 HELPER: Multi-take delta progression
-  function renderProgressionHtml(talent) {
-    const takes = talent.takes || [];
-    const latestTake = takes[takes.length - 1] || {};
-    if (latestTake.progression && (talent.takesCount > 1 || takes.length > 1)) {
-      return `
-        <div class="progression-card">
-          <div style="font-weight:800;color:#6B21A8;margin-bottom:4px;">📈 Multi-Take Directability Delta</div>
-          <div style="font-size:14px;color:var(--ink);line-height:1.5;">${esc(latestTake.progression)}</div>
-        </div>`;
-    }
-    return "";
+    // 🛡️ Fail-safe DOM Mount (Never throws null)
+    const mountPoint = document.getElementById("app") || document.querySelector(".container") || document.body;
+    mountPoint.innerHTML = html;
+    window._screenerTakes = takes;
   }
 
   // 🔄 SYNCHRONIZED TAKE SWITCHER: Updates Video, Critique, Notes, and Beat Breakdown
