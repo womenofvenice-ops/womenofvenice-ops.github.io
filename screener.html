@@ -326,6 +326,7 @@
 
 <script>
   const EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
+  const STUDIO_INQUIRY_EMAIL = "studio.wov@gmail.com";
 
   function esc(s) { 
     return String(s || "").replace(/[&<>"']/g, function(c) {
@@ -660,7 +661,7 @@
         <p style="font-size:13.5px;color:#CBD5E1;max-width:480px;margin:0 auto;">
           Contact Women of Venice Casting Studio to request high-resolution masters, availability, or to schedule a direct callback session.
         </p>
-        <a href="mailto:speakez14w@gmail.com?subject=Casting%20Inquiry%20—%20${encodeURIComponent(talent.name || 'Talent')}" class="inquire-btn">
+        <a href="mailto:${STUDIO_INQUIRY_EMAIL}?subject=Casting%20Inquiry%20—%20${encodeURIComponent(talent.name || 'Talent')}" class="inquire-btn">
           ✉️ Inquire for Casting / Representation
         </a>
       </div>
