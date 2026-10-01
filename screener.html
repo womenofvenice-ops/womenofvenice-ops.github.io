@@ -487,15 +487,17 @@
     const rawTalentName = String(talent.name || "Talent").trim();
     const safeTalentName = esc(rawTalentName);
     const safeFirstName = esc(rawTalentName.split(" ")[0]);
-    // 🛡️ Artifact Verification: Clean URL for QR code & studio hash
-    const liveScreenerUrl = "https://womenofvenice.com/screener.html?name=" + encodeURIComponent(rawTalentName) + (isCreator ? "&type=creator" : "&type=cinema");
-    const certHash = Math.abs(rawTalentName.split("").reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0)).toString(16).toUpperCase().padStart(8, "0");
-    const certId = "WOV-2026-" + certHash;
-    // 🚀 2. ROBUST CREATOR AMBITION DETECTION (Regex + ?type= / ?format= / ?mode=)
+
+    // 🚀 2. ROBUST CREATOR AMBITION DETECTION (Defined before liveScreenerUrl!)
     const params = new URLSearchParams(window.location.search);
     const typeParam = (params.get("type") || "").toLowerCase();
     const ambitionStr = String(talent.targetAmbition || params.get("format") || params.get("mode") || typeParam).toLowerCase();
     const isCreator = typeParam === "creator" || /short-form|creator|tiktok|reels|ugc|influencer/i.test(ambitionStr);
+
+    // 🛡️ Artifact Verification: Clean URL for QR code & studio hash (Now safely reads isCreator!)
+    const liveScreenerUrl = "https://womenofvenice.com/screener.html?name=" + encodeURIComponent(rawTalentName) + (isCreator ? "&type=creator" : "&type=cinema");
+    const certHash = Math.abs(rawTalentName.split("").reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0)).toString(16).toUpperCase().padStart(8, "0");
+    const certId = "WOV-2026-" + certHash;
    
     // 💳 3. PRO MONETIZATION GATE & PERSISTENT UNLOCK
     const isPro = params.get("pro") === "true" || params.get("pro") === "1" || talent.isPro === true || localStorage.getItem("wov_unlocked_" + rawTalentName) === "true";
