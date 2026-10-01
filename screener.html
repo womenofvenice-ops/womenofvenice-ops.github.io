@@ -277,6 +277,55 @@
     }
 
     /* 📄 High-Status 1-Page PDF / Print Stylesheet */
+    /* ⏱️ Interactive Clickable Timestamps */
+    .ts-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: #0F172A;
+      color: #38BDF8 !important;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-weight: 700;
+      font-size: 12px;
+      text-decoration: none;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      vertical-align: baseline;
+    }
+    .ts-link:hover {
+      background: #38BDF8;
+      color: #0F172A !important;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(56, 189, 248, 0.4);
+    }
+    
+    /* Playhead HUD Notice */
+    #playheadHud {
+      display: none;
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.94);
+      border: 1px solid #38BDF8;
+      color: #FFF;
+      padding: 7px 18px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 700;
+      z-index: 10;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      pointer-events: none;
+    }
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translate(-50%, 8px); }
+      15% { opacity: 1; transform: translate(-50%, 0); }
+      80% { opacity: 1; transform: translate(-50%, 0); }
+      100% { opacity: 0; transform: translate(-50%, -8px); }
+    }/* 📄 High-Status 1-Page PDF / Print Styles */
     @media print {
       body {
         background: #fff !important;
@@ -284,7 +333,19 @@
         padding: 0 !important;
         font-size: 11.5px !important;
       }
-      .container { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+      .ts-link { 
+        background: transparent !important; 
+        color: #000 !important; 
+        border: 1px solid #999 !important; 
+      }
+      #playheadHud { 
+        display: none !important; 
+      }
+      .container { 
+        max-width: 100% !important; 
+        margin: 0 !important; 
+        padding: 0 !important; 
+      }
       .video-card, .inquire-bar, .v-tab, .lang-switcher, #pdfExportBtn {
         display: none !important;
       }
@@ -478,8 +539,8 @@
     const defaultToLocal = hasTranslation;
 
     const timestampRegex = /\[?(\d{1,2}:\d{2}(?:\s*(?:-|–|to)\s*\d{1,2}:\d{2})?)\]?/g;
-    const badgeSpan = '<span style="background:#0F172A;color:#38BDF8;padding:2px 6px;border-radius:4px;font-family:monospace;font-weight:700;font-size:12.5px;">$1</span>';
-    
+    // ⏱️ Clickable Interactive Timecode Trigger
+    const badgeSpan = '<button type="button" class="ts-link" onclick="wovSeekTimecode(\'$1\')" title="Seek video to $1">▶ $1</button>';
     const styledCritiqueEN = rawCritiqueEN.replace(timestampRegex, badgeSpan);
     const styledCritiqueLocal = rawCritiqueLocal.replace(timestampRegex, badgeSpan);
 
@@ -531,12 +592,21 @@
           '<div class="section-title">⏱️ Scene Beat Breakdown & Structure</div>' +
           '<div style="display:flex;flex-direction:column;gap:8px;">';
       beatMap.forEach((b, bIdx) => {
-        beatMapHtml += 
-          '<div style="background:#fff;padding:10px 12px;border-radius:8px;border:1px solid rgba(28,43,44,0.08);display:flex;gap:12px;align-items:flex-start;">' +
-            '<div style="background:#0F172A;color:#38BDF8;font-family:monospace;font-size:11px;font-weight:700;padding:3px 6px;border-radius:5px;white-space:nowrap;">' +
-              esc(b.timestamp || ("Beat " + (bIdx + 1))) +
-            '</div>' +
-            '<div style="flex:1;">' +
+        const rawTs = esc(b.timestamp || ("Beat " + (bIdx + 1)));
+        const isTimecode = /\d{1,2}:\d{2}/.test(rawTs);
+        
+        beatMapHtml += `
+          <div style="background:#fff;padding:10px 12px;border-radius:8px;border:1px solid rgba(28,43,44,0.08);display:flex;gap:12px;align-items:flex-start;">
+            ${isTimecode ? `
+              <button type="button" class="ts-link" style="font-size:11px;padding:3px 6px;white-space:nowrap;" onclick="wovSeekTimecode('${rawTs}')" title="Inspect Beat">
+                ▶ ${rawTs}
+              </button>
+            ` : `
+              <div style="background:#0F172A;color:#38BDF8;font-family:monospace;font-size:11px;font-weight:700;padding:3px 6px;border-radius:5px;white-space:nowrap;">
+                ${rawTs}
+              </div>
+            `}
+            <div style="flex:1;">' +
               '<div style="font-weight:700;font-size:13px;color:var(--ink);">' + esc(b.beatTitle || ("Beat #" + (bIdx + 1))) + '</div>' +
               (b.characterIntent ? '<div style="font-size:12px;color:var(--inkS);margin-top:2px;">' + esc(b.characterIntent) + '</div>' : '') +
             '</div>' +
@@ -902,6 +972,47 @@
       statusEl.innerHTML = "⚠️ Invalid studio key. Contact curation desk.";
     }
   };
+
+// ⏱️ INTERACTIVE TIMECODE CONTROLLER (Smooth-Scrolls & Displays Playhead HUD)
+  window.wovSeekTimecode = function(timeStr) {
+    if (!timeStr) return;
+    
+    // Extract first time marker, e.g. "00:19" or "0:19 - 0:25" -> "00:19"
+    const match = String(timeStr).match(/\d{1,2}:\d{2}/);
+    if (!match) return;
+    const cleanTime = match[0];
+
+    // Smooth-scroll player into view
+    const videoCard = document.querySelector(".video-card");
+    if (videoCard) {
+      videoCard.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    // Trigger Playhead HUD Notice over player
+    let hud = document.getElementById("playheadHud");
+    if (!hud && videoCard) {
+      hud = document.createElement("div");
+      hud.id = "playheadHud";
+      videoCard.appendChild(hud);
+    }
+    if (hud) {
+      hud.innerHTML = `⏱️ Seeking to [${cleanTime}]`;
+      hud.style.display = "block";
+      hud.style.animation = "none";
+      hud.offsetHeight; // force DOM reflow
+      hud.style.animation = "fadeInOut 2.5s forwards";
+    }
+
+    // If an HTML5 video player is present, seek playhead natively
+    const nativeVid = document.getElementById("playerFrame") || document.querySelector("video");
+    if (nativeVid && nativeVid.currentTime !== undefined) {
+      const parts = cleanTime.split(":");
+      const secs = (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
+      nativeVid.currentTime = secs;
+      nativeVid.play().catch(function(){});
+    }
+  };
+  
 </script>
 
 </body>
