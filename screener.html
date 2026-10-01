@@ -306,26 +306,30 @@
     #playheadHud {
       display: none;
       position: absolute;
-      bottom: 16px;
+      bottom: 18px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(15, 23, 42, 0.94);
-      border: 1px solid #38BDF8;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1.5px solid #38BDF8;
       color: #FFF;
-      padding: 7px 18px;
+      padding: 8px 20px;
       border-radius: 99px;
-      font-size: 12px;
+      font-size: 12.5px;
       font-weight: 700;
+      letter-spacing: 0.3px;
       z-index: 10;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 12px rgba(56, 189, 248, 0.35);
       pointer-events: none;
+      white-space: nowrap;
     }
     @keyframes fadeInOut {
-      0% { opacity: 0; transform: translate(-50%, 8px); }
-      15% { opacity: 1; transform: translate(-50%, 0); }
-      80% { opacity: 1; transform: translate(-50%, 0); }
-      100% { opacity: 0; transform: translate(-50%, -8px); }
-    }/* 📄 High-Status 1-Page PDF / Print Styles */
+      0% { opacity: 0; transform: translate(-50%, 10px); }
+      12% { opacity: 1; transform: translate(-50%, 0); }
+      85% { opacity: 1; transform: translate(-50%, 0); }
+      100% { opacity: 0; transform: translate(-50%, -10px); }
+    }
+    
+    /* 📄 High-Status 1-Page PDF / Print Styles */
     @media print {
       body {
         background: #fff !important;
@@ -900,19 +904,22 @@
     }
   };
 
-  // ⏱️ INTERACTIVE TIMECODE CONTROLLER (Smooth-Scrolls & Displays Playhead HUD)
+  // ⏱️ INTERACTIVE TIMECODE CONTROLLER (Smooth-Scrolls, Displays HUD & Seeks Native Video)
   window.wovSeekTimecode = function(timeStr) {
     if (!timeStr) return;
     
+    // Extract timestamp, e.g. "00:14" or "0:14 - 0:25" -> "00:14"
     const match = String(timeStr).match(/\d{1,2}:\d{2}/);
     if (!match) return;
     const cleanTime = match[0];
 
+    // 1. Smooth-scroll the video player directly into center view
     const videoCard = document.querySelector(".video-card");
     if (videoCard) {
       videoCard.scrollIntoView({ behavior: "smooth", block: "center" });
     }
 
+    // 2. Trigger High-Status Playhead Guidance HUD over the player
     let hud = document.getElementById("playheadHud");
     if (!hud && videoCard) {
       hud = document.createElement("div");
@@ -920,13 +927,14 @@
       videoCard.appendChild(hud);
     }
     if (hud) {
-      hud.innerHTML = `⏱️ Seeking to [${cleanTime}]`;
+      hud.innerHTML = `⏱️ Directorial Marker [${cleanTime}] — Scrub player to ${cleanTime}`;
       hud.style.display = "block";
       hud.style.animation = "none";
-      hud.offsetHeight;
-      hud.style.animation = "fadeInOut 2.5s forwards";
+      hud.offsetHeight; // force reflow
+      hud.style.animation = "fadeInOut 3.8s forwards";
     }
 
+    // 3. Programmatic Seek for HTML5 Native Video Players (Active when direct MP4/CDN is used)
     const nativeVid = document.getElementById("playerFrame") || document.querySelector("video");
     if (nativeVid && nativeVid.currentTime !== undefined) {
       const parts = cleanTime.split(":");
@@ -936,6 +944,5 @@
     }
   };
 </script>
-
 </body>
 </html>
