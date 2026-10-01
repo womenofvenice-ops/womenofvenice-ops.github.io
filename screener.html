@@ -702,9 +702,12 @@
       <!-- Dynamic Take Section: Updates Synchronously on Tab Switch -->
       <div id="dynamicTakeContainer"></div>
 
+      <!-- 🎬 Take 2 Directability Benchmark Bridge (Unlocked Pro View Only) -->
+      ${renderTake2BridgeHtml(talent, isPro, isCreator, rawTalentName)}
+
       <!-- Multi-Take Directability Delta (Permanent if multiple takes exist) -->
       ${renderProgressionHtml(talent)}
-
+      
       <!-- Adaptive Conversion Footer -->
       <div class="inquire-bar">
         <h3 style="font-size:20px;font-weight:700;margin-bottom:6px;">${ctaTitle}</h3>
@@ -739,6 +742,62 @@
     switchTakeVideo(initialTakeIdx);
   }
 
+  // 🎬 HELPER: Take 2 Directability Benchmark Bridge (Pro View Only)
+  function renderTake2BridgeHtml(talent, isPro, isCreator, rawTalentName) {
+    if (!isPro) return "";
+
+    const takes = talent.takes || [];
+    const latestTake = takes[takes.length - 1] || {};
+    const dirNotes = latestTake.directorNotes || {};
+    const nextTakeNum = takes.length + 1;
+
+    const targetDirective = dirNotes.nextSessionDirective || 
+                            dirNotes.blindspotToCorrect || 
+                            (isCreator ? "Apply kinetic 0-3s hook entry and eliminate vocal fry" : "Apply physical stillness and eliminate eye-line drift");
+
+    const bridgeTitle = isCreator 
+      ? `Benchmark Your Take #${nextTakeNum} Retention Fix` 
+      : `Benchmark Your Take #${nextTakeNum} Directability Delta`;
+
+    const bridgeDesc = isCreator
+      ? "Your baseline hook velocity is logged. Re-record your take applying the retention pacing notes to measure your algorithmic directability delta."
+      : "Casting directors prioritize actors who take directorial adjustments instantly. Re-record your scene applying Director Claudio's notes to generate your official Multi-Take Directability Delta.";
+
+    const ambitionLane = talent.targetAmbition || (isCreator ? "Short-Form Narrative Creator" : "Indie / Feature Cinema");
+    const uploadUrl = "upload.html?name=" + encodeURIComponent(rawTalentName) + 
+                      "&take=" + nextTakeNum + 
+                      "&format=" + encodeURIComponent(ambitionLane) + 
+                      "&notes=" + encodeURIComponent(targetDirective);
+
+    return `
+      <div class="telemetry-card" style="background:#FAF5FF;border:1.5px solid #E9D5FF;border-left:4px solid #8B5CF6;border-radius:14px;padding:22px;margin-bottom:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;">
+          <div style="flex:1;min-width:260px;">
+            <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#7C3AED;margin-bottom:4px;">
+              📈 Directability Progression Protocol
+            </div>
+            <h3 style="font-size:18px;font-weight:800;color:var(--ink);margin-bottom:6px;">
+              ${bridgeTitle}
+            </h3>
+            <p style="font-size:13.5px;color:var(--inkS);line-height:1.55;margin-bottom:12px;">
+              ${bridgeDesc}
+            </p>
+            <div style="font-size:12px;color:#6B21A8;background:rgba(139,92,246,0.08);padding:9px 13px;border-radius:6px;font-weight:600;line-height:1.5;">
+              🎯 <b>Target Directive:</b> ${esc(targetDirective)}
+            </div>
+          </div>
+          <div style="align-self:center;">
+            <a href="${esc(uploadUrl)}" 
+               class="btn-primary" 
+               style="display:inline-block;background:#7C3AED;color:#FFF;padding:12px 24px;border-radius:99px;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;box-shadow:0 4px 14px rgba(124,58,237,0.3);transition:background 0.2s;">
+              🎬 Submit Take #${nextTakeNum} Adjustment ↗
+            </a>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
   // 🔄 HELPER: Multi-take delta progression
   function renderProgressionHtml(talent) {
     const takes = talent.takes || [];
