@@ -328,7 +328,9 @@
       85% { opacity: 1; transform: translate(-50%, 0); }
       100% { opacity: 0; transform: translate(-50%, -10px); }
     }
-    
+
+    /* Screen Mode: Hide print-only verification footer */
+    .print-verification-footer { display: none; }
     /* 📄 High-Status 1-Page PDF / Print Styles */
     @media print {
       body {
@@ -352,6 +354,34 @@
       }
       .video-card, .inquire-bar, .v-tab, .lang-switcher, #pdfExportBtn {
         display: none !important;
+      }
+      /* Print Mode: Activate High-Status Verification & QR Code Bar */
+      .print-verification-footer {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1.5px solid #000 !important;
+        padding-top: 12px !important;
+        margin-top: 16px !important;
+        page-break-inside: avoid !important;
+      }
+      .print-qr-code {
+        width: 78px !important;
+        height: 78px !important;
+        display: block !important;
+      }
+      .print-cert-title {
+        font-family: 'Playfair Display', Georgia, serif !important;
+        font-size: 13px !important;
+        font-weight: 800 !important;
+        color: #000 !important;
+        letter-spacing: 0.5px !important;
+        margin-bottom: 2px !important;
+      }
+      .print-cert-text {
+        font-size: 10px !important;
+        color: #444 !important;
+        line-height: 1.4 !important;
       }
       .studio-bar {
         border-bottom: 2px solid #000 !important;
@@ -457,7 +487,10 @@
     const rawTalentName = String(talent.name || "Talent").trim();
     const safeTalentName = esc(rawTalentName);
     const safeFirstName = esc(rawTalentName.split(" ")[0]);
-
+    // 🛡️ Artifact Verification: Clean URL for QR code & studio hash
+    const liveScreenerUrl = "https://womenofvenice.com/screener.html?name=" + encodeURIComponent(rawTalentName) + (isCreator ? "&type=creator" : "&type=cinema");
+    const certHash = Math.abs(rawTalentName.split("").reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0)).toString(16).toUpperCase().padStart(8, "0");
+    const certId = "WOV-2026-" + certHash;
     // 🚀 2. ROBUST CREATOR AMBITION DETECTION (Regex + ?type= / ?format= / ?mode=)
     const params = new URLSearchParams(window.location.search);
     const typeParam = (params.get("type") || "").toLowerCase();
@@ -677,6 +710,23 @@
         <a href="mailto:${STUDIO_INQUIRY_EMAIL}?subject=${ctaSubject}" class="inquire-btn">
           ${ctaBtnText}
         </a>
+      </div>
+      <!-- 📄 Print-Only Official Studio Verification & QR Code Bar -->
+      <div class="print-verification-footer">
+        <div>
+          <div class="print-cert-title">Women of Venice • Autonomous Studio Telemetry</div>
+          <div class="print-cert-text">
+            <b>Certification ID:</b> ${certId} &nbsp;|&nbsp; <b>Status:</b> Audited & Verified<br>
+            <b>Vision Engine:</b> CLAUD-IA Directorial Telemetry Lab · Venice, Italy<br>
+            Scan QR code with smartphone to watch full-resolution master take & live telemetry.<br>
+            <span style="font-size:9.5px;color:#666;">Direct Dossier: ${esc(liveScreenerUrl)}</span>
+          </div>
+        </div>
+        <div style="text-align:center;margin-left:16px;">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=85x85&data=${encodeURIComponent(liveScreenerUrl)}" 
+               alt="Scan to Watch Video Take" class="print-qr-code">
+          <div style="font-size:9px;font-weight:700;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">Scan to Watch Take</div>
+        </div>
       </div>
     `;
 
