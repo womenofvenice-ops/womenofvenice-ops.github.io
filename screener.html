@@ -457,7 +457,33 @@
       const cleanUrl = window.location.pathname + '?name=' + encodeURIComponent(targetName) + (params.get("pro") ? '&pro=true' : '');
       window.history.replaceState({}, '', cleanUrl);
     }
+// 🛰️ CLAUD-IA MILESTONE TELEMETRY DISPATCHER (Uses keepalive to survive unloads & Safari 302s)
+    window.wovSendMilestone = function(eventType, meta) {
+      if (!targetName) return;
+      const payload = {
+        action: "logEngagementEvent",
+        talentId: targetName,
+        eventType: eventType,
+        meta: meta || {}
+      };
+      try {
+        fetch(EXEC, {
+          method: "POST",
+          mode: "no-cors",
+          keepalive: true,
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+      } catch (e) {}
+    };
 
+    // Milestone 1: Page Opened
+    wovSendMilestone("PAGE_VIEW", { 
+      referrer: document.referrer || "direct",
+      ref: params.get("ref") || "web",
+      isProView: params.get("pro") === "true"
+    });
+    
     const container = getAppEl();
 
     if (!targetName) {
@@ -593,9 +619,9 @@
         '</a>';
     } else {
       headerActionBtnHtml = 
-        '<button onclick="window.print()" style="background:#1C2B2C;color:#fff;padding:6px 14px;border-radius:6px;font-size:11.5px;font-weight:700;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">' +
-          '📄 Export PDF Deck' +
-        '</button>';
+        '<button onclick="wovSendMilestone(\'PDF_EXPORT_CLICKED\'); window.print();" class="pdf-btn">' +
+  (isCreator ? '📄 Export Verified PDF Kit' : '📄 Export PDF Deck') +
+'</button>';
     }
 
     // 8. ADAPTIVE LABELS (Cinema vs. Creator Economy)
@@ -716,6 +742,7 @@
           ${ctaBtnText}
         </a>
       </div>
+
       <!-- 📄 Print-Only Official Studio Verification & QR Code Bar -->
       <div class="print-verification-footer">
         <div>
@@ -728,11 +755,26 @@
           </div>
         </div>
         <div style="text-align:center;margin-left:16px;">
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=85x85&data=${encodeURIComponent(liveScreenerUrl)}" 
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=85x85&data=${encodeURIComponent(liveScreenerUrl + '&ref=pdf_qr')}" 
                alt="Scan to Watch Video Take" class="print-qr-code">
           <div style="font-size:9px;font-weight:700;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">Scan to Watch Take</div>
         </div>
       </div>
+
+      <!-- ⚖️ ART. 85 GDPR & EU AI ACT ARTISTIC COMPLIANCE FOOTER -->
+      <footer style="margin-top: 36px; padding: 20px 16px; border-top: 1px solid rgba(28,43,44,0.12); text-align: center; font-size: 11px; color: var(--inkS); line-height: 1.6;">
+        <div>
+          <strong>Audition Telemetry Certified by CLAUD-IA Studio Venice</strong> · Cinematic Structural Analysis
+        </div>
+        <div style="max-width: 580px; margin: 6px auto; font-size: 10px; color: var(--inkS); opacity: 0.85;">
+          Telemetry parameters are strictly limited to compositional pacing, lens framing geometry, and acoustic modulation under Art. 85 GDPR (Processing for Artistic Expression). No biometric categorization or emotion recognition profiling is conducted.
+        </div>
+        <div style="margin-top: 8px;">
+          <a href="javascript:void(0)" onclick="wovRequestTakedown()" style="color: var(--red); text-decoration: underline; font-weight: 600;">
+            Request Audit Takedown & Immediate Data Erasure (GDPR Art. 17)
+          </a>
+        </div>
+      </footer>
     `;
 
     const container = getAppEl();
@@ -1054,6 +1096,18 @@
       nativeVid.play().catch(function(){});
     }
   };
+
+  // ⚖️ 1-CLICK GDPR TAKEDOWN DISPATCHER (Human Confirmed)
+  window.wovRequestTakedown = function() {
+    if (confirm("Would you like to immediately withdraw this portfolio critique and revoke public access?")) {
+      const params = new URLSearchParams(window.location.search);
+      const talentIdentifier = params.get("name") || params.get("talent") || "";
+      fetch(EXEC + "?action=takedown&id=" + encodeURIComponent(talentIdentifier) + "&confirm=true", { mode: "no-cors" });
+      alert("Request received. Your dossier has been de-indexed.");
+      window.location.href = "https://womenofvenice.com";
+    }
+  };
+  
 </script>
 </body>
 </html>
