@@ -495,19 +495,47 @@
       return;
     }
 
-    fetch(EXEC + "?action=screener&name=" + encodeURIComponent(targetName))
+    // 🌟 BUILT-IN STUDIO REFERENCE DEMOS (Works 100% offline & with empty databases)
+    const rawTarget = typeof targetName !== "undefined" ? targetName : (new URLSearchParams(window.location.search).get("name") || "");
+    const demoKey = String(rawTarget || "").toLowerCase().replace(/[.\-_]/g, " ").replace(/\s+/g, " ").trim();
+
+    // 1. Intercept Studio Reference Profiles
+    if (demoKey === "elena b" || demoKey === "elena" || demoKey === "marta creator" || demoKey === "marta") {
+      if (typeof getDemoProfile_ === "function") {
+        renderScreener(getDemoProfile_(demoKey));
+        return;
+      }
+    }
+
+    // Helper: Safe HTML escape fallback
+    const safeEsc = typeof esc === "function" ? esc : function(s) {
+      return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    };
+
+    // 2. Fetch Live Database Record
+    fetch(EXEC + "?action=screener&name=" + encodeURIComponent(rawTarget))
       .then(res => res.json())
       .then(data => {
-        if (!data || !data.ok) {
+        // Tolerant check for ok, found, or direct talent object
+        if (!data || (!data.ok && !data.found && !data.dossier && !data.talent)) {
+          const errMsg = (data && (data.error || data.message)) ? (data.error || data.message) : "No audition dossier available for this profile.";
           container.innerHTML = 
-            '<div style="text-align:center;padding:60px 0;"><h2>⚠️ Talent Brief Not Found</h2><p style="color:var(--inkS);margin-top:8px;">' + (data ? esc(data.error) : "No record available") + '</p></div>';
+            '<div style="text-align:center;padding:60px 20px;">' +
+              '<h2 style="font-size:22px;color:var(--text,#1C2B2C);margin-bottom:8px;">⚠️ Talent Brief Not Found</h2>' +
+              '<p style="color:var(--inkS,#64748B);font-size:14px;max-width:440px;margin:0 auto 20px;">' + safeEsc(errMsg) + '</p>' +
+              '<a href="index.html#casting-studio" style="display:inline-block;padding:9px 20px;background:var(--red,#A8492E);color:#FFF;border-radius:99px;text-decoration:none;font-size:13px;font-weight:700;">← Return to Studio Lab</a>' +
+            '</div>';
           return;
         }
         renderScreener(data);
       })
       .catch(err => {
         container.innerHTML = 
-          '<div style="text-align:center;padding:60px 0;"><h2>Network Error</h2><p style="color:var(--inkS);margin-top:8px;">' + esc(err.message || err) + '</p></div>';
+          '<div style="text-align:center;padding:60px 20px;">' +
+            '<h2 style="font-size:22px;color:var(--text,#1C2B2C);margin-bottom:8px;">📡 Studio Connection Error</h2>' +
+            '<p style="color:var(--inkS,#64748B);font-size:13.5px;max-width:440px;margin:0 auto 20px;">' + safeEsc(err.message || err) + '</p>' +
+            '<button onclick="window.location.reload()" style="padding:9px 20px;background:var(--text,#1C2B2C);color:#FFF;border:none;border-radius:99px;cursor:pointer;font-size:13px;font-weight:700;">Retry Connection</button>' +
+          '</div>';
       });
   });
 
