@@ -567,8 +567,23 @@
     const baseStripeUrl = "https://buy.stripe.com/YOUR_STRIPE_LINK";
     const stripePaymentUrl = baseStripeUrl + "?client_reference_id=" + encodeURIComponent(rawTalentName);
 
-    window.wovPrepCheckout = function() {
+    window.wovPrepCheckout = function(e) {
       localStorage.setItem("wov_screener_talent", rawTalentName);
+
+      // 🛡️ If Stripe link is unconfigured or viewing a demo, guide to VIP pass
+      if (stripePaymentUrl.indexOf("YOUR_STRIPE_LINK") >= 0) {
+        if (e && e.preventDefault) e.preventDefault();
+        const vipBox = document.getElementById("vipCodeInput");
+        if (vipBox) {
+          vipBox.scrollIntoView({ behavior: "smooth", block: "center" });
+          vipBox.focus();
+          const statusEl = document.getElementById("vipCodeStatus");
+          if (statusEl) {
+            statusEl.style.color = "#F6E4B8";
+            statusEl.innerHTML = "💡 Test Pass: Enter <b>VENICE-VIP</b> to unlock this full demonstration.";
+          }
+        }
+      }
     };
 
     const radar = talent.latestRadar || {};
@@ -802,9 +817,9 @@
           Telemetry parameters are strictly limited to compositional pacing, lens framing geometry, and acoustic modulation under Art. 85 GDPR (Processing for Artistic Expression). No biometric categorization or emotion recognition profiling is conducted.
         </div>
         <div style="margin-top: 8px;">
-          <a href="javascript:void(0)" onclick="wovRequestTakedown()" style="color: var(--red); text-decoration: underline; font-weight: 600;">
-            Request Audit Takedown & Immediate Data Erasure (GDPR Art. 17)
-          </a>
+          <button type="button" onclick="wovRequestTakedown(event)" style="background:none;border:none;color:var(--red);text-decoration:underline;font-weight:600;font-size:11px;cursor:pointer;padding:0;font-family:inherit;">
+  Request Audit Takedown & Immediate Data Erasure (GDPR Art. 17)
+</button>
         </div>
       </footer>
     `;
@@ -1248,14 +1263,29 @@
     }
   };
 
-  // ⚖️ 1-CLICK GDPR TAKEDOWN DISPATCHER (Human Confirmed)
-  window.wovRequestTakedown = function() {
+  // ⚖️ 1-CLICK GDPR TAKEDOWN DISPATCHER (Protected & Unblockable)
+  window.wovRequestTakedown = function(e) {
+    if (e && e.preventDefault) e.preventDefault();
+
+    const params = new URLSearchParams(window.location.search);
+    const talentIdentifier = params.get("name") || params.get("talent") || "";
+    const cleanId = talentIdentifier.toLowerCase().trim();
+
+    // 🛡️ Protect Studio Demos from being de-indexed
+    if (cleanId === "elena b" || cleanId === "elena" || cleanId === "marta creator" || cleanId === "marta") {
+      alert("ℹ️ Studio Reference Demos are permanent public benchmarks and cannot be de-indexed.");
+      return;
+    }
+
     if (confirm("Would you like to immediately withdraw this portfolio critique and revoke public access?")) {
-      const params = new URLSearchParams(window.location.search);
-      const talentIdentifier = params.get("name") || params.get("talent") || "";
+      try {
+        localStorage.removeItem("wov_unlocked_" + talentIdentifier);
+        localStorage.removeItem("wov_screener_talent");
+      } catch(err) {}
+
       fetch(EXEC + "?action=takedown&id=" + encodeURIComponent(talentIdentifier) + "&confirm=true", { mode: "no-cors" });
       alert("Request received. Your dossier has been de-indexed.");
-      window.location.href = "https://womenofvenice.com";
+      window.location.replace("https://womenofvenice.com");
     }
   };
   // 💼 BRAND PITCH GENERATOR CONTROLLER
