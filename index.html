@@ -63,6 +63,60 @@
     .hero-content .unveil-headline { font-size: 34px; font-weight: 700; color: #F6E4B8; text-shadow: 0 2px 14px rgba(0,0,0,0.4); line-height: 1.15; margin-top: 14px; }
     .hero-content .unveil-sub { font-style: italic; font-size: 17px; color: rgba(244,236,222,0.9); margin-top: 8px; }
     @media (min-width: 700px) { .hero-content .unveil-headline { font-size: 56px; } .hero-content .unveil-sub { font-size: 22px; } }
+    /* 🌟 Reconciled Hero CTA Button Styles */
+    .hero-cta-group {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+    .hero-btn {
+      padding: 11px 24px;
+      border-radius: 30px;
+      font-family: 'Inter', Arial, sans-serif;
+      font-size: 13.5px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+      box-sizing: border-box;
+    }
+    .hero-btn-lab {
+      background: var(--red, #A8492E);
+      color: #FFF !important;
+      font-weight: 700;
+      box-shadow: 0 4px 14px rgba(168,73,46,0.3);
+    }
+    .hero-btn-lab:hover {
+      transform: translateY(-2px);
+      background: #8a3d28;
+      box-shadow: 0 6px 20px rgba(168,73,46,0.45);
+    }
+    .hero-btn-gallery {
+      background: rgba(28,43,44,0.65);
+      color: #FAF8F5 !important;
+      border: 1.5px solid rgba(250,248,245,0.4);
+      font-weight: 600;
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+    }
+    .hero-btn-gallery:hover {
+      transform: translateY(-2px);
+      background: rgba(28,43,44,0.85);
+      border-color: rgba(250,248,245,0.7);
+    }
+    @media (max-width: 600px) {
+      .hero-cta-group {
+        flex-direction: column;
+        width: 100%;
+      }
+      .hero-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
     .featured-stories { margin: 40px 0; }
     .featured-stories h2 { font-size: 28px; text-align: center; margin-bottom: 30px; font-weight: 700; }
     .featured-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
@@ -354,12 +408,24 @@
   </div>
 
   <div class="hero" id="hero">
-    <img id="heroImage" src="" alt="Women of Venice">
+    <img id="heroImage" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="Women of Venice Studio">
     <div class="hero-content">
       <h1>Women of Venice</h1>
-      <div class="sub">Portraits &amp; Stories · Venezia</div>
-      <div class="unveil-headline">Unveiling this Fall</div>
-      <div class="motto">✦ I'll steal you from Chronos — and give you Kairos.</div>
+      <div class="sub">Portraits, Stories &amp; Performance Telemetry · Venezia</div>
+      <div class="unveil-headline" style="font-size: clamp(28px, 4.5vw, 48px); margin-top: 10px; font-weight: 700; line-height: 1.2;">
+        Cinematic Presence &amp; Performance Intelligence.
+      </div>
+      <div class="motto" style="margin-bottom: 24px;">✦ I’ll steal you from Chronos — and give you Kairos.</div>
+      
+      <!-- Reconciled Dual CTA -->
+      <div class="hero-cta-group">
+        <a href="#casting-studio" class="hero-btn hero-btn-lab">
+          🎬 Enter Telemetry Lab
+        </a>
+        <a href="#gallery-section" class="hero-btn hero-btn-gallery">
+          🖼️ View Portrait Archive
+        </a>
+      </div>
     </div>
   </div>
 
