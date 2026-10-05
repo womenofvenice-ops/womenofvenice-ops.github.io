@@ -1253,6 +1253,99 @@
       }
     });
   };
+
+  // 🌟 PRE-POPULATED STUDIO BENCHMARKS FOR HOMEPAGE DEMOS (Offline-Immune & Fully Interactive)
+function getDemoProfile_(key) {
+  const cleanKey = String(key || "").toLowerCase();
+  
+  // ==========================================
+  // 1. CREATOR BENCHMARK: Marta Creator
+  // ==========================================
+  if (cleanKey.indexOf("marta") >= 0) {
+    return {
+      ok: true,
+      found: true,
+      isCreator: true,
+      name: "Marta Creator",
+      targetAmbition: "Short-Form Narrative Creator",
+      marketArchetype: "Viral Relatable Host",
+      instagram: "martacreator",
+      hookVelocity: "89/100",
+      presenceScore: 89,
+      vocalScore: 84,
+      subtextScore: 92,
+      formatFitScore: 90,
+      comps: {
+        actorComps: "Emma Chamberlain, Alix Earle, Drew Afualo",
+        directorFit: "DTC Brand Sponsorships & UGC Campaigns (Fashion/Beauty)"
+      },
+      latestRadar: { presenceScore: 89, vocalScore: 84, subtextScore: 92, formatFitScore: 90 },
+      takesCount: 1,
+      takes: [{
+        takeNumber: 1,
+        // High-speed portrait test video stream (ensures player & playhead HUD work live)
+        videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+        directorNotes: {
+          superpower: "Immediate 400ms kinetic visual hook with zero dead air on frame entry.",
+          blindspotToCorrect: "Vocal cadence decelerates slightly at [00:14], creating a micro-friction drop-off point.",
+          nextSessionDirective: "Insert a visual jump cut or pattern interrupt at second 12 to maintain momentum."
+        },
+        formatDiag: {
+          focusTitle: "3-Second Hook & Viral Retention Diagnostic",
+          viabilityAssessment: "High-converting brand sponsorship profile with top 5% front-end retention index."
+        },
+        talentFeedback: "Marta delivers exceptional parasocial intimacy, addressing the viewer with natural confessional trust. Tightening the mid-roll pacing at [00:14] will maximize full completion rates for brand deliverables.",
+        temporalBeatMap: [
+          { timestamp: "0:00 - 0:03", beatTitle: "Hook Entry: Pattern Interrupt", characterIntent: "Curiosity gap established within 400ms" },
+          { timestamp: "0:03 - 0:14", beatTitle: "Value Delivery & Pacing", characterIntent: "Fast-paced conversational confession" },
+          { timestamp: "0:14 - 0:22", beatTitle: "Call to Action / Resolution", characterIntent: "Community loyalty reinforcement" }
+        ]
+      }]
+    };
+  }
+
+  // ==========================================
+  // 2. CINEMA BENCHMARK: Elena B.
+  // ==========================================
+  return {
+    ok: true,
+    found: true,
+    isCreator: false,
+    name: "Elena B.",
+    targetAmbition: "Indie / Feature Cinema",
+    marketArchetype: "Grounded Dramatic Lead",
+    instagram: "elenab_cinema",
+    presenceScore: 88,
+    vocalScore: 82,
+    subtextScore: 91,
+    formatFitScore: 89,
+    comps: {
+      actorComps: "Vicky Krieps, Paula Beer, Renate Reinsve",
+      directorFit: "A24 / European Festival Feature (Joachim Trier, Charlotte Wells, Mia Hansen-Løve)"
+    },
+    latestRadar: { presenceScore: 88, vocalScore: 82, subtextScore: 91, formatFitScore: 89 },
+    takesCount: 1,
+    takes: [{
+      takeNumber: 1,
+      // Cinematic test video stream (enables interactive timestamp seeking to [00:18])
+      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+      directorNotes: {
+        superpower: "Silence discipline: holds dramatic subtext between lines with zero performative anxiety.",
+        blindspotToCorrect: "Vocal resonance transitions into throat register during emotional peak at [00:18].",
+        nextSessionDirective: "Anchor breath to lower diaphragm on transitions to maintain low-frequency acoustic authority."
+      },
+      formatDiag: {
+        focusTitle: "Silence Discipline & Subtext Depth Diagnostic",
+        viabilityAssessment: "Prime Cannes / Venice Film Festival feature lead candidate."
+      },
+      talentFeedback: "Elena exhibits remarkable stillness before the camera. Her eyes hold unspoken tension without wandering off-axis. Correcting the pitch shift at [00:18] will elevate scene continuity.",
+      temporalBeatMap: [
+        { timestamp: "0:00 - 0:12", beatTitle: "Beat 1: Establishing Interior Silence", characterIntent: "Internalized suppression of dramatic admission" },
+        { timestamp: "0:12 - 0:28", beatTitle: "Beat 2: Controlled Confrontation", characterIntent: "Direct eye-line challenge to scene partner across axis" }
+      ]
+    }]
+  };
+}
   
 </script>
 </body>
