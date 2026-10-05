@@ -957,19 +957,80 @@
     const wrapper = document.getElementById("videoWrapper");
     const directLinkWrap = document.getElementById("videoDirectLinkWrap");
 
+    // 🎬 MULTI-FORMAT PLAYER RENDER ENGINE (Native Stream, Drive Embed, or Studio NDA Slate)
+    const safeStudioEmail = (typeof STUDIO_INQUIRY_EMAIL !== "undefined" && STUDIO_INQUIRY_EMAIL) 
+      ? STUDIO_INQUIRY_EMAIL 
+      : "studio.wov@gmail.com";
+
+    const safeTalentName = (typeof state !== "undefined" && state && state.rawTalentName)
+      ? state.rawTalentName
+      : (window._screenerState && window._screenerState.rawTalentName ? window._screenerState.rawTalentName : "Talent");
+
+    const safeTakeNum = targetTake.takeNumber || (typeof idx !== "undefined" ? idx + 1 : 1);
+
+    const safeEsc = typeof esc === "function" ? esc : function(s) {
+      return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    };
+
     if (targetTake.videoUrl && String(targetTake.videoUrl).indexOf("http") === 0) {
       if (wrapper) {
-        wrapper.innerHTML = `<iframe id="playerFrame" src="${esc(targetTake.videoUrl)}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
+        const isDirectStream = /\.(mp4|webm|mov)(\?.*)?$/i.test(targetTake.videoUrl);
+        
+        if (isDirectStream) {
+          // 1A. Native HTML5 Video (Enables exact ▶ 00:14 timestamp scrubbing!)
+          wrapper.innerHTML = `
+            <video id="playerVideo" src="${safeEsc(targetTake.videoUrl)}" 
+                   controls playsinline style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;background:#000;">
+            </video>`;
+        } else {
+          // 1B. Google Drive / Third-Party Embed (Full-bleed absolute fill)
+          wrapper.innerHTML = `
+            <iframe id="playerFrame" src="${safeEsc(targetTake.videoUrl)}" 
+                    allow="autoplay; encrypted-media; fullscreen" allowfullscreen 
+                    style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;">
+            </iframe>`;
+        }
       }
+
       if (directLinkWrap) {
-        directLinkWrap.innerHTML = `<a href="${esc(targetTake.videoUrl)}" target="_blank" rel="noopener noreferrer" style="color:#94A3B8;font-size:12px;text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:4px;">🎬 Open Fullscreen Player ↗</a>`;
+        directLinkWrap.innerHTML = `
+          <a href="${safeEsc(targetTake.videoUrl)}" target="_blank" rel="noopener noreferrer" 
+             style="color:#94A3B8;font-size:12px;text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:4px;">
+            🎬 Open Fullscreen Player ↗
+          </a>`;
       }
-    } else {
+
+    } else if (targetTake.videoUrl === "CONFIDENTIAL_STUDIO_ARCHIVE" || targetTake.isConfidential) {
+      // 2. 🏛️ Studio Confidentiality & NDA Slate (Protects Talent Rights)
       if (wrapper) {
         wrapper.innerHTML = `
-          <div id="videoPlaceholder" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94A3B8;padding:20px;text-align:center;">
+          <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(145deg,#0B111E,#162235);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#FFF;padding:32px 24px;text-align:center;box-sizing:border-box;">
+            <div style="font-family:'Inter',monospace;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#F6E4B8;background:rgba(246,228,184,0.1);padding:5px 14px;border-radius:99px;margin-bottom:14px;border:1px solid rgba(246,228,184,0.25);">
+              🔒 Studio Master Archive · NDA Protected
+            </div>
+            <h3 style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin:0 0 10px;color:#FFF;">
+              Master Footage Restricted to Authorized Industry Evaluators
+            </h3>
+            <p style="font-size:12.5px;color:#94A3B8;max-width:480px;line-height:1.6;margin:0 auto 20px;">
+              To protect talent representation rights and production confidentiality, live playback is restricted to accredited producers and brand partners. The 4-axis performance radar, scene beats, and telemetry diagnostics are certified and verifiable below.
+            </p>
+            <a href="mailto:${safeStudioEmail}?subject=Screening%20Access%20Request%20—%20${encodeURIComponent(safeTalentName)}" 
+               style="display:inline-flex;align-items:center;gap:6px;background:var(--red,#A8492E);color:#FFF;padding:10px 22px;border-radius:99px;font-size:12.5px;font-weight:700;text-decoration:none;transition:background 0.2s;">
+              ✉️ Request Private Callback Screening Credentials
+            </a>
+          </div>`;
+      }
+      if (directLinkWrap) {
+        directLinkWrap.innerHTML = `<span style="color:#64748B;font-size:11px;font-weight:600;">🔒 Archive Restricted</span>`;
+      }
+
+    } else {
+      // 3. Temporary Processing Placeholder
+      if (wrapper) {
+        wrapper.innerHTML = `
+          <div id="videoPlaceholder" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94A3B8;padding:20px;text-align:center;box-sizing:border-box;">
             <div style="font-size:32px;margin-bottom:8px;">⏳</div>
-            <div style="font-size:14px;font-weight:600;">Playback Processing for Take #${targetTake.takeNumber || (idx + 1)}</div>
+            <div style="font-size:14px;font-weight:600;color:#CBD5E1;">Playback Processing for Take #${safeTakeNum}</div>
             <div style="font-size:12px;color:#64748B;margin-top:4px;">Master video file is currently synchronizing with streaming CDN.</div>
           </div>`;
       }
@@ -1328,7 +1389,7 @@ function getDemoProfile_(key) {
     takes: [{
       takeNumber: 1,
       // Cinematic test video stream (enables interactive timestamp seeking to [00:18])
-      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+      videoUrl: "CONFIDENTIAL_STUDIO_ARCHIVE",
       directorNotes: {
         superpower: "Silence discipline: holds dramatic subtext between lines with zero performative anxiety.",
         blindspotToCorrect: "Vocal resonance transitions into throat register during emotional peak at [00:18].",
