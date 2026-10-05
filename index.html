@@ -202,7 +202,7 @@
 .casting-card p { font-family: 'Inter', Arial, sans-serif; font-size: 13px; color: var(--text-light, #64748B); line-height: 1.55; }
 
 /* 🌟 Dual Interactive Live Demo Anchors */
-.demo-anchors-box {
+ .demo-anchors-box {
   background: var(--bg, #FFFFFF);
   border: 1.5px dashed var(--border, rgba(0,0,0,0.15));
   border-radius: 14px;
@@ -467,18 +467,18 @@
   </div>
 
   <!-- 🌟 Dual Interactive Live Demo Anchors -->
-  <div class="demo-anchors-box">
-    <div class="demo-anchors-tag">Interactive Studio Demonstrations</div>
-    <div class="demo-anchors-title">Inspect live certified telemetry decks before submitting your take:</div>
-    <div class="demo-btn-group">
-      <a href="screener.html?name=Elena+B&type=cinema" target="_blank" rel="noopener noreferrer" class="demo-btn demo-btn-cinema">
-        <span>🎬 Sample Arthouse Casting Brief</span> <span style="opacity:0.6;" aria-hidden="true">↗</span>
-      </a>
-      <a href="screener.html?name=Marta+Creator&type=creator" target="_blank" rel="noopener noreferrer" class="demo-btn demo-btn-creator">
-        <span>⚡ Sample Creator Media Kit</span> <span style="opacity:0.6;" aria-hidden="true">↗</span>
-      </a>
+    <div class="demo-anchors-box">
+      <div class="demo-anchors-tag">Interactive Studio Demonstrations</div>
+      <div class="demo-anchors-title">Inspect live certified telemetry decks before submitting your take:</div>
+      <div class="demo-btn-group">
+        <a href="screener.html?name=Elena+B&type=cinema" target="_blank" rel="noopener noreferrer" class="demo-btn demo-btn-cinema">
+          <span>🎬 Sample Arthouse Casting Brief</span> <span style="opacity:0.6;" aria-hidden="true">↗</span>
+        </a>
+        <a href="screener.html?name=Marta+Creator&type=creator" target="_blank" rel="noopener noreferrer" class="demo-btn demo-btn-creator">
+          <span>⚡ Sample Creator Media Kit</span> <span style="opacity:0.6;" aria-hidden="true">↗</span>
+        </a>
+      </div>
     </div>
-  </div>
 
   <!-- 🎬 Dual-Track Submission Portal (Pre-selects lane in upload.html) -->
   <div class="portal-box">
@@ -500,8 +500,19 @@
 </section>
   
   <section id="gallery-section">
-    <h2 style="text-align:center;font-size:28px;margin:20px 0 10px;">All Portraits</h2>
+    <div style="text-align: center; margin: 30px auto 16px; max-width: 640px;">
+      <div style="font-family: 'Inter', monospace; font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--red); margin-bottom: 6px;">
+        Atmosphere &amp; Scenography
+      </div>
+      <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 30px; font-weight: 700; margin-bottom: 6px; color: var(--text);">
+        Venetian Light &amp; Setting
+      </h2>
+      <p style="font-family: 'Inter', sans-serif; font-size: 13.5px; color: var(--text-light); line-height: 1.5;">
+        The cinematic canvas of Venezia — architectural contrast, morning lagoon light, and atmospheric framing for our camera lens sessions.
+      </p>
+    </div>
     <div class="gallery-grid" id="gallery"><div class="grid-sizer"></div><div class="load">Loading…</div></div>
+    
     <div class="load-more-container" id="loadMoreContainer" style="display:none;"><button id="loadMoreBtn">Load More</button></div>
   </section>
 
