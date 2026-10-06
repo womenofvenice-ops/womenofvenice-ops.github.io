@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Headshot Triage &amp; Casting Telemetry · Women of Venice</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,700;1,400&display=swap">
+  <style>
+    :root {
+      --bg: #FBF9F5;
+      --card-bg: #FFFFFF;
+      --text: #1C2B2C;
+      --text-light: #64748B;
+      --red: #A8492E;
+      --border: #E2E8F0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 40px 16px 64px;
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.5;
+    }
+    .triage-container {
+      max-width: 840px;
+      width: 100%;
+      text-align: center;
+    }
+    .kicker {
+      font-family: monospace;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-weight: 800;
+      color: var(--red);
+      background: rgba(168,73,46,0.1);
+      padding: 5px 14px;
+      border-radius: 99px;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(28px, 4.5vw, 40px);
+      margin: 0 0 12px;
+      line-height: 1.2;
+      color: var(--text);
+    }
+    p.sub {
+      color: var(--text-light);
+      font-size: 15px;
+      max-width: 580px;
+      margin: 0 auto 32px;
+      line-height: 1.6;
+    }
+    .meta-bar {
+      display: flex;
+      gap: 12px;
+      max-width: 480px;
+      margin: 0 auto 24px;
+      flex-wrap: wrap;
+    }
+    .meta-input {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 13.5px;
+      background: var(--card-bg);
+      outline: none;
+      font-family: inherit;
+    }
+    .meta-input:focus { border-color: var(--red); }
+    .dropzone-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    .dropzone {
+      background: var(--card-bg);
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 30px 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      min-height: 240px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .dropzone.dragover { border-color: var(--red); background: rgba(168,73,46,0.04); }
+    .dropzone img {
+      max-width: 100%;
+      max-height: 220px;
+      border-radius: 8px;
+      object-fit: cover;
+      display: none;
+    }
+    .dropzone-label {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text);
+      margin-top: 10px;
+    }
+    .dropzone-hint {
+      font-size: 11px;
+      color: var(--text-light);
+      margin-top: 4px;
+    }
+    .btn-triage {
+      background: var(--red);
+      color: #FFF;
+      border: none;
+      padding: 14px 36px;
+      border-radius: 99px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(168,73,46,0.3);
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-triage:hover { transform: translateY(-2px); background: #8a3d28; }
+    .btn-triage:disabled { background: #94A3B8; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* Verdict Card */
+    #verdictBox {
+      display: none;
+      background: var(--card-bg);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 32px 24px;
+      margin-top: 36px;
+      text-align: left;
+      box-shadow: 0 12px 35px rgba(0,0,0,0.05);
+    }
+    @media (max-width: 640px) {
+      .dropzone-grid { grid-template-columns: 1fr; }
+      .meta-bar { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="triage-container">
+    <div class="kicker">Studio Casting Desk · Headshot Telemetry</div>
+    <h1>Headshot A/B Triage &amp; Casting Predictor</h1>
+    <p class="sub">
+      Casting directors make placement decisions in under 2 seconds. Upload your two contender headshots to benchmark eye catchlight, lighting geometry, and predict your European casting bracket.
+    </p>
+
+    <!-- Context Meta Bar -->
+    <div class="meta-bar">
+      <input type="text" id="talentName" class="meta-input" placeholder="Your Name (e.g. Heather D.)">
+      <select id="targetFormat" class="meta-input">
+        <option value="Indie / Feature Cinema">🎬 Arthouse / Screen Acting</option>
+        <option value="Short-Form Narrative Creator">⚡ Digital Creator / Editorial UGC</option>
+      </select>
+    </div>
+
+    <!-- Side-by-Side Ingestion -->
+    <div class="dropzone-grid">
+      <div class="dropzone" id="zoneA">
+        <span style="font-size: 32px;">📷</span>
+        <div class="dropzone-label">Upload Photo A (Contender 1)</div>
+        <div class="dropzone-hint">Tap or drag image here</div>
+        <img id="previewA" alt="Photo A Preview">
+        <input type="file" id="fileA" accept="image/*" style="display:none">
+      </div>
+
+      <div class="dropzone" id="zoneB">
+        <span style="font-size: 32px;">📷</span>
+        <div class="dropzone-label">Upload Photo B (Contender 2)</div>
+        <div class="dropzone-hint">Tap or drag image here</div>
+        <img id="previewB" alt="Photo B Preview">
+        <input type="file" id="fileB" accept="image/*" style="display:none">
+      </div>
+    </div>
+
+    <button id="runTriageBtn" class="btn-triage" onclick="wovExecuteTriage()" disabled>
+      ⚖️ Run Comparative Casting Triage
+    </button>
+
+    <!-- Dynamic Verdict Container -->
+    <div id="verdictBox"></div>
+  </div>
+
+  <script>
+    const EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
+    const state = { imgA: null, imgB: null, mimeA: "image/jpeg", mimeB: "image/jpeg" };
+
+    // 🛡️ XSS Sanitizer
+    function escHtml(str) {
+      return String(str || "").replace(/[&<>"']/g, function(m) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m];
+      });
+    }
+
+    // Auto-fill parameters if passed via URL (?name=Heather+D.&format=...)
+    window.addEventListener("DOMContentLoaded", function() {
+      const p = new URLSearchParams(window.location.search);
+      if (p.get("name")) document.getElementById("talentName").value = p.get("name");
+      if (p.get("format")) document.getElementById("targetFormat").value = p.get("format");
+    });
+
+    // ⚡ Fast Client-Side Image Compressor with Error Traps
+    function compressImage(file, onSuccess, onError) {
+      const reader = new FileReader();
+      reader.onerror = function() {
+        if (onError) onError("Failed to read image file from your device storage.");
+      };
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onerror = function() {
+          if (onError) onError("Unsupported or unreadable image format. Please upload standard JPEG or PNG headshots.");
+        };
+        img.onload = function() {
+          const maxDim = 1600;
+          let w = img.width, h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+            else { w = Math.round((w * maxDim) / h); h = maxDim; }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.85);
+          onSuccess(compressedDataUrl);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Process file and reset input value to prevent re-upload deadlocks
+    function processFile(file, target) {
+      if (!file) return;
+      const preview = document.getElementById("preview" + target);
+      
+      compressImage(file, function(dataUrl) {
+        state["img" + target] = dataUrl;
+        state["mime" + target] = "image/jpeg";
+        preview.src = dataUrl;
+        preview.style.display = "block";
+        document.querySelector("#zone" + target + " span").style.display = "none";
+        document.querySelector("#zone" + target + " .dropzone-label").style.display = "none";
+        document.querySelector("#zone" + target + " .dropzone-hint").style.display = "none";
+        checkReady();
+      }, function(errMsg) {
+        alert("⚠️ Image Notice: " + errMsg);
+      });
+    }
+
+    // Attach click and native Drag-and-Drop to zones
+    ["A", "B"].forEach(function(target) {
+      const zone = document.getElementById("zone" + target);
+      const fileInput = document.getElementById("file" + target);
+
+      zone.addEventListener("click", function() {
+        fileInput.click();
+      });
+
+      fileInput.addEventListener("change", function() {
+        if (this.files && this.files[0]) {
+          processFile(this.files[0], target);
+          this.value = ""; // 👈 Clears value so same file can be re-selected
+        }
+      });
+
+      zone.addEventListener("dragover", function(e) {
+        e.preventDefault();
+        zone.classList.add("dragover");
+      });
+
+      zone.addEventListener("dragleave", function() {
+        zone.classList.remove("dragover");
+      });
+
+      zone.addEventListener("drop", function(e) {
+        e.preventDefault();
+        zone.classList.remove("dragover");
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+          processFile(e.dataTransfer.files[0], target);
+        }
+      });
+    });
+
+    function checkReady() {
+      if (state.imgA && state.imgB) {
+        document.getElementById("runTriageBtn").removeAttribute("disabled");
+      }
+    }
+
+    function wovExecuteTriage() {
+      const btn = document.getElementById("runTriageBtn");
+      const talentName = document.getElementById("talentName").value.trim() || "Emerging Talent";
+      const targetFormat = document.getElementById("targetFormat").value;
+
+      btn.innerText = "⏳ Auditing Eye Catchlight & Shadow Geometry...";
+      btn.disabled = true;
+
+      fetch(EXEC, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "headshotTriage",
+          talentName: talentName,
+          format: targetFormat,
+          imageA_base64: state.imgA,
+          imageA_mimeType: state.mimeA,
+          imageB_base64: state.imgB,
+          imageB_mimeType: state.mimeB
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.ok && data.result) {
+          btn.innerText = "✓ Analysis Complete";
+          renderVerdict(data.result, talentName, targetFormat);
+        } else {
+          btn.innerText = "⚠️ Triage Failed";
+          btn.disabled = false;
+          alert("Studio Analysis Notice: " + (data.error || "The vision model could not analyze the provided images."));
+        }
+      })
+      .catch(err => {
+        btn.innerText = "⚠️ Connection Error";
+        btn.disabled = false;
+        alert("Studio connection error: " + err.message);
+      });
+    }
+
+    function renderVerdict(res, name, format) {
+      const box = document.getElementById("verdictBox");
+      
+      // 🛡️ Robust Winner Resolution
+      const winnerStr = String(res.winner || "").toUpperCase();
+      const isWinnerA = winnerStr.includes("A") && !winnerStr.includes("B");
+      const winObj = (isWinnerA ? res.photoA : res.photoB) || res.photoA || res.photoB || {};
+      const winScore = winObj.overallScore || winObj.score || "88";
+      const winTypology = winObj.typology || res.castingTypology || "Screen / Commercial";
+      const winUsage = winObj.recommendedUsage || "Primary Spotlight / Agency Submissions";
+      const winTag = isWinnerA ? "Photo A" : "Photo B";
+
+      const uploadUrl = "upload.html?track=cinema&format=" + encodeURIComponent(format) + "&name=" + encodeURIComponent(name);
+
+      box.innerHTML = `
+        <div style="font-family:monospace;font-size:11px;font-weight:800;color:var(--red);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">
+          Official Studio Curation Verdict
+        </div>
+        <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:24px;margin:0 0 10px;color:var(--text);">
+          🏆 Recommended Industry Selection: ${escHtml(winTag)} (${escHtml(winScore)}/100)
+        </h2>
+        <div style="font-size:12px;color:var(--text-light);margin-bottom:16px;">
+          Candidate: <b>${escHtml(name)}</b> · Primary Alignment: <b>${escHtml(winTypology)}</b>
+        </div>
+        <p style="font-size:14px;color:var(--text);line-height:1.6;margin-bottom:20px;">
+          ${escHtml(res.verdictReasoning)}
+        </p>
+
+        <!-- Detailed Metrics -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:14px;background:var(--bg);padding:18px;border-radius:10px;margin-bottom:24px;border:1px solid var(--border);">
+          <div>
+            <div style="font-size:11px;font-weight:800;color:var(--red);text-transform:uppercase;">Predicted Typology</div>
+            <div style="font-size:14.5px;font-weight:700;margin-top:2px;">${escHtml(winTypology)}</div>
+            <div style="font-size:11.5px;color:var(--text-light);margin-top:2px;">${escHtml(winUsage)}</div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:800;color:var(--red);text-transform:uppercase;">Director Comps</div>
+            <div style="font-size:14.5px;font-weight:700;margin-top:2px;">${escHtml(res.directorComps || 'European Arthouse / Festival')}</div>
+            <div style="font-size:11.5px;color:var(--text-light);margin-top:2px;">High-fit visual packaging</div>
+          </div>
+        </div>
+
+        <!-- 🚀 Progression Bridge to Video Screen Test -->
+        <div style="background:#1C2B2C;color:#FAF8F5;border-radius:12px;padding:26px 20px;text-align:center;">
+          <h3 style="font-family:'Playfair Display',Georgia,serif;font-size:20px;margin:0 0 8px;">
+            Your Photographic Presence is Verified. Now Test Your Motion Directability.
+          </h3>
+          <p style="font-size:13px;color:#CBD5E1;max-width:500px;margin:0 auto 18px;line-height:1.5;">
+            Casting directors review self-tapes to benchmark vocal resonance, acoustic pacing, and silence discipline. Submit your 30s screen-test take to complete your verified studio dossier.
+          </p>
+          <a href="${uploadUrl}" style="display:inline-block;background:var(--red);color:#FFF;padding:11px 26px;border-radius:99px;font-weight:700;font-size:13.5px;text-decoration:none;transition:background 0.2s;">
+            🎬 Submit Self-Tape for Take 1 Evaluation ↗
+          </a>
+        </div>
+      `;
+      box.style.display = "block";
+      box.scrollIntoView({ behavior: "smooth" });
+    }
+  </script>
+</body>
+</html>
