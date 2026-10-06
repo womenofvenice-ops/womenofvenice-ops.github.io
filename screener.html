@@ -592,15 +592,7 @@
 
           if (statusEl) {
             statusEl.style.color = "#F6E4B8";
-            statusEl.innerHTML = "💡 Studio Demo: Enter <b>VENICE-VIP</b> below to unlock the complete verified dossier.";
-          }
-        } else {
-          // Fail-safe prompt if element was not immediately found in DOM
-          const entered = prompt("Studio Demonstration Mode:\nEnter scholarship code to unlock full evaluation dossier:", "VENICE-VIP");
-          if (entered) {
-            const inputEl = document.getElementById("vipCodeInput");
-            if (inputEl) inputEl.value = entered;
-            if (typeof wovRedeemVipCode === "function") wovRedeemVipCode();
+            statusEl.innerHTML = "Enter your single-use scholarship pass or agency credential below to unlock.";
           }
         }
         return false;
