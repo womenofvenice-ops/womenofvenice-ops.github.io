@@ -563,28 +563,42 @@
     }
     localStorage.setItem("wov_screener_talent", rawTalentName);
     
-    // 🛡️ 4. TRACKABLE STRIPE PAYMENT LINK (Attaches candidate name to Stripe receipt)
-    const baseStripeUrl = "https://buy.stripe.com/YOUR_STRIPE_LINK";
-    const stripePaymentUrl = baseStripeUrl + "?client_reference_id=" + encodeURIComponent(rawTalentName);
+  // 🛡️ 4. TRACKABLE STRIPE PAYMENT LINK & SMART CHECKOUT ROUTER
+    const baseStripeUrl = "https://buy.stripe.com/YOUR_STRIPE_LINK"; // 👈 Replace with live Stripe link when ready
+    const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
+      ? baseStripeUrl
+      : (baseStripeUrl + "?client_reference_id=" + encodeURIComponent(rawTalentName));
 
-    window.wovPrepCheckout = function(e) {
-      localStorage.setItem("wov_screener_talent", rawTalentName);
+    window.wovHandlePaymentClick = function(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      try {
+        localStorage.setItem("wov_screener_talent", rawTalentName);
+      } catch (err) {}
 
-      // 🛡️ If Stripe link is unconfigured or viewing a demo, guide to VIP pass
-      if (stripePaymentUrl.indexOf("YOUR_STRIPE_LINK") >= 0) {
-        if (e && e.preventDefault) e.preventDefault();
+      const cleanLowerName = rawTalentName.toLowerCase();
+      const isDemo = cleanLowerName.indexOf("elena") >= 0 || cleanLowerName.indexOf("marta") >= 0;
+      const isPlaceholder = !stripePaymentUrl || stripePaymentUrl.indexOf("YOUR_STRIPE_LINK") >= 0;
+
+      // 🛡️ If in Demo Mode OR Stripe link is unconfigured: guide smoothly to VIP box
+      if (isDemo || isPlaceholder) {
         const vipBox = document.getElementById("vipCodeInput");
+        const statusEl = document.getElementById("vipCodeStatus");
         if (vipBox) {
           vipBox.scrollIntoView({ behavior: "smooth", block: "center" });
           vipBox.focus();
-          const statusEl = document.getElementById("vipCodeStatus");
           if (statusEl) {
             statusEl.style.color = "#F6E4B8";
-            statusEl.innerHTML = "💡 Test Pass: Enter <b>VENICE-VIP</b> to unlock this full demonstration.";
+            statusEl.innerHTML = "💡 Studio Demo: Enter <b>VENICE-VIP</b> below to unlock the complete verified dossier.";
           }
         }
+        return false;
       }
+
+      // 🚀 Real checkout link configured for real candidate: navigate to live checkout
+      window.location.href = stripePaymentUrl;
     };
+    // Backward-compatible alias
+    window.wovPrepCheckout = window.wovHandlePaymentClick;
 
     const radar = talent.latestRadar || {};
     const comps = talent.comps || {};
