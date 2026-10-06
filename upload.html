@@ -259,16 +259,36 @@
     e.preventDefault();
     e.returnValue = 'Upload in progress. Are you sure you want to leave?';
   }
-  // URL Parameter Auto-Fill (?name=Heather+D.&email=...)
+  // URL Parameter Auto-Fill (Clean Slug & Session Support)
   window.addEventListener("DOMContentLoaded", function() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("name")) document.getElementById("name").value = params.get("name");
     if (params.get("email")) document.getElementById("email").value = params.get("email");
     if (params.get("take")) document.getElementById("takeNum").value = params.get("take");
-    if (params.get("format")) document.getElementById("targetFormat").value = params.get("format");
-    if (params.get("social") || params.get("handle")) {
-  document.getElementById("talentSocial").value = params.get("social") || params.get("handle");
-}
+    
+    // 🛡️ Clean Track Mapping (cinema -> Feature Cinema / creator -> Short-Form)
+    const track = (params.get("track") || "").toLowerCase();
+    const format = params.get("format") || "";
+    const formatEl = document.getElementById("targetFormat");
+    
+    if (track === "creator" || format.indexOf("Short-Form") >= 0 || format.indexOf("Creator") >= 0) {
+      if (formatEl) formatEl.value = "Short-Form Narrative Creator";
+    } else if (track === "cinema" || format.indexOf("Cinema") >= 0) {
+      if (formatEl) formatEl.value = "Indie / Feature Cinema";
+    } else if (format && formatEl) {
+      formatEl.value = format;
+    }
+
+    if (params.get("social") || params.get("handle") || params.get("ig")) {
+      document.getElementById("talentSocial").value = params.get("social") || params.get("handle") || params.get("ig");
+    }
+
+    // 🔒 Auto-fill Director's Note safely from sessionStorage or URL fallback
+    const savedNotes = sessionStorage.getItem("wov_take_notes") || params.get("notes") || "";
+    if (savedNotes && document.getElementById("notes")) {
+      document.getElementById("notes").value = savedNotes;
+      sessionStorage.removeItem("wov_take_notes"); // clean up
+    }
   });
 
   const fileInput = document.getElementById("videoFile");
