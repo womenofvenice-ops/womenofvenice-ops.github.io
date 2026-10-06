@@ -570,6 +570,7 @@
       ? baseStripeUrl
       : (baseStripeUrl + "?client_reference_id=" + encodeURIComponent(rawTalentName));
 
+   // 💳 SMART CHECKOUT ROUTER (Never Freezes · Auto-Scroll & Demo Safe)
     window.wovHandlePaymentClick = function(e) {
       if (e && e.preventDefault) e.preventDefault();
       try {
@@ -580,27 +581,36 @@
       const isDemo = cleanLowerName.indexOf("elena") >= 0 || cleanLowerName.indexOf("marta") >= 0;
       const isPlaceholder = !stripePaymentUrl || stripePaymentUrl.indexOf("YOUR_STRIPE_LINK") >= 0;
 
-      // 🛡️ If in Demo Mode OR Stripe link is unconfigured: guide smoothly to VIP box
+      // 🛡️ Demo Mode OR Unconfigured Stripe: Guide to VIP Scholarship
       if (isDemo || isPlaceholder) {
         const vipBox = document.getElementById("vipCodeInput");
         const statusEl = document.getElementById("vipCodeStatus");
+
         if (vipBox) {
           vipBox.scrollIntoView({ behavior: "smooth", block: "center" });
-          vipBox.focus();
+          setTimeout(function() { vipBox.focus(); }, 400);
+
           if (statusEl) {
             statusEl.style.color = "#F6E4B8";
             statusEl.innerHTML = "💡 Studio Demo: Enter <b>VENICE-VIP</b> below to unlock the complete verified dossier.";
+          }
+        } else {
+          // Fail-safe prompt if element was not immediately found in DOM
+          const entered = prompt("Studio Demonstration Mode:\nEnter scholarship code to unlock full evaluation dossier:", "VENICE-VIP");
+          if (entered) {
+            const inputEl = document.getElementById("vipCodeInput");
+            if (inputEl) inputEl.value = entered;
+            if (typeof wovRedeemVipCode === "function") wovRedeemVipCode();
           }
         }
         return false;
       }
 
-      // 🚀 Real checkout link configured for real candidate: navigate to live checkout
+      // 🚀 Real checkout link: Navigate to live checkout
       window.location.href = stripePaymentUrl;
     };
-    // Backward-compatible alias
     window.wovPrepCheckout = window.wovHandlePaymentClick;
-
+    
     const radar = talent.latestRadar || {};
     const comps = talent.comps || {};
     const takes = Array.isArray(talent.takes) && talent.takes.length > 0 ? talent.takes : [{}];
