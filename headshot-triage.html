@@ -304,12 +304,16 @@
       }
     }
 
-    function wovExecuteTriage() {
+    function wovExecuteTriage(isRetry) {
       const btn = document.getElementById("runTriageBtn");
       const talentName = document.getElementById("talentName").value.trim() || "Emerging Talent";
       const targetFormat = document.getElementById("targetFormat").value;
 
-      btn.innerText = "⏳ Auditing Eye Catchlight & Shadow Geometry...";
+      if (!isRetry) {
+        btn.innerText = "⏳ Auditing Eye Catchlight & Shadow Geometry...";
+      } else {
+        btn.innerText = "⏳ Server capacity surge, retrying analysis (2/2)...";
+      }
       btn.disabled = true;
 
       fetch(EXEC, {
@@ -331,12 +335,28 @@
           btn.innerText = "✓ Analysis Complete";
           renderVerdict(data.result, talentName, targetFormat);
         } else {
+          // If server failed (e.g. 503) and we haven't retried yet, auto-retry once after 2s
+          if (!isRetry && data.error && (data.error.indexOf("503") >= 0 || data.error.indexOf("429") >= 0)) {
+            setTimeout(function() {
+              wovExecuteTriage(true);
+            }, 2000);
+            return;
+          }
+
           btn.innerText = "⚠️ Triage Failed";
           btn.disabled = false;
           alert("Studio Analysis Notice: " + (data.error || "The vision model could not analyze the provided images."));
         }
       })
       .catch(err => {
+        // If network dropped and we haven't retried yet, auto-retry once
+        if (!isRetry) {
+          setTimeout(function() {
+            wovExecuteTriage(true);
+          }, 2000);
+          return;
+        }
+
         btn.innerText = "⚠️ Connection Error";
         btn.disabled = false;
         alert("Studio connection error: " + err.message);
