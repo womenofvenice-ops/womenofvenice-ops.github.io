@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <title>Headshot Triage &amp; Casting Telemetry · Women of Venice</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="apple-touch-icon" href="logo.png">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,700;1,400&display=swap">
   <style>
     :root {
@@ -55,28 +57,47 @@
       color: var(--text-light);
       font-size: 15px;
       max-width: 580px;
-      margin: 0 auto 32px;
+      margin: 0 auto 28px;
       line-height: 1.6;
     }
-    .meta-bar {
+
+    /* Guidelines Bar */
+    .guidelines-box {
+      background: rgba(168,73,46,0.04);
+      border: 1px dashed rgba(168,73,46,0.25);
+      border-radius: 10px;
+      padding: 12px 18px;
+      max-width: 620px;
+      margin: 0 auto 28px;
+      font-size: 12.5px;
+      color: var(--text);
       display: flex;
+      gap: 10px;
+      align-items: center;
+      text-align: left;
+    }
+
+    /* Lead Capture Form */
+    .lead-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: 12px;
-      max-width: 480px;
+      max-width: 680px;
       margin: 0 auto 24px;
-      flex-wrap: wrap;
     }
     .meta-input {
-      flex: 1;
-      min-width: 200px;
-      padding: 10px 14px;
+      width: 100%;
+      padding: 11px 14px;
       border: 1.5px solid var(--border);
       border-radius: 8px;
       font-size: 13.5px;
       background: var(--card-bg);
       outline: none;
       font-family: inherit;
+      color: var(--text);
     }
     .meta-input:focus { border-color: var(--red); }
+
     .dropzone-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -91,7 +112,7 @@
       cursor: pointer;
       transition: all 0.2s;
       position: relative;
-      min-height: 240px;
+      min-height: 250px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -116,11 +137,34 @@
       color: var(--text-light);
       margin-top: 4px;
     }
+
+    /* ❌ Remove / Clear Image Button */
+    .btn-remove-img {
+      display: none;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 28px;
+      height: 28px;
+      background: rgba(15,23,42,0.85);
+      color: #FFF;
+      border: none;
+      border-radius: 50%;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: background 0.2s;
+    }
+    .btn-remove-img:hover { background: var(--red); }
+
     .btn-triage {
       background: var(--red);
       color: #FFF;
       border: none;
-      padding: 14px 36px;
+      padding: 14px 40px;
       border-radius: 99px;
       font-size: 15px;
       font-weight: 700;
@@ -140,65 +184,32 @@
       background: var(--card-bg);
       border: 1.5px solid var(--border);
       border-radius: 14px;
-      padding: 32px 24px;
+      padding: 36px 28px;
       margin-top: 36px;
       text-align: left;
       box-shadow: 0 12px 35px rgba(0,0,0,0.05);
     }
-    @media (max-width: 640px) {
+
+    @media (max-width: 680px) {
+      .lead-form-grid { grid-template-columns: 1fr; }
       .dropzone-grid { grid-template-columns: 1fr; }
-      .meta-bar { flex-direction: column; }
     }
-    /* 🎬 Cinematic Studio Telemetry Loader */
-    #triageProgressBox {
-      display: none;
-      margin-top: 28px;
-      padding: 22px;
-      background: var(--card-bg);
-      border-radius: 14px;
-      border: 1px solid var(--border);
-      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+
+    /* 📄 High-Status 1-Page PDF Export */
+    @media print {
+      body { background: #FFF !important; padding: 0 !important; color: #000 !important; }
+      .triage-container > h1, .triage-container > p.sub, .kicker, .guidelines-box, .lead-form-grid, .dropzone-grid, #runTriageBtn {
+        display: none !important;
+      }
+      #verdictBox {
+        display: block !important;
+        border: 1.5px solid #000 !important;
+        box-shadow: none !important;
+        padding: 24px !important;
+        margin: 0 !important;
+      }
+      .no-print { display: none !important; }
     }
-    .triage-progress-bar-bg {
-      width: 100%;
-      height: 7px;
-      background: rgba(0,0,0,0.06);
-      border-radius: 99px;
-      overflow: hidden;
-      margin-bottom: 14px;
-    }
-    .triage-progress-bar-fill {
-      width: 0%;
-      height: 100%;
-      background: linear-gradient(90deg, #A8492E, #E09A73);
-      border-radius: 99px;
-      transition: width 0.3s ease;
-    }
-    .aperture-spinner {
-      margin: 12px auto 8px;
-      width: 44px;
-      height: 44px;
-      border: 3px solid rgba(168, 73, 46, 0.15);
-      border-top-color: var(--red);
-      border-radius: 50%;
-      animation: apertureSpin 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
-    }
-    @keyframes apertureSpin {
-      to { transform: rotate(360deg); }
-    }
-    .triage-phase-text {
-      font-size: 13.5px;
-      font-weight: 700;
-      color: var(--text);
-      letter-spacing: 0.2px;
-      margin-top: 6px;
-    }
-    .triage-phase-sub {
-      font-size: 11.5px;
-      color: var(--text-light);
-      margin-top: 3px;
-    }
-    
   </style>
 </head>
 <body>
@@ -207,12 +218,21 @@
     <div class="kicker">Studio Casting Desk · Headshot Telemetry</div>
     <h1>Headshot A/B Triage &amp; Casting Predictor</h1>
     <p class="sub">
-      Casting directors make placement decisions in under 2 seconds. Upload your two contender headshots to benchmark eye catchlight, lighting geometry, and predict your European casting bracket.
+      Casting directors make placement decisions in under 2 seconds. Upload your two contender headshots to benchmark eye catchlight, lighting geometry, and European casting typology.
     </p>
 
-    <!-- Context Meta Bar -->
-    <div class="meta-bar">
-      <input type="text" id="talentName" class="meta-input" placeholder="Your Name (e.g. Heather D.)">
+    <!-- Pre-Upload Guidelines -->
+    <div class="guidelines-box">
+      <span style="font-size:20px;">💡</span>
+      <div>
+        <b>Studio Headshot Standards:</b> Direct-to-lens eye contact, natural bone structure lighting, and minimal beauty filters. <i>Photos are processed securely in memory and never shared.</i>
+      </div>
+    </div>
+
+    <!-- Lead Capture Form (Required for Analysis) -->
+    <div class="lead-form-grid">
+      <input type="text" id="talentName" class="meta-input" placeholder="Your Full Name *" required>
+      <input type="email" id="talentEmail" class="meta-input" placeholder="Your Email (For Directing Notes) *" required>
       <select id="targetFormat" class="meta-input">
         <option value="Indie / Feature Cinema">🎬 Arthouse / Screen Acting</option>
         <option value="Short-Form Narrative Creator">⚡ Digital Creator / Editorial UGC</option>
@@ -222,17 +242,19 @@
     <!-- Side-by-Side Ingestion -->
     <div class="dropzone-grid">
       <div class="dropzone" id="zoneA">
-        <span style="font-size: 32px;">📷</span>
-        <div class="dropzone-label">Upload Photo A (Contender 1)</div>
-        <div class="dropzone-hint">Tap or drag image here</div>
+        <button type="button" class="btn-remove-img" id="removeA" onclick="wovClearImg(event, 'A')" title="Remove Photo">×</button>
+        <span style="font-size: 36px;" id="iconA">📷</span>
+        <div class="dropzone-label" id="labelA">Upload Photo A (Contender 1)</div>
+        <div class="dropzone-hint" id="hintA">Tap or drag image here</div>
         <img id="previewA" alt="Photo A Preview">
         <input type="file" id="fileA" accept="image/*" style="display:none">
       </div>
 
       <div class="dropzone" id="zoneB">
-        <span style="font-size: 32px;">📷</span>
-        <div class="dropzone-label">Upload Photo B (Contender 2)</div>
-        <div class="dropzone-hint">Tap or drag image here</div>
+        <button type="button" class="btn-remove-img" id="removeB" onclick="wovClearImg(event, 'B')" title="Remove Photo">×</button>
+        <span style="font-size: 36px;" id="iconB">📷</span>
+        <div class="dropzone-label" id="labelB">Upload Photo B (Contender 2)</div>
+        <div class="dropzone-hint" id="hintB">Tap or drag image here</div>
         <img id="previewB" alt="Photo B Preview">
         <input type="file" id="fileB" accept="image/*" style="display:none">
       </div>
@@ -242,16 +264,6 @@
       ⚖️ Run Comparative Casting Triage
     </button>
 
-    <!-- 🎬 Cinematic Studio Telemetry Loader (Visible during analysis) -->
-    <div id="triageProgressBox">
-      <div class="triage-progress-bar-bg">
-        <div class="triage-progress-bar-fill" id="triageProgressFill"></div>
-      </div>
-      <div class="aperture-spinner"></div>
-      <div class="triage-phase-text" id="triagePhaseText">Connecting to Venice Studio Desk...</div>
-      <div class="triage-phase-sub" id="triagePhaseSub">Establishing secure multimodal vision session</div>
-    </div>
-
     <!-- Dynamic Verdict Container -->
     <div id="verdictBox"></div>
   </div>
@@ -260,21 +272,21 @@
     const EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
     const state = { imgA: null, imgB: null, mimeA: "image/jpeg", mimeB: "image/jpeg" };
 
-    // 🛡️ XSS Sanitizer
     function escHtml(str) {
       return String(str || "").replace(/[&<>"']/g, function(m) {
         return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m];
       });
     }
 
-    // Auto-fill parameters if passed via URL (?name=Heather+D.&format=...)
+    // Auto-fill parameters if passed via query
     window.addEventListener("DOMContentLoaded", function() {
       const p = new URLSearchParams(window.location.search);
       if (p.get("name")) document.getElementById("talentName").value = p.get("name");
+      if (p.get("email")) document.getElementById("talentEmail").value = p.get("email");
       if (p.get("format")) document.getElementById("targetFormat").value = p.get("format");
     });
 
-    // ⚡ Fast Client-Side Image Compressor with Error Traps
+    // ⚡ Fast Client-Side Image Compressor
     function compressImage(file, onSuccess, onError) {
       const reader = new FileReader();
       reader.onerror = function() {
@@ -283,7 +295,7 @@
       reader.onload = function(e) {
         const img = new Image();
         img.onerror = function() {
-          if (onError) onError("Unsupported or unreadable image format. Please upload standard JPEG or PNG headshots.");
+          if (onError) onError("Unsupported image format. Please upload standard JPEG or PNG headshots.");
         };
         img.onload = function() {
           const maxDim = 1600;
@@ -305,38 +317,53 @@
       reader.readAsDataURL(file);
     }
 
-    // Process file and reset input value to prevent re-upload deadlocks
     function processFile(file, target) {
       if (!file) return;
       const preview = document.getElementById("preview" + target);
+      const removeBtn = document.getElementById("remove" + target);
       
       compressImage(file, function(dataUrl) {
         state["img" + target] = dataUrl;
         state["mime" + target] = "image/jpeg";
         preview.src = dataUrl;
         preview.style.display = "block";
-        document.querySelector("#zone" + target + " span").style.display = "none";
-        document.querySelector("#zone" + target + " .dropzone-label").style.display = "none";
-        document.querySelector("#zone" + target + " .dropzone-hint").style.display = "none";
+        removeBtn.style.display = "flex";
+        document.getElementById("icon" + target).style.display = "none";
+        document.getElementById("label" + target).style.display = "none";
+        document.getElementById("hint" + target).style.display = "none";
         checkReady();
       }, function(errMsg) {
         alert("⚠️ Image Notice: " + errMsg);
       });
     }
 
-    // Attach click and native Drag-and-Drop to zones
+    // ❌ 1-Click Clear / Remove Image
+    window.wovClearImg = function(e, target) {
+      e.stopPropagation();
+      state["img" + target] = null;
+      document.getElementById("preview" + target).style.display = "none";
+      document.getElementById("preview" + target).src = "";
+      document.getElementById("remove" + target).style.display = "none";
+      document.getElementById("icon" + target).style.display = "block";
+      document.getElementById("label" + target).style.display = "block";
+      document.getElementById("hint" + target).style.display = "block";
+      document.getElementById("file" + target).value = "";
+      checkReady();
+    };
+
+    // Attach click and native Drag-and-Drop
     ["A", "B"].forEach(function(target) {
-      const zone = document.getElementById("zone" + target);
+      const zone = document.getElementById("zoneA" === "zone" + target ? "zoneA" : "zoneB");
       const fileInput = document.getElementById("file" + target);
 
-      zone.addEventListener("click", function() {
+      zone.addEventListener("click", function(e) {
+        if (e.target.classList.contains("btn-remove-img")) return;
         fileInput.click();
       });
 
       fileInput.addEventListener("change", function() {
         if (this.files && this.files[0]) {
           processFile(this.files[0], target);
-          this.value = ""; // 👈 Clears value so same file can be re-selected
         }
       });
 
@@ -359,52 +386,46 @@
     });
 
     function checkReady() {
-      if (state.imgA && state.imgB) {
-        document.getElementById("runTriageBtn").removeAttribute("disabled");
+      const hasImages = state.imgA && state.imgB;
+      const btn = document.getElementById("runTriageBtn");
+      if (hasImages) {
+        btn.removeAttribute("disabled");
+      } else {
+        btn.setAttribute("disabled", "true");
       }
     }
 
     function wovExecuteTriage() {
-      const btn = document.getElementById("runTriageBtn");
-      const progressBox = document.getElementById("triageProgressBox");
-      const progressFill = document.getElementById("triageProgressFill");
-      const phaseText = document.getElementById("triagePhaseText");
-      const phaseSub = document.getElementById("triagePhaseSub");
-      const verdictBox = document.getElementById("verdictBox");
-
-      const talentName = document.getElementById("talentName").value.trim() || "Emerging Talent";
+      const nameInput = document.getElementById("talentName");
+      const emailInput = document.getElementById("talentEmail");
       const targetFormat = document.getElementById("targetFormat").value;
 
-      // 1. Hide button, hide previous verdict, show studio loader
-      btn.style.display = "none";
-      if (verdictBox) verdictBox.style.display = "none";
-      progressBox.style.display = "block";
-      progressFill.style.width = "15%";
+      const talentName = nameInput.value.trim();
+      const talentEmail = emailInput.value.trim();
 
-      // 2. Dynamic Phase Progression (Keeps user visually engaged)
-      const phases = [
-        { pct: 30, text: "Transmitting High-Res Portraits...", sub: "Calibrating 1600px lens geometry" },
-        { pct: 65, text: "Auditing Pupillary Catchlight & Shadow...", sub: "Measuring Rembrandt lighting contrast ratio" },
-        { pct: 88, text: "Synthesizing Casting Typology...", sub: "Benchmarking against European director criteria" }
-      ];
+      // Lead Capture Validation
+      if (!talentName) {
+        alert("Please enter your name before running the triage.");
+        nameInput.focus();
+        return;
+      }
+      if (!talentEmail || talentEmail.indexOf("@") === -1) {
+        alert("Please enter a valid email address to receive your directing notes.");
+        emailInput.focus();
+        return;
+      }
 
-      let phaseIdx = 0;
-      const phaseInterval = setInterval(function() {
-        if (phaseIdx < phases.length) {
-          progressFill.style.width = phases[phaseIdx].pct + "%";
-          phaseText.innerText = phases[phaseIdx].text;
-          phaseSub.innerText = phases[phaseIdx].sub;
-          phaseIdx++;
-        }
-      }, 700);
+      const btn = document.getElementById("runTriageBtn");
+      btn.innerText = "⏳ Auditing Eye Catchlight & Shadow Geometry...";
+      btn.disabled = true;
 
-      // 3. Dispatch to Backend
       fetch(EXEC, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({
           action: "headshotTriage",
           talentName: talentName,
+          talentEmail: talentEmail,
           format: targetFormat,
           imageA_base64: state.imgA,
           imageA_mimeType: state.mimeA,
@@ -414,32 +435,25 @@
       })
       .then(res => res.json())
       .then(data => {
-        clearInterval(phaseInterval);
-        progressFill.style.width = "100%";
-
-        setTimeout(function() {
-          progressBox.style.display = "none";
-          btn.style.display = "inline-flex";
-
-          if (data.ok && data.result) {
-            renderVerdict(data.result, talentName, targetFormat);
-          } else {
-            alert("Studio Notice: " + (data.error || "Analysis could not be completed. Please ensure clear frontal portraits."));
-          }
-        }, 400);
+        if (data.ok && data.result) {
+          btn.innerText = "✓ Analysis Complete";
+          renderVerdict(data.result, talentName, talentEmail, targetFormat);
+        } else {
+          btn.innerText = "⚖️ Run Comparative Casting Triage";
+          btn.disabled = false;
+          alert("Studio Notice: " + (data.error || "Analysis could not be completed. Please ensure clear frontal portraits."));
+        }
       })
       .catch(err => {
-        clearInterval(phaseInterval);
-        progressBox.style.display = "none";
-        btn.style.display = "inline-flex";
-        alert("Studio connection notice: " + err.message);
+        btn.innerText = "⚖️ Run Comparative Casting Triage";
+        btn.disabled = false;
+        alert("Studio connection error: " + err.message);
       });
     }
 
-    function renderVerdict(res, name, format) {
+    function renderVerdict(res, name, email, format) {
       const box = document.getElementById("verdictBox");
       
-      // 🛡️ Robust Winner Resolution
       const winnerStr = String(res.winner || "").toUpperCase();
       const isWinnerA = winnerStr.includes("A") && !winnerStr.includes("B");
       const winObj = (isWinnerA ? res.photoA : res.photoB) || res.photoA || res.photoB || {};
@@ -448,45 +462,51 @@
       const winUsage = winObj.recommendedUsage || "Primary Spotlight / Agency Submissions";
       const winTag = isWinnerA ? "Photo A" : "Photo B";
 
-      const uploadUrl = "upload.html?track=cinema&format=" + encodeURIComponent(format) + "&name=" + encodeURIComponent(name);
+      const uploadUrl = "upload.html?track=cinema&format=" + encodeURIComponent(format) + "&name=" + encodeURIComponent(name) + "&email=" + encodeURIComponent(email);
 
       box.innerHTML = `
-        <div style="font-family:monospace;font-size:11px;font-weight:800;color:var(--red);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">
-          Official Studio Curation Verdict
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+          <div style="font-family:monospace;font-size:11px;font-weight:800;color:var(--red);letter-spacing:2px;text-transform:uppercase;">
+            Official Studio Curation Verdict
+          </div>
+          <button type="button" class="no-print" onclick="window.print()" style="background:#1C2B2C;color:#FFF;border:none;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">
+            📄 Export Verdict (PDF)
+          </button>
         </div>
-        <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:24px;margin:0 0 10px;color:var(--text);">
+
+        <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:26px;margin:0 0 8px;color:var(--text);">
           🏆 Recommended Industry Selection: ${escHtml(winTag)} (${escHtml(winScore)}/100)
         </h2>
-        <div style="font-size:12px;color:var(--text-light);margin-bottom:16px;">
+        <div style="font-size:12.5px;color:var(--text-light);margin-bottom:18px;">
           Candidate: <b>${escHtml(name)}</b> · Primary Alignment: <b>${escHtml(winTypology)}</b>
         </div>
-        <p style="font-size:14px;color:var(--text);line-height:1.6;margin-bottom:20px;">
+        <p style="font-size:14.5px;color:var(--text);line-height:1.6;margin-bottom:24px;">
           ${escHtml(res.verdictReasoning)}
         </p>
 
-        <!-- Detailed Metrics -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:14px;background:var(--bg);padding:18px;border-radius:10px;margin-bottom:24px;border:1px solid var(--border);">
+        <!-- Metrics Grid -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:14px;background:var(--bg);padding:18px;border-radius:10px;margin-bottom:28px;border:1px solid var(--border);">
           <div>
             <div style="font-size:11px;font-weight:800;color:var(--red);text-transform:uppercase;">Predicted Typology</div>
-            <div style="font-size:14.5px;font-weight:700;margin-top:2px;">${escHtml(winTypology)}</div>
+            <div style="font-size:15px;font-weight:700;margin-top:2px;">${escHtml(winTypology)}</div>
             <div style="font-size:11.5px;color:var(--text-light);margin-top:2px;">${escHtml(winUsage)}</div>
           </div>
           <div>
             <div style="font-size:11px;font-weight:800;color:var(--red);text-transform:uppercase;">Director Comps</div>
-            <div style="font-size:14.5px;font-weight:700;margin-top:2px;">${escHtml(res.directorComps || 'European Arthouse / Festival')}</div>
+            <div style="font-size:15px;font-weight:700;margin-top:2px;">${escHtml(res.directorComps || 'European Arthouse / Festival')}</div>
             <div style="font-size:11.5px;color:var(--text-light);margin-top:2px;">High-fit visual packaging</div>
           </div>
         </div>
 
         <!-- 🚀 Progression Bridge to Video Screen Test -->
-        <div style="background:#1C2B2C;color:#FAF8F5;border-radius:12px;padding:26px 20px;text-align:center;">
+        <div class="no-print" style="background:#1C2B2C;color:#FAF8F5;border-radius:12px;padding:28px 22px;text-align:center;">
           <h3 style="font-family:'Playfair Display',Georgia,serif;font-size:20px;margin:0 0 8px;">
             Your Photographic Presence is Verified. Now Test Your Motion Directability.
           </h3>
-          <p style="font-size:13px;color:#CBD5E1;max-width:500px;margin:0 auto 18px;line-height:1.5;">
+          <p style="font-size:13px;color:#CBD5E1;max-width:500px;margin:0 auto 20px;line-height:1.5;">
             Casting directors review self-tapes to benchmark vocal resonance, acoustic pacing, and silence discipline. Submit your 30s screen-test take to complete your verified studio dossier.
           </p>
-          <a href="${uploadUrl}" style="display:inline-block;background:var(--red);color:#FFF;padding:11px 26px;border-radius:99px;font-weight:700;font-size:13.5px;text-decoration:none;transition:background 0.2s;">
+          <a href="${uploadUrl}" style="display:inline-block;background:var(--red);color:#FFF;padding:12px 28px;border-radius:99px;font-weight:700;font-size:13.5px;text-decoration:none;transition:background 0.2s;">
             🎬 Submit Self-Tape for Take 1 Evaluation ↗
           </a>
         </div>
