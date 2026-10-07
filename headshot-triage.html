@@ -149,6 +149,56 @@
       .dropzone-grid { grid-template-columns: 1fr; }
       .meta-bar { flex-direction: column; }
     }
+    /* 🎬 Cinematic Studio Telemetry Loader */
+    #triageProgressBox {
+      display: none;
+      margin-top: 28px;
+      padding: 22px;
+      background: var(--card-bg);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    }
+    .triage-progress-bar-bg {
+      width: 100%;
+      height: 7px;
+      background: rgba(0,0,0,0.06);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+    .triage-progress-bar-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #A8492E, #E09A73);
+      border-radius: 99px;
+      transition: width 0.3s ease;
+    }
+    .aperture-spinner {
+      margin: 12px auto 8px;
+      width: 44px;
+      height: 44px;
+      border: 3px solid rgba(168, 73, 46, 0.15);
+      border-top-color: var(--red);
+      border-radius: 50%;
+      animation: apertureSpin 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+    }
+    @keyframes apertureSpin {
+      to { transform: rotate(360deg); }
+    }
+    .triage-phase-text {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.2px;
+      margin-top: 6px;
+    }
+    .triage-phase-sub {
+      font-size: 11.5px;
+      color: var(--text-light);
+      margin-top: 3px;
+    }
+    
   </style>
 </head>
 <body>
@@ -191,6 +241,16 @@
     <button id="runTriageBtn" class="btn-triage" onclick="wovExecuteTriage()" disabled>
       ⚖️ Run Comparative Casting Triage
     </button>
+
+    <!-- 🎬 Cinematic Studio Telemetry Loader (Visible during analysis) -->
+    <div id="triageProgressBox">
+      <div class="triage-progress-bar-bg">
+        <div class="triage-progress-bar-fill" id="triageProgressFill"></div>
+      </div>
+      <div class="aperture-spinner"></div>
+      <div class="triage-phase-text" id="triagePhaseText">Connecting to Venice Studio Desk...</div>
+      <div class="triage-phase-sub" id="triagePhaseSub">Establishing secure multimodal vision session</div>
+    </div>
 
     <!-- Dynamic Verdict Container -->
     <div id="verdictBox"></div>
@@ -304,18 +364,41 @@
       }
     }
 
-    function wovExecuteTriage(isRetry) {
+    function wovExecuteTriage() {
       const btn = document.getElementById("runTriageBtn");
+      const progressBox = document.getElementById("triageProgressBox");
+      const progressFill = document.getElementById("triageProgressFill");
+      const phaseText = document.getElementById("triagePhaseText");
+      const phaseSub = document.getElementById("triagePhaseSub");
+      const verdictBox = document.getElementById("verdictBox");
+
       const talentName = document.getElementById("talentName").value.trim() || "Emerging Talent";
       const targetFormat = document.getElementById("targetFormat").value;
 
-      if (!isRetry) {
-        btn.innerText = "⏳ Auditing Eye Catchlight & Shadow Geometry...";
-      } else {
-        btn.innerText = "⏳ Server capacity surge, retrying analysis (2/2)...";
-      }
-      btn.disabled = true;
+      // 1. Hide button, hide previous verdict, show studio loader
+      btn.style.display = "none";
+      if (verdictBox) verdictBox.style.display = "none";
+      progressBox.style.display = "block";
+      progressFill.style.width = "15%";
 
+      // 2. Dynamic Phase Progression (Keeps user visually engaged)
+      const phases = [
+        { pct: 30, text: "Transmitting High-Res Portraits...", sub: "Calibrating 1600px lens geometry" },
+        { pct: 65, text: "Auditing Pupillary Catchlight & Shadow...", sub: "Measuring Rembrandt lighting contrast ratio" },
+        { pct: 88, text: "Synthesizing Casting Typology...", sub: "Benchmarking against European director criteria" }
+      ];
+
+      let phaseIdx = 0;
+      const phaseInterval = setInterval(function() {
+        if (phaseIdx < phases.length) {
+          progressFill.style.width = phases[phaseIdx].pct + "%";
+          phaseText.innerText = phases[phaseIdx].text;
+          phaseSub.innerText = phases[phaseIdx].sub;
+          phaseIdx++;
+        }
+      }, 700);
+
+      // 3. Dispatch to Backend
       fetch(EXEC, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -331,35 +414,25 @@
       })
       .then(res => res.json())
       .then(data => {
-        if (data.ok && data.result) {
-          btn.innerText = "✓ Analysis Complete";
-          renderVerdict(data.result, talentName, targetFormat);
-        } else {
-          // If server failed (e.g. 503) and we haven't retried yet, auto-retry once after 2s
-          if (!isRetry && data.error && (data.error.indexOf("503") >= 0 || data.error.indexOf("429") >= 0)) {
-            setTimeout(function() {
-              wovExecuteTriage(true);
-            }, 2000);
-            return;
-          }
+        clearInterval(phaseInterval);
+        progressFill.style.width = "100%";
 
-          btn.innerText = "⚠️ Triage Failed";
-          btn.disabled = false;
-          alert("Studio Analysis Notice: " + (data.error || "The vision model could not analyze the provided images."));
-        }
+        setTimeout(function() {
+          progressBox.style.display = "none";
+          btn.style.display = "inline-flex";
+
+          if (data.ok && data.result) {
+            renderVerdict(data.result, talentName, targetFormat);
+          } else {
+            alert("Studio Notice: " + (data.error || "Analysis could not be completed. Please ensure clear frontal portraits."));
+          }
+        }, 400);
       })
       .catch(err => {
-        // If network dropped and we haven't retried yet, auto-retry once
-        if (!isRetry) {
-          setTimeout(function() {
-            wovExecuteTriage(true);
-          }, 2000);
-          return;
-        }
-
-        btn.innerText = "⚠️ Connection Error";
-        btn.disabled = false;
-        alert("Studio connection error: " + err.message);
+        clearInterval(phaseInterval);
+        progressBox.style.display = "none";
+        btn.style.display = "inline-flex";
+        alert("Studio connection notice: " + err.message);
       });
     }
 
