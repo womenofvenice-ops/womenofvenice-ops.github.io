@@ -764,28 +764,50 @@
       <!-- 💼 Dynamic Monetization Paywall Banner -->
       ${paywallHtml}
 
-      <!-- Adaptive Telemetry Radar -->
-      <div class="telemetry-card">
-        <div class="section-title">${radarTitle}</div>
-        <div class="meter-row">
-          <div class="meter-lbl">${lbl1}<span style="font-size:11px;font-weight:600;color:var(--inkS);">${hookContext}</span></div>
-          <div class="meter-bar"><div class="meter-fill" style="width:${pScore || 0}%"></div></div>
-          <div class="meter-num">${pScore !== null ? pScore : "In Review"}</div>
+      <!-- 📊 Geometric 4-Axis Spider Radar Chart (Clipped Label & Range Protected) -->
+      <div class="telemetry-card" style="text-align:center;padding:28px 18px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+          <div class="section-title" style="margin-bottom:0;">${radarTitle}</div>
+          ${isCreator && hookContext ? `<span style="font-size:11px;font-weight:700;color:var(--red);background:rgba(168,73,46,0.08);padding:3px 10px;border-radius:99px;">${hookContext}</span>` : ''}
         </div>
-        <div class="meter-row">
-          <div class="meter-lbl">${lbl2}</div>
-          <div class="meter-bar"><div class="meter-fill" style="width:${vScore || 0}%"></div></div>
-          <div class="meter-num">${vScore !== null ? vScore : "In Review"}</div>
-        </div>
-        <div class="meter-row">
-          <div class="meter-lbl">${lbl3}</div>
-          <div class="meter-bar"><div class="meter-fill" style="width:${sScore || 0}%"></div></div>
-          <div class="meter-num">${sScore !== null ? sScore : "In Review"}</div>
-        </div>
-        <div class="meter-row">
-          <div class="meter-lbl">${lbl4}</div>
-          <div class="meter-bar"><div class="meter-fill" style="width:${fScore || 0}%"></div></div>
-          <div class="meter-num">${fScore !== null ? fScore : "In Review"}</div>
+
+        <div style="position:relative;max-width:340px;margin:10px auto 0;">
+          <!-- Expanded viewBox (-40 to 380) prevents left/right label clipping -->
+          <svg viewBox="-40 0 380 300" style="width:100%;height:auto;overflow:visible;">
+            <!-- Concentric Grid Polygons (25%, 50%, 75%, 100%) -->
+            <polygon points="150,30 270,150 150,270 30,150" fill="none" stroke="rgba(28,43,44,0.07)" stroke-width="1"/>
+            <polygon points="150,60 240,150 150,240 60,150" fill="none" stroke="rgba(28,43,44,0.07)" stroke-width="1"/>
+            <polygon points="150,90 210,150 150,210 90,150" fill="none" stroke="rgba(28,43,44,0.07)" stroke-width="1"/>
+            <polygon points="150,120 180,150 150,180 120,150" fill="none" stroke="rgba(28,43,44,0.07)" stroke-width="1"/>
+
+            <!-- Axis Crosshairs -->
+            <line x1="150" y1="30" x2="150" y2="270" stroke="rgba(28,43,44,0.12)" stroke-dasharray="3,3"/>
+            <line x1="30" y1="150" x2="270" y2="150" stroke="rgba(28,43,44,0.12)" stroke-dasharray="3,3"/>
+
+            <!-- Dynamic Telemetry Shape (Clamped 0–100) -->
+            <polygon id="radarPolygon" 
+              points="
+                150,${150 - (Math.min(100, Math.max(0, pScore || 50))/100 * 120)} 
+                ${150 + (Math.min(100, Math.max(0, vScore || 50))/100 * 120)},150 
+                150,${150 + (Math.min(100, Math.max(0, sScore || 50))/100 * 120)} 
+                ${150 - (Math.min(100, Math.max(0, fScore || 50))/100 * 120)},150" 
+              fill="rgba(168, 73, 46, 0.22)" 
+              stroke="var(--red, #A8492E)" 
+              stroke-width="2.5"
+            />
+
+            <!-- Vertex Nodes -->
+            <circle cx="150" cy="${150 - (Math.min(100, Math.max(0, pScore || 50))/100 * 120)}" r="4.5" fill="var(--red, #A8492E)"/>
+            <circle cx="${150 + (Math.min(100, Math.max(0, vScore || 50))/100 * 120)}" cy="150" r="4.5" fill="var(--red, #A8492E)"/>
+            <circle cx="150" cy="${150 + (Math.min(100, Math.max(0, sScore || 50))/100 * 120)}" r="4.5" fill="var(--red, #A8492E)"/>
+            <circle cx="${150 - (Math.min(100, Math.max(0, fScore || 50))/100 * 120)}" cy="150" r="4.5" fill="var(--red, #A8492E)"/>
+
+            <!-- Corner Labels with Scores -->
+            <text x="150" y="14" text-anchor="middle" font-family="'Inter',sans-serif" font-size="10.5" font-weight="700" fill="var(--ink,#1C2B2C)">${lbl1} (${pScore || '—'})</text>
+            <text x="282" y="154" text-anchor="start" font-family="'Inter',sans-serif" font-size="10.5" font-weight="700" fill="var(--ink,#1C2B2C)">${lbl2} (${vScore || '—'})</text>
+            <text x="150" y="290" text-anchor="middle" font-family="'Inter',sans-serif" font-size="10.5" font-weight="700" fill="var(--ink,#1C2B2C)">${lbl3} (${sScore || '—'})</text>
+            <text x="18" y="154" text-anchor="end" font-family="'Inter',sans-serif" font-size="10.5" font-weight="700" fill="var(--ink,#1C2B2C)">${lbl4} (${fScore || '—'})</text>
+          </svg>
         </div>
       </div>
 
@@ -1529,6 +1551,38 @@ function getDemoProfile_(key) {
     ]
   };
 }
+// 🍞 TIMER-SAFE STUDIO TOAST NOTIFICATION ENGINE (Eliminates browser alert popups)
+  window.showToast = function(msg, title, isError) {
+    let toast = document.getElementById("wovToast");
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.id = "wovToast";
+      toast.style.cssText = "display:none;position:fixed;bottom:24px;right:24px;z-index:99999;background:#1C2B2C;color:#FFF;border-left:4px solid var(--red,#A8492E);padding:14px 22px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.35);font-family:'Inter',sans-serif;font-size:13px;max-width:360px;line-height:1.5;transition:transform 0.25s ease,opacity 0.25s ease;pointer-events:auto;";
+      toast.innerHTML = '<div id="wovToastTitle" style="font-weight:800;text-transform:uppercase;font-size:11px;letter-spacing:1px;color:var(--peach,#E09A73);margin-bottom:3px;"></div><div id="wovToastMsg"></div>';
+      document.body.appendChild(toast);
+    }
+
+    const toastTitle = document.getElementById("wovToastTitle");
+    const toastMsg = document.getElementById("wovToastMsg");
+
+    // 🛡️ Clear existing timer to prevent premature cut-off on rapid triggers
+    if (window.toastTimeout) clearTimeout(window.toastTimeout);
+
+    toastTitle.innerText = title || (isError ? "Studio Alert" : "Studio Notice");
+    toastMsg.innerText = msg;
+    toast.style.borderLeftColor = isError ? "#E24E42" : "var(--red, #A8492E)";
+
+    toast.style.display = "block";
+    void toast.offsetWidth; // Force reflow
+    toast.style.opacity = "1";
+    toast.style.transform = "translateY(0)";
+
+    window.toastTimeout = setTimeout(function() {
+      toast.style.opacity = "0";
+      toast.style.transform = "translateY(12px)";
+      setTimeout(function() { toast.style.display = "none"; }, 250);
+    }, 4200);
+  };
   
 </script>
 </body>
