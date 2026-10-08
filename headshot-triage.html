@@ -259,7 +259,13 @@
         <input type="file" id="fileB" accept="image/*" style="display:none">
       </div>
     </div>
-
+<!-- ⚖️ Mandatory GDPR Art. 9 Facial/Visual Consent Shield -->
+    <div style="margin-bottom: 22px; font-size: 12px; color: var(--text-light); text-align: left; max-width: 580px; margin-left: auto; margin-right: auto; line-height: 1.5; display: flex; align-items: flex-start; gap: 9px;">
+      <input type="checkbox" id="gdprConsent" onchange="checkReady()" style="margin-top: 2px; cursor: pointer; width: 16px; height: 16px; accent-color: var(--red);">
+      <label for="gdprConsent" style="cursor: pointer;">
+        I consent to automated visual casting analysis by CLAUD-IA for evaluation purposes under GDPR Art. 9. Photos are processed ephemerally in memory and never used for foundation model training.
+      </label>
+    </div>
     <button id="runTriageBtn" class="btn-triage" onclick="wovExecuteTriage()" disabled>
       ⚖️ Run Comparative Casting Triage
     </button>
@@ -387,8 +393,9 @@
 
     function checkReady() {
       const hasImages = state.imgA && state.imgB;
+      const hasConsent = document.getElementById("gdprConsent") && document.getElementById("gdprConsent").checked;
       const btn = document.getElementById("runTriageBtn");
-      if (hasImages) {
+      if (hasImages && hasConsent) {
         btn.removeAttribute("disabled");
       } else {
         btn.setAttribute("disabled", "true");
@@ -514,6 +521,38 @@
       box.style.display = "block";
       box.scrollIntoView({ behavior: "smooth" });
     }
+
+ // 🍞 Timer-Safe Studio Toast Engine
+  window.showToast = function(msg, title, isError) {
+    let toast = document.getElementById("wovToast");
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.id = "wovToast";
+      toast.style.cssText = "display:none;position:fixed;bottom:24px;right:24px;z-index:99999;background:#1C2B2C;color:#FFF;border-left:4px solid var(--red,#A8492E);padding:14px 22px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.35);font-family:'Inter',sans-serif;font-size:13px;max-width:360px;line-height:1.5;transition:transform 0.25s ease,opacity 0.25s ease;";
+      toast.innerHTML = '<div id="wovToastTitle" style="font-weight:800;text-transform:uppercase;font-size:11px;letter-spacing:1px;color:var(--peach,#E09A73);margin-bottom:3px;"></div><div id="wovToastMsg"></div>';
+      document.body.appendChild(toast);
+    }
+    const toastTitle = document.getElementById("wovToastTitle");
+    const toastMsg = document.getElementById("wovToastMsg");
+
+    if (window.toastTimeout) clearTimeout(window.toastTimeout);
+
+    toastTitle.innerText = title || (isError ? "Studio Alert" : "Studio Notice");
+    toastMsg.innerText = msg;
+    toast.style.borderLeftColor = isError ? "#E24E42" : "var(--red, #A8492E)";
+
+    toast.style.display = "block";
+    void toast.offsetWidth;
+    toast.style.opacity = "1";
+    toast.style.transform = "translateY(0)";
+
+    window.toastTimeout = setTimeout(function() {
+      toast.style.opacity = "0";
+      toast.style.transform = "translateY(12px)";
+      setTimeout(function() { toast.style.display = "none"; }, 250);
+    }, 4200);
+  };
+    
   </script>
 </body>
 </html>
