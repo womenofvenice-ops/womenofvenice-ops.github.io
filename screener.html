@@ -1456,71 +1456,94 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
       window.location.replace("https://womenofvenice.com");
     }
   };
-  window.wovUpdatePitchScript = function() {
-  const drawer = document.getElementById("brandPitchDrawer");
-  if (!drawer) return;
-
-  const creatorName = drawer.dataset.creatorName || (window._screenerState && window._screenerState.rawTalentName) || "Creator";
-  const hookScore = drawer.dataset.hookScore || "89";
   
-  const tier = document.getElementById("rateFollowerTier")?.value || "rising";
-  const niche = document.getElementById("rateNiche")?.value || "fashion_beauty";
-  const brand = document.getElementById("pitchBrandName")?.value.trim() || "[Brand]";
-  const product = document.getElementById("pitchProduct")?.value.trim() || "upcoming campaign";
+  // 💼 FORMULA-DRIVEN RATE CARD & BRAND PITCH CONTROLLER (Hardened Production Version)
+  window.wovUpdatePitchScript = function() {
+    const brandInput = document.getElementById("pitchBrandName");
+    const productInput = document.getElementById("pitchProduct");
+    const tierInput = document.getElementById("rateFollowerTier");
+    const nicheInput = document.getElementById("rateNiche");
+    const previewEl = document.getElementById("pitchScriptPreview");
+    const mailtoEl = document.getElementById("mailtoPitchLink");
+    if (!previewEl) return;
 
-  // Deterministic Pricing Matrix
-  const baseRates = { micro: 450, rising: 750, mid: 1250 };
-  const nicheMultipliers = { fashion_beauty: 1.0, lifestyle_travel: 0.9, wellness_fitness: 0.85 };
+    const drawerEl = document.getElementById("brandPitchDrawer");
+    const brand = (brandInput && brandInput.value.trim()) ? brandInput.value.trim() : "[Brand]";
+    const product = (productInput && productInput.value.trim()) ? productInput.value.trim() : "your upcoming campaigns";
+    const tier = (tierInput && tierInput.value) ? tierInput.value : "rising";
+    const niche = (nicheInput && nicheInput.value) ? nicheInput.value : "fashion_beauty";
 
-  const baseReel = Math.round((baseRates[tier] || 750) * (nicheMultipliers[niche] || 1.0));
-  const adsVal = Math.round(baseReel * 0.40);
-  const rawVal = Math.round(baseReel * 0.25);
-  const totalVal = baseReel + adsVal + rawVal;
+    // 🛡️ Safe State Resolution (State object -> Dataset fallback -> Safe default)
+    const state = window._screenerState || {};
+    const talentName = state.rawTalentName || (drawerEl && drawerEl.dataset.creatorName) || "Creator";
+    const radar = (state.talent && state.talent.latestRadar) || {};
+    
+    const rawScore = (radar.presenceScore != null && !isNaN(radar.presenceScore))
+      ? Math.round(radar.presenceScore)
+      : (drawerEl && drawerEl.dataset.hookScore ? Number(drawerEl.dataset.hookScore) : 89);
+    const hookVal = rawScore + "/100";
 
-  // Update UI Figures
-  const rReel = document.getElementById("rateReelVal");
-  const rAds = document.getElementById("rateAdsVal");
-  const rRaw = document.getElementById("rateRawVal");
-  const rTot = document.getElementById("rateTotalVal");
+    // 📐 ALGORITHMIC RATE CARD FORMULA
+    // Base tier baseline: micro = €480, rising = €680, mid = €980
+    let baseMultiplier = tier === "micro" ? 480 : (tier === "mid" ? 980 : 680);
+    if (niche === "fashion_beauty") baseMultiplier *= 1.15; // +15% Luxury/Beauty CPM multiplier
+    if (niche === "lifestyle_travel") baseMultiplier *= 1.05;
 
-  if (rReel) rReel.innerText = "€" + baseReel;
-  if (rAds) rAds.innerText = "+€" + adsVal;
-  if (rRaw) rRaw.innerText = "+€" + rawVal;
-  if (rTot) rTot.innerText = "€" + totalVal;
+    // Retention incentive: 85+ gets +20% bonus, 75+ gets +10%
+    const hookMultiplier = rawScore >= 85 ? 1.20 : (rawScore >= 75 ? 1.10 : 1.0);
+    
+    const reelRate = Math.round((baseMultiplier * hookMultiplier) / 10) * 10;
+    const adsRate = Math.round((reelRate * 0.40) / 10) * 10;
+    const rawRate = Math.round((reelRate * 0.25) / 10) * 10;
+    const totalPackage = reelRate + adsRate + rawRate;
 
-  // 🛡️ Canonical Dossier URL for the Brand Manager (Strips session tokens & hash parameters)
-  const cleanUrl = "https://womenofvenice.com/screener.html?name=" + encodeURIComponent(creatorName) + "&type=creator";
+    // 🔄 Update Live Rate Card Boxes
+    const reelEl = document.getElementById("rateReelVal");
+    const adsEl = document.getElementById("rateAdsVal");
+    const rawEl = document.getElementById("rateRawVal");
+    const totalEl = document.getElementById("rateTotalVal");
+    if (reelEl) reelEl.textContent = "€" + reelRate;
+    if (adsEl) adsEl.textContent = "+€" + adsRate;
+    if (rawEl) rawEl.textContent = "+€" + rawRate;
+    if (totalEl) totalEl.textContent = "€" + totalPackage;
 
-  // Compile Dynamic Pitch Template
-  const pitchText = 
-`Subject: Partnership Concept: ${brand} × ${creatorName} (Retention-Verified Pitch)
+    // 🔗 Preserve Magic Dossier Token if available
+    const urlParams = new URLSearchParams(window.location.search);
+    const dossierId = urlParams.get("id");
+    const cleanScreenerUrl = dossierId
+      ? "https://womenofvenice.com/screener.html?id=" + encodeURIComponent(dossierId)
+      : "https://womenofvenice.com/screener.html?name=" + encodeURIComponent(talentName) + "&type=creator";
 
-Hi ${brand} Team,
+    // ✉️ Clean, Authoritative Subject Line
+    const subject = `Partnership Concept: ${brand} × ${talentName} (Audited Retention Index)`;
 
-I've been following your recent rollout for ${product} and put together a tailored visual concept centered around authentic product integration.
+    // 📝 Standardized CRLF Linebreaks for Mailto Compliance
+    const crlf = "\r\n";
+    const body = 
+      `Hi ${brand} Partnerships Team,${crlf}${crlf}` +
+      `I've been closely following ${brand} and designed a dedicated short-form visual concept centered around ${product}.${crlf}${crlf}` +
+      `To ensure your media investment delivers maximum engagement, my creative pacing was independently audited by CLAUD-IA Vision Labs (Venice):${crlf}` +
+      `• 3-Second Hook Retention Velocity: ${hookVal} (Top 5% Category Engagement)${crlf}` +
+      `• Drop-Off Resistance: High Pacing Discipline (Minimal front-end audience bounce)${crlf}${crlf}` +
+      `You can inspect my verified video screener, retention telemetry, and directorial notes here:${crlf}` +
+      `${cleanScreenerUrl}${crlf}${crlf}` +
+      `RECOMMENDED DELIVERABLES & STUDIO RATE BENCHMARK:${crlf}` +
+      `• 1x Dedicated Vertical Reel / TikTok: €${reelRate}${crlf}` +
+      `• 30-Day Paid Whitelist / Spark Ad Rights (+40%): €${adsRate}${crlf}` +
+      `• Raw B-Roll Footage Buyout (+25%): €${rawRate}${crlf}` +
+      `• Total Package Anchor: €${totalPackage} (Complete campaign buyout)${crlf}${crlf}` +
+      `Are you currently planning creator collaborations for the coming month? I would be glad to share the creative concept.${crlf}${crlf}` +
+      `Best regards,${crlf}` +
+      `${talentName}`;
 
-According to direct screen-test benchmarks verified by Women of Venice Studio, my content averages a ${hookScore}/100 in 0–3s hook velocity (Top 5% category retention), ensuring minimal audience drop-off before your core CTA.
+    // Update UI Terminal Preview (uses clean web linebreaks for DOM display)
+    previewEl.textContent = `Subject: ${subject}\n\n${body.replace(/\r\n/g, "\n")}`;
 
-Recommended Deliverable Structure:
-• 1x Dedicated High-Retention Reel / TikTok (€${baseReel})
-• 30-Day Paid Whitelist / Spark Ad Rights (+€${adsVal})
-• Raw B-Roll Asset Buyout (+€${rawVal})
-Total Anchor Package: €${totalVal}
-
-Are you currently booking creator collaborations for Q4? Happy to share the concept boards.
-
-Best,
-${creatorName}
-Verified Studio Portfolio: ${cleanUrl}`;
-
-  const preview = document.getElementById("pitchScriptPreview");
-  if (preview) preview.innerText = pitchText;
-
-  const mailtoLink = document.getElementById("mailtoPitchLink");
-  if (mailtoLink) {
-    mailtoLink.href = `mailto:?subject=${encodeURIComponent("Collaboration Concept: " + brand + " × " + creatorName)}&body=${encodeURIComponent(pitchText)}`;
-  }
-};
+    // Update Mailto Link (preserves CRLF encoding)
+    if (mailtoEl) {
+      mailtoEl.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }
+  };
 
 window.wovCopyPitchScript = function() {
   const preview = document.getElementById("pitchScriptPreview");
