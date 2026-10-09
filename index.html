@@ -31,8 +31,18 @@
     .nav-logo { display: block; width: 50px; height: 50px; border-radius: 50%; overflow: hidden; background: var(--card-bg); border: 1px solid var(--shadow); }
     .nav-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .nav-right { display: flex; align-items: center; gap: 12px; }
-    .nav-links { display: flex; align-items: center; gap: 10px; font-family: 'Inter', Arial, sans-serif; font-size: 13px; font-weight: 600; }
-.nav-links { display: flex; align-items: center; gap: 6px; font-family: 'Inter', Arial, sans-serif; font-size: 13px; font-weight: 600; }    .nav-links a:hover { background: rgba(168,73,46,0.15); color: var(--red); }
+    .nav-links { 
+      display: flex; 
+      align-items: center; 
+      gap: 8px; 
+      font-family: 'Inter', Arial, sans-serif; 
+      font-size: 13px; 
+      font-weight: 600; 
+    }
+    .nav-links a:hover { 
+      background: rgba(168,73,46,0.15); 
+      color: var(--red); 
+    }
     .nav-links a.primary { background: var(--red); color: #fff; padding: 6px 18px; border-radius: 30px; }
     .nav-links a.primary:hover { background: #8a3d28; color: #fff; }
     .nav-links a.secondary, .nav-links a.contact-btn { background: var(--text); color: var(--bg); padding: 6px 18px; border-radius: 30px; }
@@ -704,16 +714,27 @@
   function formatName(raw){ return (raw || '').replace(/\b\w/g, function(l){ return l.toUpperCase(); }); }
   function truncate(str, n){ return (str && str.length > n) ? str.substring(0, n) + '\u2026' : str; }
 
+  // 🛡️ Single Persistent Observer: Unobserves once visible to prevent memory leaks
+  var galleryObserver = new IntersectionObserver(function(entries, obs) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        obs.unobserve(entry.target); // 👈 Stops tracking once rendered on screen
+      }
+    });
+  }, { threshold: 0.15 });
+
   function renderGalleryItems(files) {
     if (!files || !files.length) return;
     var fragment = document.createDocumentFragment();
+    var newItems = [];
+
     files.forEach(function(f, idx) {
       var item = document.createElement('div'); 
       item.className = 'gallery-item';
       
-      var thumbUrl = getThumbUrl(f.id, 500);
-      var fullUrl = getFullUrl(f.id);
-      
+      // 🚀 Performance: Single crisp 600px fetch for grid (reserves 1000px for Lightbox)
+      var thumbUrl = getThumbUrl(f.id, 600);
       var img = document.createElement('img');
       img.className = 'placeholder-blur'; 
       img.src = thumbUrl; 
@@ -721,18 +742,12 @@
       img.loading = 'lazy';
       
       img.onload = function() {
-        var fullImg = new Image(); 
-        fullImg.src = fullUrl;
-        fullImg.onload = function() { 
-          img.src = fullUrl; 
-          img.classList.add('loaded'); 
-          if (masonryInstance) masonryInstance.layout(); 
-        };
-        fullImg.onerror = function() { img.classList.add('loaded'); };
+        img.classList.add('loaded'); 
+        if (masonryInstance) masonryInstance.layout(); 
       };
       item.appendChild(img);
       
-      // 🏛️ Lookbook Production Slate
+      // 🏛️ Lookbook Production Slate Caption
       var cap = document.createElement('div'); 
       cap.className = 'caption';
       
@@ -767,7 +782,9 @@
       item.appendChild(cap);
       item.dataset.idx = currentIndex + idx;
       item.addEventListener('click', function(){ openLightbox(parseInt(this.dataset.idx, 10)); });
+      
       fragment.appendChild(item);
+      newItems.push(item);
     });
     
     gallery.appendChild(fragment);
@@ -781,11 +798,8 @@
       masonryInstance = new Masonry(gallery, { itemSelector: '.gallery-item', columnWidth: '.grid-sizer', percentPosition: true, transitionDuration: '0.3s' }); 
     }
     
-    var observer = new IntersectionObserver(function(entries){
-      entries.forEach(function(entry){ if (entry.isIntersecting) entry.target.classList.add('visible'); });
-    }, { threshold: 0.15 });
-    
-    gallery.querySelectorAll('.gallery-item').forEach(function(item){ observer.observe(item); });
+    // Observe only newly appended items
+    newItems.forEach(function(item) { galleryObserver.observe(item); });
   }
 
   function renderFeaturedStories(files) {
