@@ -934,39 +934,52 @@
     if (currentIndex >= allFiles.length) loadMoreContainer.style.display = 'none';
   });
 
-  // 🛡️ DATA CONNECTOR (Guards Against Re-Shuffle Duplicates on Background 5m Polling)
+  // 🛡️ DATA CONNECTOR (Duplicate-Immune & Paging-Stable)
   var loaded = false;
   window.wovPortfolio = function(data) {
     loaded = true;
+    if (typeof timeout !== "undefined") clearTimeout(timeout); // Clear watchdog timer
+
     try {
       if (data && data.error) { 
-        gallery.innerHTML = '<div class="load">Connector error: ' + data.error + '</div>'; 
+        if (!allFiles.length) gallery.innerHTML = '<div class="load">Connector error: ' + esc(data.error) + '</div>'; 
         return; 
       }
       var files = (data.files || []);
       if (!files.length) { 
-        gallery.innerHTML = '<div class="load">No portraits published yet.</div>'; 
+        if (!allFiles.length) gallery.innerHTML = '<div class="load">No portraits published yet.</div>'; 
         return; 
       }
       
       var isFirstLoad = !allFiles.length;
-      // 🛡️ Shuffle Guard: Only shuffle on initial load so 5m background polling doesn't duplicate cards
+
       if (isFirstLoad) {
+        // Initial Load: Randomize once for editorial freshness
         allFiles = shuffleArray(files);
-      } else {
-        allFiles = files; // Preserves stable order on background updates
-      }
+        setHeroImage(allFiles);
+        renderFeaturedStories(allFiles);
 
-      setHeroImage(allFiles);
-      renderFeaturedStories(allFiles);
-
-      if (isFirstLoad) {
         currentIndex = 0; 
         displayedFiles = [];
         gallery.innerHTML = '<div class="grid-sizer"></div>';
         renderGalleryItems(allFiles.slice(0, INITIAL_COUNT));
-        loadMoreContainer.style.display = allFiles.length > INITIAL_COUNT ? 'block' : 'none';
+        if (loadMoreContainer) {
+          loadMoreContainer.style.display = allFiles.length > INITIAL_COUNT ? 'block' : 'none';
+        }
+      } else {
+        // 🛡️ Background Poll (5m): Keep existing browsing order stable; only append new uploads
+        var existingIds = {};
+        allFiles.forEach(function(f) { existingIds[String(f.id)] = true; });
+        var brandNewFiles = files.filter(function(f) { return !existingIds[String(f.id)]; });
+        
+        if (brandNewFiles.length > 0) {
+          allFiles = allFiles.concat(brandNewFiles);
+          if (loadMoreContainer && allFiles.length > currentIndex) {
+            loadMoreContainer.style.display = 'block';
+          }
+        }
       }
+
     } catch (e) {
       console.error('Render error:', e);
       if (!allFiles.length) gallery.innerHTML = '<div class="load">Error loading portfolio.</div>';
