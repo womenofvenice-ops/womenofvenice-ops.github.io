@@ -335,15 +335,77 @@
 }
     .gallery-grid { margin-top: 24px; }
     .grid-sizer, .gallery-item { width: 33.333%; padding: 8px; }
-    .gallery-item { margin-bottom: 8px; background: var(--card-bg); border-radius: 12px; overflow: hidden;
-      box-shadow: 0 2px 10px var(--shadow); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;
-      opacity: 0; transform: translateY(20px); }
+    
+    /* 🏛️ Cinematographer's Production Lookbook Styles */
+    .gallery-item { 
+      margin-bottom: 16px; 
+      background: var(--card-bg); 
+      border-radius: 12px; 
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 12px var(--shadow); 
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease; 
+      cursor: pointer;
+      opacity: 0; 
+      transform: translateY(20px); 
+      position: relative;
+    }
     .gallery-item.visible { opacity: 1; transform: translateY(0); transition: opacity 0.6s ease, transform 0.6s ease; }
-    .gallery-item:hover { transform: scale(1.02); box-shadow: 0 6px 24px var(--shadow); }
-    .gallery-item img { width: 100%; display: block; transition: filter 0.3s; }
-    .gallery-item .caption { padding: 12px 14px 14px; font-family: 'Inter', Arial, sans-serif; }
-    .gallery-item .caption .name { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
-    .gallery-item .caption .quote { font-size: 13px; color: var(--text-light); line-height: 1.4; font-style: italic; }
+    .gallery-item:hover { 
+      transform: translateY(-4px); 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.18); 
+      border-color: var(--red);
+    }
+    .gallery-item img { 
+      width: 100%; 
+      display: block; 
+      transition: filter 0.4s ease, transform 0.4s ease; 
+    }
+    .gallery-item:hover img { transform: scale(1.02); }
+    .gallery-item .caption { 
+      padding: 14px 16px 16px; 
+      font-family: 'Inter', sans-serif; 
+      background: var(--card-bg);
+      border-top: 1px solid var(--border);
+    }
+    .gallery-item .lookbook-tag { 
+      font-family: 'Inter', monospace;
+      font-size: 10px; 
+      font-weight: 800; 
+      letter-spacing: 1.5px;
+      text-transform: uppercase; 
+      color: var(--red); 
+      margin-bottom: 3px; 
+    }
+    .gallery-item .name { 
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 18px; 
+      font-weight: 700; 
+      color: var(--text); 
+      margin-bottom: 4px; 
+      line-height: 1.3;
+    }
+    .gallery-item .quote { 
+      font-size: 12px; 
+      color: var(--text-light); 
+      line-height: 1.5; 
+      font-style: italic; 
+    }
+    /* 🎬 Contextual Audition Bridge (Reveals on Hover) */
+    .gallery-item .audition-bridge-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--red);
+      text-decoration: none;
+      letter-spacing: 0.3px;
+      transition: color 0.2s;
+    }
+    .gallery-item .audition-bridge-btn:hover { color: #8a3d28; text-decoration: underline; }
+    
     .placeholder-blur { filter: blur(10px); transition: filter 0.5s; }
     .placeholder-blur.loaded { filter: blur(0); }
     .load { text-align: center; font-family: 'Inter', Arial, sans-serif; color: var(--text-light); padding: 50px 0; grid-column: 1/-1; }
@@ -646,33 +708,83 @@
     if (!files || !files.length) return;
     var fragment = document.createDocumentFragment();
     files.forEach(function(f, idx) {
-      var item = document.createElement('div'); item.className = 'gallery-item';
-      var thumbUrl = getThumbUrl(f.id, 500), fullUrl = getFullUrl(f.id);
+      var item = document.createElement('div'); 
+      item.className = 'gallery-item';
+      
+      var thumbUrl = getThumbUrl(f.id, 500);
+      var fullUrl = getFullUrl(f.id);
+      
       var img = document.createElement('img');
-      img.className = 'placeholder-blur'; img.src = thumbUrl; img.alt = f.name; img.loading = 'lazy';
+      img.className = 'placeholder-blur'; 
+      img.src = thumbUrl; 
+      img.alt = f.location || f.name || "Venetian Scenography"; 
+      img.loading = 'lazy';
+      
       img.onload = function() {
-        var fullImg = new Image(); fullImg.src = fullUrl;
-        fullImg.onload = function() { img.src = fullUrl; img.classList.add('loaded'); if (masonryInstance) masonryInstance.layout(); };
+        var fullImg = new Image(); 
+        fullImg.src = fullUrl;
+        fullImg.onload = function() { 
+          img.src = fullUrl; 
+          img.classList.add('loaded'); 
+          if (masonryInstance) masonryInstance.layout(); 
+        };
         fullImg.onerror = function() { img.classList.add('loaded'); };
       };
       item.appendChild(img);
-      var cap = document.createElement('div'); cap.className = 'caption';
-      var nameEl = document.createElement('div'); nameEl.className = 'name'; nameEl.textContent = formatName(f.model);
-      var quoteEl = document.createElement('div'); quoteEl.className = 'quote';
-      quoteEl.textContent = f.story ? '"' + truncate(f.story, 100) + '"' : '';
-      cap.appendChild(nameEl); cap.appendChild(quoteEl); item.appendChild(cap);
+      
+      // 🏛️ Lookbook Production Slate
+      var cap = document.createElement('div'); 
+      cap.className = 'caption';
+      
+      // Lighting & Stock Tag
+      var tagEl = document.createElement('div');
+      tagEl.className = 'lookbook-tag';
+      tagEl.textContent = f.lighting || "35mm Analog Tone · Natural Light";
+      cap.appendChild(tagEl);
+
+      // Sestiere / Setting Title
+      var nameEl = document.createElement('div'); 
+      nameEl.className = 'name'; 
+      nameEl.textContent = f.location || formatName(f.model) || "Venezia Scenografia";
+      cap.appendChild(nameEl);
+
+      // Literary / Cinematographic Tone Quote
+      var quoteEl = document.createElement('div'); 
+      quoteEl.className = 'quote';
+      var rawQuote = f.cinematicTone || f.story || "";
+      quoteEl.textContent = rawQuote ? '"' + truncate(rawQuote, 120) + '"' : '';
+      cap.appendChild(quoteEl);
+
+      // 🎬 Contextual Audition Bridge Link
+      var bridgeLink = document.createElement('a');
+      bridgeLink.className = 'audition-bridge-btn';
+      var settingParam = encodeURIComponent(f.location || "Venice Scenography");
+      bridgeLink.href = 'headshot-triage.html?setting=' + settingParam;
+      bridgeLink.innerHTML = '<span>🎬 Benchmark in this Setting</span> <span>↗</span>';
+      bridgeLink.addEventListener('click', function(e) { e.stopPropagation(); });
+      cap.appendChild(bridgeLink);
+
+      item.appendChild(cap);
       item.dataset.idx = currentIndex + idx;
       item.addEventListener('click', function(){ openLightbox(parseInt(this.dataset.idx, 10)); });
       fragment.appendChild(item);
     });
+    
     gallery.appendChild(fragment);
     displayedFiles = displayedFiles.concat(files);
     currentIndex += files.length;
-    if (masonryInstance) { masonryInstance.reloadItems(); masonryInstance.layout(); }
-    else { masonryInstance = new Masonry(gallery, { itemSelector: '.gallery-item', columnWidth: '.grid-sizer', percentPosition: true, transitionDuration: '0.3s' }); }
+    
+    if (masonryInstance) { 
+      masonryInstance.reloadItems(); 
+      masonryInstance.layout(); 
+    } else { 
+      masonryInstance = new Masonry(gallery, { itemSelector: '.gallery-item', columnWidth: '.grid-sizer', percentPosition: true, transitionDuration: '0.3s' }); 
+    }
+    
     var observer = new IntersectionObserver(function(entries){
       entries.forEach(function(entry){ if (entry.isIntersecting) entry.target.classList.add('visible'); });
-    }, { threshold: 0.2 });
+    }, { threshold: 0.15 });
+    
     gallery.querySelectorAll('.gallery-item').forEach(function(item){ observer.observe(item); });
   }
 
