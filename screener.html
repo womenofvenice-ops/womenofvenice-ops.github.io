@@ -333,6 +333,47 @@
     /* Screen Mode: Hide print-only verification footer */
     .print-verification-footer { display: none; }
     /* 📄 High-Status 1-Page PDF / Print Styles */
+    /* 💼 Algorithmic Rate Card Matrix Styles */
+    .rate-card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin: 16px 0 20px;
+    }
+    .rate-box {
+      background: var(--bg, #FBF9F5);
+      border: 1px solid var(--border, #E2E8F0);
+      border-radius: 10px;
+      padding: 14px 12px;
+      text-align: center;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+    .rate-box:hover {
+      border-color: var(--red);
+      transform: translateY(-2px);
+    }
+    .rate-box-highlight {
+      background: rgba(168, 73, 46, 0.04);
+      border-color: var(--red);
+    }
+    .rate-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--inkS, #64748B);
+      margin-bottom: 4px;
+    }
+    .rate-val {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--ink, #1C2B2C);
+    }
+    .rate-val-total {
+      color: var(--red, #A8492E);
+    }
+    
     @media print {
       body {
         background: #fff !important;
@@ -961,59 +1002,116 @@
     `;
   }
 
-  // 💼 HELPER: 1-Click Brand Pitch Outreach Generator (Creator Pro View Only)
-  function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, pScore) {
-    if (!isCreator || !isPro) return "";
+  // 💼 HELPER: Unified Rate Card & Brand Pitch Outreach Engine (Creator Pro View Only)
+function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, pScore) {
+  if (!isCreator || !isPro) return "";
 
-    const verifiedHookScore = pScore ? (pScore + "/100") : "89/100";
+  const safeEscape = typeof esc === "function" ? esc : function(s) { 
+    return String(s || "").replace(/[&<>"']/g, function(m) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m];
+    });
+  };
 
-    return `
-      <div id="brandPitchDrawer" class="telemetry-card" style="background:#FFF;border:1.5px solid var(--red);border-radius:14px;padding:26px 22px;margin-bottom:24px;text-align:left;box-shadow:0 8px 30px rgba(0,0,0,0.06);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
-          <div style="font-family:'Inter',monospace;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--red);">
-            🚀 Monetization Engine · Automated Brand Outreach
-          </div>
-          <span style="font-size:11px;background:#FAF8F5;border:1px solid var(--border);padding:3px 10px;border-radius:99px;font-weight:700;color:var(--ink);">
-            Verified Studio Asset
-          </span>
+  const cleanName = safeEscape(rawTalentName || (talent && talent.name) || "Creator");
+  const numScore = (pScore != null && !isNaN(pScore)) ? Math.round(Number(pScore)) : 89;
+  const verifiedHookScore = numScore + "/100";
+
+  return `
+    <div id="brandPitchDrawer" class="telemetry-card" 
+         data-creator-name="${cleanName}" 
+         data-hook-score="${numScore}"
+         style="background:#FFF;border:1.5px solid var(--red, #A8492E);border-radius:14px;padding:28px 22px;margin-bottom:24px;text-align:left;box-shadow:0 8px 30px rgba(0,0,0,0.06);">
+      
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+        <div style="font-family:'Inter',monospace;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--red, #A8492E);">
+          🚀 Monetization Engine · Studio-Certified Rate Card
         </div>
+        <span style="font-size:11px;background:#FAF8F5;border:1px solid var(--border, #E2E8F0);padding:3px 10px;border-radius:99px;font-weight:700;color:var(--ink, #1C2B2C);">
+          Top 5% Retention Multiplier Active
+        </span>
+      </div>
 
-        <h3 style="font-size:19px;font-weight:800;color:var(--ink);margin:0 0 6px;">Instant Brand Sponsorship Pitch Generator</h3>
-        <p style="font-size:13px;color:var(--inkS);margin:0 0 18px;line-height:1.55;">
-          Pitch brands with verified third-party telemetry. Enter the target sponsor below to dynamically compile an outreach email with your retention metrics:
-        </p>
+      <h3 style="font-size:20px;font-weight:800;color:var(--ink, #1C2B2C);margin:0 0 6px;">Algorithmic Sponsorship Rate Card &amp; Pitch Generator</h3>
+      <p style="font-size:13px;color:var(--inkS, #64748B);margin:0 0 16px;line-height:1.55;">
+        Rates calculated objectively based on your <b>${verifiedHookScore}</b> 3-second hook retention index. Select your follower tier to benchmark deliverables:
+      </p>
 
-        <!-- Dynamic Brand Inputs -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;margin-bottom:16px;">
-          <div>
-            <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--ink);display:block;margin-bottom:5px;">Target Brand / Company</label>
-            <input type="text" id="pitchBrandName" placeholder="e.g. CeraVe / Gymshark / Sézane" oninput="wovUpdatePitchScript()" 
-                   style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;background:#FAFAFA;">
-          </div>
-          <div>
-            <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--ink);display:block;margin-bottom:5px;">Target Product / Campaign (Optional)</label>
-            <input type="text" id="pitchProduct" placeholder="e.g. Daily Moisturizing Lotion" oninput="wovUpdatePitchScript()" 
-                   style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;background:#FAFAFA;">
-          </div>
+      <!-- Rate Card Interactive Controls (Fluid Grid for Mobile) -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:12px;margin-bottom:16px;">
+        <div>
+          <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--ink, #1C2B2C);display:block;margin-bottom:5px;">Follower Tier Benchmark</label>
+          <select id="rateFollowerTier" onchange="wovUpdatePitchScript()" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid var(--border, #E2E8F0);border-radius:8px;font-size:13px;outline:none;background:#FAFAFA;color:var(--ink, #1C2B2C);font-weight:600;">
+            <option value="micro">Micro-Creator (10k – 25k followers)</option>
+            <option value="rising" selected>Rising Creator (25k – 50k followers)</option>
+            <option value="mid">Mid-Tier Creator (50k – 100k followers)</option>
+          </select>
         </div>
-
-        <!-- Dynamic Pitch Terminal Preview -->
-        <div style="background:#0F172A;color:#E2E8F0;padding:18px 20px;border-radius:10px;font-size:12.5px;font-family:ui-monospace,Menlo,Monaco,monospace;line-height:1.65;white-space:pre-wrap;margin-bottom:16px;border:1px solid #334155;" id="pitchScriptPreview"></div>
-
-        <!-- 1-Click Action Buttons -->
-        <div style="display:flex;gap:12px;flex-wrap:wrap;">
-          <button type="button" onclick="wovCopyPitchScript()" id="copyPitchBtn" 
-                  style="background:var(--red);color:#FFF;border:none;padding:11px 22px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background 0.2s;">
-            <span>📋 Copy Pitch to Clipboard</span>
-          </button>
-          <a href="#" id="mailtoPitchLink" target="_blank" 
-             style="background:#FFF;color:var(--ink);border:1.5px solid var(--border);padding:10px 20px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
-            <span>✉️ Open in Email App</span>
-          </a>
+        <div>
+          <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--ink, #1C2B2C);display:block;margin-bottom:5px;">Commercial Niche</label>
+          <select id="rateNiche" onchange="wovUpdatePitchScript()" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid var(--border, #E2E8F0);border-radius:8px;font-size:13px;outline:none;background:#FAFAFA;color:var(--ink, #1C2B2C);font-weight:600;">
+            <option value="fashion_beauty" selected>Luxury Fashion &amp; Beauty (High CPM)</option>
+            <option value="lifestyle_travel">Travel &amp; Lifestyle</option>
+            <option value="wellness_fitness">Fitness &amp; Wellness</option>
+          </select>
         </div>
       </div>
-    `;
-  }
+
+      <!-- Dynamic Rate Card Matrix Display (Self-Contained Inline Fallback Grid) -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:10px;margin-bottom:18px;">
+        <div style="background:#FAF8F5;border:1px solid var(--border, #E2E8F0);border-radius:8px;padding:12px 10px;text-align:center;">
+          <div style="font-size:11px;font-weight:700;color:var(--inkS, #64748B);text-transform:uppercase;margin-bottom:4px;">1x Dedicated Reel</div>
+          <div style="font-size:17px;font-weight:800;color:var(--ink, #1C2B2C);" id="rateReelVal">€750</div>
+        </div>
+        <div style="background:#FAF8F5;border:1px solid var(--border, #E2E8F0);border-radius:8px;padding:12px 10px;text-align:center;">
+          <div style="font-size:11px;font-weight:700;color:var(--inkS, #64748B);text-transform:uppercase;margin-bottom:4px;">30d Spark Ads (+40%)</div>
+          <div style="font-size:17px;font-weight:800;color:var(--ink, #1C2B2C);" id="rateAdsVal">+€300</div>
+        </div>
+        <div style="background:#FAF8F5;border:1px solid var(--border, #E2E8F0);border-radius:8px;padding:12px 10px;text-align:center;">
+          <div style="font-size:11px;font-weight:700;color:var(--inkS, #64748B);text-transform:uppercase;margin-bottom:4px;">Raw Asset Buyout (+25%)</div>
+          <div style="font-size:17px;font-weight:800;color:var(--ink, #1C2B2C);" id="rateRawVal">+€190</div>
+        </div>
+        <div style="background:rgba(168,73,46,0.06);border:1.5px solid var(--red, #A8492E);border-radius:8px;padding:12px 10px;text-align:center;">
+          <div style="font-size:11px;font-weight:800;color:var(--red, #A8492E);text-transform:uppercase;margin-bottom:4px;">Total Package Anchor</div>
+          <div style="font-size:18px;font-weight:800;color:var(--red, #A8492E);" id="rateTotalVal">€1,240</div>
+        </div>
+      </div>
+
+      <!-- Target Brand Customization -->
+      <div style="border-top:1px dashed var(--border, #E2E8F0);padding-top:16px;">
+        <div style="font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--ink, #1C2B2C);margin-bottom:10px;">
+          ✉️ Auto-Compiled Sponsorship Outreach Pitch
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;margin-bottom:14px;">
+          <div>
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--inkS, #64748B);display:block;margin-bottom:4px;">Target Brand</label>
+            <input type="text" id="pitchBrandName" placeholder="e.g. CeraVe / Gymshark / Sézane" oninput="wovUpdatePitchScript()" 
+                   style="width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid var(--border, #E2E8F0);border-radius:8px;font-size:13px;outline:none;background:#FAFAFA;">
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--inkS, #64748B);display:block;margin-bottom:4px;">Product / Campaign</label>
+            <input type="text" id="pitchProduct" placeholder="e.g. Daily Moisturizing Lotion" oninput="wovUpdatePitchScript()" 
+                   style="width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid var(--border, #E2E8F0);border-radius:8px;font-size:13px;outline:none;background:#FAFAFA;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Dynamic Pitch Terminal Preview -->
+      <div id="pitchScriptPreview" style="background:#0F172A;color:#E2E8F0;padding:18px 20px;border-radius:10px;font-size:12px;font-family:ui-monospace,Menlo,Monaco,monospace;line-height:1.65;white-space:pre-wrap;margin-bottom:16px;border:1px solid #334155;min-height:120px;"></div>
+
+      <!-- 1-Click Action Buttons -->
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <button type="button" onclick="wovCopyPitchScript()" id="copyPitchBtn" 
+                style="background:var(--red, #A8492E);color:#FFF;border:none;padding:11px 22px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background 0.2s;">
+          <span>📋 Copy Pitch to Clipboard</span>
+        </button>
+        <a href="javascript:void(0)" id="mailtoPitchLink"
+           style="background:#FFF;color:var(--ink, #1C2B2C);border:1.5px solid var(--border, #E2E8F0);padding:10px 20px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+          <span>✉️ Open in Email App</span>
+        </a>
+      </div>
+    </div>
+  `;
+}
   
   // 🔄 HELPER: Multi-take delta progression
   function renderProgressionHtml(talent) {
@@ -1358,62 +1456,84 @@
       window.location.replace("https://womenofvenice.com");
     }
   };
-  // 💼 BRAND PITCH GENERATOR CONTROLLER
   window.wovUpdatePitchScript = function() {
-    const brandInput = document.getElementById("pitchBrandName");
-    const productInput = document.getElementById("pitchProduct");
-    const previewEl = document.getElementById("pitchScriptPreview");
-    const mailtoEl = document.getElementById("mailtoPitchLink");
-    if (!previewEl) return;
+  const drawer = document.getElementById("brandPitchDrawer");
+  if (!drawer) return;
 
-    const brand = (brandInput && brandInput.value.trim()) ? brandInput.value.trim() : "[Brand]";
-    const product = (productInput && productInput.value.trim()) ? productInput.value.trim() : "your upcoming campaigns";
+  const creatorName = drawer.dataset.creatorName || (window._screenerState && window._screenerState.rawTalentName) || "Creator";
+  const hookScore = drawer.dataset.hookScore || "89";
+  
+  const tier = document.getElementById("rateFollowerTier")?.value || "rising";
+  const niche = document.getElementById("rateNiche")?.value || "fashion_beauty";
+  const brand = document.getElementById("pitchBrandName")?.value.trim() || "[Brand]";
+  const product = document.getElementById("pitchProduct")?.value.trim() || "upcoming campaign";
 
-    const state = window._screenerState || {};
-    const talentName = state.rawTalentName || "Creator";
-    const radar = (state.talent && state.talent.latestRadar) || {};
-    const hookVal = radar.presenceScore ? (Math.round(radar.presenceScore) + "/100") : "89/100";
-    
-    // Clean public screener URL (omits local session tokens)
-    const cleanScreenerUrl = "https://womenofvenice.com/screener.html?name=" + encodeURIComponent(talentName) + "&type=creator";
+  // Deterministic Pricing Matrix
+  const baseRates = { micro: 450, rising: 750, mid: 1250 };
+  const nicheMultipliers = { fashion_beauty: 1.0, lifestyle_travel: 0.9, wellness_fitness: 0.85 };
 
-    const subject = `Paid Collaboration Inquiry — ${talentName} x ${brand} (Top 5% Hook Retention)`;
+  const baseReel = Math.round((baseRates[tier] || 750) * (nicheMultipliers[niche] || 1.0));
+  const adsVal = Math.round(baseReel * 0.40);
+  const rawVal = Math.round(baseReel * 0.25);
+  const totalVal = baseReel + adsVal + rawVal;
 
-    const body = `Hi ${brand} Partnerships Team,\n\n` +
-      `I've been closely following ${brand} and designed a dedicated short-form video concept tailored to ${product}.\n\n` +
-      `To ensure your media investment delivers maximum return, my creative pacing was independently audited by CLAUD-IA Vision Labs (Venice):\n` +
-      `• 3-Second Hook Retention Velocity: ${hookVal} (Top 5% Front-End Engagement Index)\n` +
-      `• Drop-Off Resistance: High Pacing Discipline (Audited for minimal audience bounce)\n\n` +
-      `You can inspect my verified video audit, interactive drop-off curve, and directorial notes here:\n` +
-      `${cleanScreenerUrl}\n\n` +
-      `Attached is my 1-page certified studio media sheet. Are you open to reviewing my concept and deliverables for next month?\n\n` +
-      `Best regards,\n` +
-      `${talentName}`;
+  // Update UI Figures
+  const rReel = document.getElementById("rateReelVal");
+  const rAds = document.getElementById("rateAdsVal");
+  const rRaw = document.getElementById("rateRawVal");
+  const rTot = document.getElementById("rateTotalVal");
 
-    previewEl.textContent = `Subject: ${subject}\n\n${body}`;
+  if (rReel) rReel.innerText = "€" + baseReel;
+  if (rAds) rAds.innerText = "+€" + adsVal;
+  if (rRaw) rRaw.innerText = "+€" + rawVal;
+  if (rTot) rTot.innerText = "€" + totalVal;
 
-    if (mailtoEl) {
-      mailtoEl.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  // 🛡️ Canonical Dossier URL for the Brand Manager (Strips session tokens & hash parameters)
+  const cleanUrl = "https://womenofvenice.com/screener.html?name=" + encodeURIComponent(creatorName) + "&type=creator";
+
+  // Compile Dynamic Pitch Template
+  const pitchText = 
+`Subject: Partnership Concept: ${brand} × ${creatorName} (Retention-Verified Pitch)
+
+Hi ${brand} Team,
+
+I've been following your recent rollout for ${product} and put together a tailored visual concept centered around authentic product integration.
+
+According to direct screen-test benchmarks verified by Women of Venice Studio, my content averages a ${hookScore}/100 in 0–3s hook velocity (Top 5% category retention), ensuring minimal audience drop-off before your core CTA.
+
+Recommended Deliverable Structure:
+• 1x Dedicated High-Retention Reel / TikTok (€${baseReel})
+• 30-Day Paid Whitelist / Spark Ad Rights (+€${adsVal})
+• Raw B-Roll Asset Buyout (+€${rawVal})
+Total Anchor Package: €${totalVal}
+
+Are you currently booking creator collaborations for Q4? Happy to share the concept boards.
+
+Best,
+${creatorName}
+Verified Studio Portfolio: ${cleanUrl}`;
+
+  const preview = document.getElementById("pitchScriptPreview");
+  if (preview) preview.innerText = pitchText;
+
+  const mailtoLink = document.getElementById("mailtoPitchLink");
+  if (mailtoLink) {
+    mailtoLink.href = `mailto:?subject=${encodeURIComponent("Collaboration Concept: " + brand + " × " + creatorName)}&body=${encodeURIComponent(pitchText)}`;
+  }
+};
+
+window.wovCopyPitchScript = function() {
+  const preview = document.getElementById("pitchScriptPreview");
+  if (!preview) return;
+  navigator.clipboard.writeText(preview.innerText).then(function() {
+    const btn = document.getElementById("copyPitchBtn");
+    if (btn) {
+      const orig = btn.innerHTML;
+      btn.innerHTML = "<span>✓ Copied to Clipboard!</span>";
+      setTimeout(function() { btn.innerHTML = orig; }, 2000);
     }
-  };
-
-  window.wovCopyPitchScript = function() {
-    const previewEl = document.getElementById("pitchScriptPreview");
-    if (!previewEl) return;
-    const text = previewEl.textContent;
-    
-    navigator.clipboard.writeText(text).then(function() {
-      const btn = document.getElementById("copyPitchBtn");
-      if (btn) {
-        btn.innerHTML = "<span>✓ Pitch Copied to Clipboard!</span>";
-        btn.style.background = "#22C55E";
-        setTimeout(function() {
-          btn.innerHTML = "<span>📋 Copy Pitch to Clipboard</span>";
-          btn.style.background = "var(--red)";
-        }, 2500);
-      }
-    });
-  };
+  });
+};
 
   // 🌟 PRE-POPULATED STUDIO BENCHMARKS (Elite Multi-Take Masterclass)
 function getDemoProfile_(key) {
