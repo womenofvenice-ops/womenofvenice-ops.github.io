@@ -802,26 +802,40 @@
     newItems.forEach(function(item) { galleryObserver.observe(item); });
   }
 
+  // 🏛️ FEATURED STORIES (Deadlock-Free Lightbox Router)
   function renderFeaturedStories(files) {
     var stories = files.filter(function(f){ return f.story && f.story.trim().length > 0; });
-    if (!stories.length) { featuredGrid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--text-light)">No stories yet. Check back soon!</p>'; return; }
+    if (!stories.length) { 
+      featuredGrid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--text-light)">No stories yet. Check back soon!</p>'; 
+      return; 
+    }
     var selected = stories.slice(0, 4);
     var html = '';
     selected.forEach(function(f) {
       html += '<div class="featured-item" data-id="' + f.id + '">' +
-        '<img src="' + getFullUrl(f.id) + '" alt="' + formatName(f.model) + '" loading="lazy">' +
-        '<div class="info"><h3>' + formatName(f.model) + '</h3><p>"' + truncate(f.story, 160) + '"</p></div></div>';
+        '<img src="' + getFullUrl(f.id) + '" alt="' + (f.location || formatName(f.model)) + '" loading="lazy">' +
+        '<div class="info"><h3>' + (f.location || formatName(f.model)) + '</h3><p>"' + truncate(f.cinematicTone || f.story, 160) + '"</p></div></div>';
     });
     featuredGrid.innerHTML = html;
+
     featuredGrid.querySelectorAll('.featured-item').forEach(function(el) {
       el.addEventListener('click', function() {
         var id = this.dataset.id;
+        // 🛡️ Deadlock Fix: Check displayedFiles first; if absent, search allFiles pool
         var idx = displayedFiles.findIndex(function(f){ return f.id === id; });
-        if (idx >= 0) openLightbox(idx);
+        if (idx >= 0) {
+          openLightbox(idx, displayedFiles);
+        } else {
+          var fullIdx = allFiles.findIndex(function(f){ return f.id === id; });
+          if (fullIdx >= 0) {
+            openLightbox(fullIdx, allFiles);
+          }
+        }
       });
     });
   }
 
+  // 🛡️ HERO CAROUSEL (Preloads Image in Memory to Prevent Black Flashing)
   var heroTimer = null, heroPool = [];
   function setHeroImage(files) {
     if (!files || !files.length) return;
@@ -830,45 +844,87 @@
     clearInterval(heroTimer);
     heroTimer = setInterval(rotateHero, 8000);
   }
+
   function rotateHero() {
     if (!heroPool.length) return;
     var pick = heroPool[Math.floor(Math.random() * heroPool.length)];
-    heroImg.style.opacity = '0';
-    setTimeout(function () {
-      heroImg.src = getFullUrl(pick.id);
-      heroImg.onload = function () { heroImg.style.opacity = '1'; };
-    }, 400);
+    var preloader = new Image();
+    preloader.src = getFullUrl(pick.id);
+    preloader.onload = function() {
+      heroImg.style.opacity = '0';
+      setTimeout(function () {
+        heroImg.src = preloader.src;
+        heroImg.style.opacity = '1';
+      }, 300);
+    };
   }
 
+  // 🏛️ LIGHTBOX MODAL (Supports Dynamic Pools & Production Lookbook Metadata)
   var lightboxIdx = 0, lightboxFiles = [];
-  function openLightbox(index) {
-    if (!displayedFiles.length) return;
-    lightboxFiles = displayedFiles;
+  function openLightbox(index, pool) {
+    var sourcePool = pool || displayedFiles;
+    if (!sourcePool || !sourcePool.length) return;
+    lightboxFiles = sourcePool;
     lightboxIdx = (index + lightboxFiles.length) % lightboxFiles.length;
     showLightboxImage(lightboxIdx);
-    lb.classList.add('on'); document.body.style.overflow = 'hidden';
+    lb.classList.add('on'); 
+    document.body.style.overflow = 'hidden';
     resetLbTimer();
   }
-  function closeLightbox(){ lb.classList.remove('on'); document.body.style.overflow = ''; clearTimeout(window.lbTimer); }
+
+  function closeLightbox(){ 
+    lb.classList.remove('on'); 
+    document.body.style.overflow = ''; 
+    clearTimeout(window.lbTimer); 
+  }
+
   function showLightboxImage(idx) {
     var f = lightboxFiles[idx];
+    if (!f) return;
     lbImg.src = getFullUrl(f.id);
-    lbCap.innerHTML = '<div class="t">' + formatName(f.model) + '</div><div class="s">' + (f.story ? '"' + f.story + '"' : '') + '</div>';
-    lbCount.textContent = (idx+1) + ' / ' + lightboxFiles.length;
+    
+    // Synchronized Lookbook Metadata
+    var locTitle = f.location || formatName(f.model) || "Venezia Scenografia";
+    var lightTag = f.lighting || "35mm Analog Tone · Natural Light";
+    var descText = f.cinematicTone || f.story || "";
+    
+    lbCap.innerHTML = 
+      '<div style="font-family:\'Inter\',monospace;font-size:11px;font-weight:800;color:var(--peach);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">' + lightTag + '</div>' +
+      '<div class="t">' + locTitle + '</div>' +
+      (descText ? '<div class="s">"' + descText + '"</div>' : '');
+      
+    lbCount.textContent = (idx + 1) + ' / ' + lightboxFiles.length;
     resetLbTimer();
   }
-  function resetLbTimer(){ clearTimeout(window.lbTimer); lbControls.classList.remove('hidden'); window.lbTimer = setTimeout(function(){ lbControls.classList.add('hidden'); }, 3000); }
 
-  lbPrev.addEventListener('click', function(e){ e.stopPropagation(); lightboxIdx = (lightboxIdx - 1 + lightboxFiles.length) % lightboxFiles.length; showLightboxImage(lightboxIdx); });
-  lbNext.addEventListener('click', function(e){ e.stopPropagation(); lightboxIdx = (lightboxIdx + 1) % lightboxFiles.length; showLightboxImage(lightboxIdx); });
+  function resetLbTimer(){ 
+    clearTimeout(window.lbTimer); 
+    lbControls.classList.remove('hidden'); 
+    window.lbTimer = setTimeout(function(){ lbControls.classList.add('hidden'); }, 3000); 
+  }
+
+  lbPrev.addEventListener('click', function(e){ 
+    e.stopPropagation(); 
+    lightboxIdx = (lightboxIdx - 1 + lightboxFiles.length) % lightboxFiles.length; 
+    showLightboxImage(lightboxIdx); 
+  });
+
+  lbNext.addEventListener('click', function(e){ 
+    e.stopPropagation(); 
+    lightboxIdx = (lightboxIdx + 1) % lightboxFiles.length; 
+    showLightboxImage(lightboxIdx); 
+  });
+
   lbClose.addEventListener('click', closeLightbox);
   lb.addEventListener('click', function(e){ if (e.target === lb) closeLightbox(); });
+  
   document.addEventListener('keydown', function(e){
     if (!lb.classList.contains('on')) return;
     if (e.key === 'ArrowLeft') { lbPrev.click(); e.preventDefault(); }
     else if (e.key === 'ArrowRight') { lbNext.click(); e.preventDefault(); }
     else if (e.key === 'Escape') closeLightbox();
   });
+  
   lb.addEventListener('mousemove', resetLbTimer);
 
   loadMoreBtn.addEventListener('click', function() {
@@ -878,19 +934,35 @@
     if (currentIndex >= allFiles.length) loadMoreContainer.style.display = 'none';
   });
 
+  // 🛡️ DATA CONNECTOR (Guards Against Re-Shuffle Duplicates on Background 5m Polling)
   var loaded = false;
   window.wovPortfolio = function(data) {
     loaded = true;
     try {
-      if (data && data.error) { gallery.innerHTML = '<div class="load">Connector error: ' + data.error + '</div>'; return; }
+      if (data && data.error) { 
+        gallery.innerHTML = '<div class="load">Connector error: ' + data.error + '</div>'; 
+        return; 
+      }
       var files = (data.files || []);
-      if (!files.length) { gallery.innerHTML = '<div class="load">No portraits published yet.</div>'; return; }
+      if (!files.length) { 
+        gallery.innerHTML = '<div class="load">No portraits published yet.</div>'; 
+        return; 
+      }
+      
       var isFirstLoad = !allFiles.length;
-      allFiles = shuffleArray(files);
+      // 🛡️ Shuffle Guard: Only shuffle on initial load so 5m background polling doesn't duplicate cards
+      if (isFirstLoad) {
+        allFiles = shuffleArray(files);
+      } else {
+        allFiles = files; // Preserves stable order on background updates
+      }
+
       setHeroImage(allFiles);
       renderFeaturedStories(allFiles);
+
       if (isFirstLoad) {
-        currentIndex = 0; displayedFiles = [];
+        currentIndex = 0; 
+        displayedFiles = [];
         gallery.innerHTML = '<div class="grid-sizer"></div>';
         renderGalleryItems(allFiles.slice(0, INITIAL_COUNT));
         loadMoreContainer.style.display = allFiles.length > INITIAL_COUNT ? 'block' : 'none';
