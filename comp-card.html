@@ -20,8 +20,8 @@
       --gold: #D4AF37;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-   body {
-      background: #EFEAE1; /* 👈 Warm editorial Venetian linen desk */
+    body {
+      background: #EFEAE1;
       color: var(--text);
       font-family: 'Inter', -apple-system, sans-serif;
       padding: 30px 16px 60px;
@@ -35,7 +35,7 @@
     .toolbar {
       max-width: 800px;
       width: 100%;
-      background: #1C2B2C; /* 👈 Deep Venetian Charcoal Ink */
+      background: #1C2B2C;
       border: 1px solid rgba(28, 43, 44, 0.2);
       border-radius: 12px;
       padding: 14px 20px;
@@ -45,6 +45,7 @@
       align-items: center;
       flex-wrap: wrap;
       gap: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     }
     .toolbar-title {
       color: #F8FAFC;
@@ -81,7 +82,7 @@
     }
     .btn-secondary:hover { background: #475569; }
 
-    /* Modal for Quick Specs Editing */
+    /* Modal for Specs Editing */
     #editModal {
       display: none;
       position: fixed;
@@ -123,7 +124,7 @@
       width: 210mm;
       min-height: 297mm;
       background: #FFF;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
       padding: 16mm 16mm 14mm;
       display: flex;
       flex-direction: column;
@@ -318,9 +319,7 @@
       color: #475569;
     }
 
-    /* ================================================= */
-    /* 📱 RESPONSIVE SCREEN VIEW (<820px)                */
-    /* ================================================= */
+    /* Responsive Mobile Screen View */
     @media screen and (max-width: 820px) {
       body {
         padding: 12px 8px 48px;
@@ -343,9 +342,7 @@
       }
     }
 
-    /* ================================================= */
-    /* 🖨️ HARDENED A4 PRINT ENGINE (Zero 2nd-Page Bleed) */
-    /* ================================================= */
+    /* Strict A4 Print Engine */
     @page {
       size: A4 portrait;
       margin: 0;
@@ -369,4 +366,283 @@
         padding: 14mm 14mm 12mm !important;
         overflow: hidden !important;
         page-break-inside: avoid !important;
-        page-break-after: avoid !important
+        page-break-after: avoid !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Screen-Only Management Bar -->
+  <div class="toolbar no-print">
+    <div class="toolbar-title">
+      <span>🏛️ Women of Venice Studio</span>
+      <span style="opacity:0.4;">|</span>
+      <span>Official Casting Comp Card</span>
+    </div>
+    <div class="toolbar-actions">
+      <button class="btn-action btn-secondary" onclick="openEditModal()">
+        ✏️ Edit Physical Specs
+      </button>
+      <button class="btn-action" onclick="window.print()">
+        🖨️ Download Press-Ready PDF
+      </button>
+      <a href="javascript:history.back()" class="btn-action btn-secondary">
+        ← Return
+      </a>
+    </div>
+  </div>
+
+  <!-- The A4 Sheet -->
+  <div class="comp-sheet" id="compSheet">
+    
+    <!-- Masthead -->
+    <div class="comp-masthead">
+      <div>
+        <div class="comp-studio-mark">Women of Venice · Casting Studio</div>
+        <div class="comp-submark">Biometric Telemetry &amp; Actor Representation Deck</div>
+      </div>
+      <div class="comp-cert-pill" id="certIdEl">WOV-2026-ARCHIVE</div>
+    </div>
+
+    <!-- Main Grid: Photo + Specs -->
+    <div class="comp-main-grid">
+      
+      <!-- Left: Primary Headshot -->
+      <div class="comp-photo-box">
+        <img id="headshotImg" src="" alt="Primary Headshot" style="display:none;">
+        <div class="comp-photo-placeholder" id="photoPlaceholder">
+          <span style="font-size:36px;margin-bottom:8px;">📷</span>
+          <div style="font-weight:700;font-size:12px;color:#475569;">Verified Primary Headshot</div>
+          <div style="font-size:10px;margin-top:4px;">Natural Rembrandt Light · CSA Standard</div>
+        </div>
+      </div>
+
+      <!-- Right: Specs, Telemetry Radar, Comps -->
+      <div class="comp-details">
+        
+        <div class="comp-name-block">
+          <h1 id="talentName">Elena B.</h1>
+          <div class="comp-archetype" id="talentArchetype">Grounded Dramatic Lead</div>
+        </div>
+
+        <!-- Physical Casting Specifications -->
+        <table class="specs-table">
+          <tr><td class="specs-label">Playing Age:</td><td class="specs-val" id="specAge">24 – 32</td></tr>
+          <tr><td class="specs-label">Height:</td><td class="specs-val" id="specHeight">174 cm (5'8.5")</td></tr>
+          <tr><td class="specs-label">Eyes:</td><td class="specs-val" id="specEyes">Hazel / Green</td></tr>
+          <tr><td class="specs-label">Hair:</td><td class="specs-val" id="specHair">Chestnut Brown</td></tr>
+          <tr><td class="specs-label">Languages:</td><td class="specs-val" id="specLang">Italian (Native), English (Fluent)</td></tr>
+          <tr><td class="specs-label">Representation:</td><td class="specs-val" id="specRep">Direct Studio Roster · Venice</td></tr>
+        </table>
+
+        <!-- Mini 4-Axis Spider Radar Polygon -->
+        <div class="radar-box">
+          <div class="radar-header">4-Axis Craft Telemetry Footprint</div>
+          <div style="max-width:180px;margin:0 auto;">
+            <svg viewBox="-40 0 380 300" style="width:100%;height:auto;overflow:visible;">
+              <polygon points="150,30 270,150 150,270 30,150" fill="none" stroke="rgba(28,43,44,0.08)" stroke-width="1"/>
+              <polygon points="150,60 240,150 150,240 60,150" fill="none" stroke="rgba(28,43,44,0.08)" stroke-width="1"/>
+              <polygon points="150,90 210,150 150,210 90,150" fill="none" stroke="rgba(28,43,44,0.08)" stroke-width="1"/>
+              <line x1="150" y1="30" x2="150" y2="270" stroke="rgba(28,43,44,0.12)" stroke-dasharray="3,3"/>
+              <line x1="30" y1="150" x2="270" y2="150" stroke="rgba(28,43,44,0.12)" stroke-dasharray="3,3"/>
+              <polygon id="radarPolygon" points="150,44 248,150 150,259 43,150" fill="rgba(168,73,46,0.25)" stroke="#A8492E" stroke-width="2.5"/>
+              <circle id="nodeP" cx="150" cy="44" r="4" fill="#A8492E"/>
+              <circle id="nodeV" cx="248" cy="150" r="4" fill="#A8492E"/>
+              <circle id="nodeS" cx="150" cy="259" r="4" fill="#A8492E"/>
+              <circle id="nodeF" cx="43" cy="150" r="4" fill="#A8492E"/>
+              <text id="lblP" x="150" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="#1C2B2C">Stillness (88)</text>
+              <text id="lblV" x="282" y="154" text-anchor="start" font-size="10" font-weight="700" fill="#1C2B2C">Vocal (82)</text>
+              <text id="lblS" x="150" y="288" text-anchor="middle" font-size="10" font-weight="700" fill="#1C2B2C">Subtext (91)</text>
+              <text id="lblF" x="18" y="154" text-anchor="end" font-size="10" font-weight="700" fill="#1C2B2C">Fit (89)</text>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Casting Comps -->
+        <div class="comps-container">
+          <div style="font-weight:800;font-size:9.5px;text-transform:uppercase;color:var(--red);margin-bottom:2px;">Casting Lane &amp; Comps</div>
+          <div id="compsActors"><b>Actors:</b> Vicky Krieps, Paula Beer, Renate Reinsve</div>
+          <div id="compsDirector" style="color:#64748B;margin-top:2px;"><b>Director Lane:</b> A24 / Cannes Arthouse (Joachim Trier, Charlotte Wells)</div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Bottom Bar: Directorial Quote + Scan-to-Watch QR -->
+    <div class="comp-footer-grid">
+      <div class="directorial-quote">
+        <b>Directorial Superpower &amp; Frame Presence:</b>
+        <span id="superpowerText">"Demonstrates deep dramatic interiority and stillness before the camera. Eyes sustain dramatic tension across silence with zero performative anxiety."</span>
+        <div style="font-size:9.5px;color:#64748B;margin-top:4px;">
+          Audited under CSA Photographic Standards &amp; Art. 85 GDPR (Processing for Artistic Expression).
+        </div>
+      </div>
+
+      <div class="qr-block">
+        <img id="qrImg" src="" alt="Scan to Watch Video Take">
+        <div class="qr-caption">Scan to Watch Self-Tape</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Editable Specs Modal (Screen-Only) -->
+  <div id="editModal">
+    <div class="modal-card">
+      <h3 style="font-size:18px;font-weight:800;margin-bottom:4px;">Customize Physical Specifications</h3>
+      <p style="font-size:12px;color:#64748B;margin-bottom:14px;">Update details to reflect your Spotlight / Agency profile before printing.</p>
+      
+      <div class="modal-grid">
+        <div>
+          <label style="font-size:11px;font-weight:700;display:block;margin-bottom:4px;">Playing Age</label>
+          <input type="text" id="inAge" class="modal-input" value="24 – 32">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;display:block;margin-bottom:4px;">Height</label>
+          <input type="text" id="inHeight" class="modal-input" value="174 cm (5'8.5&quot;)">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;display:block;margin-bottom:4px;">Eye Color</label>
+          <input type="text" id="inEyes" class="modal-input" value="Hazel / Green">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;display:block;margin-bottom:4px;">Hair Color</label>
+          <input type="text" id="inHair" class="modal-input" value="Chestnut Brown">
+        </div>
+        <div style="grid-column:1/-1;">
+          <label style="font-size:11px;font-weight:700;display:block;margin-bottom:4px;">Languages</label>
+          <input type="text" id="inLang" class="modal-input" value="Italian (Native), English (Fluent)">
+        </div>
+        <div style="grid-column:1/-1;">
+          <label style="font-size:11px;font-weight:700;display:block;margin-bottom:4px;">Agency / Representation</label>
+          <input type="text" id="inRep" class="modal-input" value="Direct Studio Roster · Venice">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn-action btn-secondary" onclick="closeEditModal()">Cancel</button>
+        <button class="btn-action" onclick="saveSpecs()">Apply to Sheet</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
+
+    function esc(s) { 
+      return String(s || "").replace(/[&<>"']/g, function(c) {
+        return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+      }); 
+    }
+
+    function safeScore(v) {
+      const n = Number(v);
+      return (!isNaN(n) && n >= 0 && n <= 100) ? Math.round(n) : 80;
+    }
+
+    function openEditModal() { document.getElementById("editModal").style.display = "flex"; }
+    function closeEditModal() { document.getElementById("editModal").style.display = "none"; }
+    function saveSpecs() {
+      document.getElementById("specAge").innerText = document.getElementById("inAge").value;
+      document.getElementById("specHeight").innerText = document.getElementById("inHeight").value;
+      document.getElementById("specEyes").innerText = document.getElementById("inEyes").value;
+      document.getElementById("specHair").innerText = document.getElementById("inHair").value;
+      document.getElementById("specLang").innerText = document.getElementById("inLang").value;
+      document.getElementById("specRep").innerText = document.getElementById("inRep").value;
+      closeEditModal();
+    }
+
+    function setHeadshot(src) {
+      if (!src) return;
+      const hImg = document.getElementById("headshotImg");
+      hImg.src = src;
+      hImg.style.display = "block";
+      document.getElementById("photoPlaceholder").style.display = "none";
+    }
+
+    window.addEventListener("DOMContentLoaded", function() {
+      const params = new URLSearchParams(window.location.search);
+      const targetName = params.get("name") || params.get("talent") || "Elena B.";
+      const dossierId = params.get("id");
+      const urlImg = params.get("img");
+
+      document.getElementById("talentName").innerText = targetName;
+      
+      const cleanUrl = dossierId 
+        ? "https://womenofvenice.com/screener.html?id=" + encodeURIComponent(dossierId)
+        : "https://womenofvenice.com/screener.html?name=" + encodeURIComponent(targetName) + "&type=cinema";
+      
+      const certHash = Math.abs(targetName.split("").reduce((acc, c) => (acc << 5) - acc + c.charCodeAt(0), 0)).toString(16).toUpperCase().padStart(8, "0");
+      document.getElementById("certIdEl").innerText = "WOV-2026-" + certHash;
+      
+      const qrEl = document.getElementById("qrImg");
+      qrEl.src = "https://api.qrserver.com/v1/create-qr-code/?size=95x95&data=" + encodeURIComponent(cleanUrl + "&ref=comp_qr");
+      qrEl.onerror = function() { this.style.display = "none"; };
+
+      // Ingest Headshot: URL Param -> LocalStorage -> Backend Fallback
+      const cachedImg = urlImg || localStorage.getItem("wov_triage_winning_img");
+      if (cachedImg) {
+        setHeadshot(cachedImg);
+      }
+
+      const fetchUrl = dossierId
+        ? EXEC + "?action=screener&id=" + encodeURIComponent(dossierId)
+        : EXEC + "?action=screener&name=" + encodeURIComponent(targetName);
+
+      fetch(fetchUrl)
+        .then(res => res.json())
+        .then(data => {
+          if (data && (data.ok || data.status === "ok" || data.talent || data.marketArchetype)) {
+            renderCompCard(data);
+          }
+        })
+        .catch(err => {
+          console.log("Using offline comp card defaults.");
+        });
+    });
+
+    function renderCompCard(data) {
+      if (data.photoUrl || data.headshotUrl || (data.talent && data.talent.photoUrl)) {
+        setHeadshot(data.photoUrl || data.headshotUrl || data.talent.photoUrl);
+      }
+
+      if (data.marketArchetype) document.getElementById("talentArchetype").innerText = data.marketArchetype;
+
+      const comps = data.comps || {};
+      if (comps.actorComps) document.getElementById("compsActors").innerHTML = "<b>Actors:</b> " + esc(comps.actorComps);
+      if (comps.directorFit) document.getElementById("compsDirector").innerHTML = "<b>Director Lane:</b> " + esc(comps.directorFit);
+
+      const takes = data.takes || [];
+      const latest = takes[takes.length - 1] || {};
+      const dNotes = latest.directorNotes || {};
+      if (dNotes.superpower) {
+        document.getElementById("superpowerText").innerText = `"${dNotes.superpower}"`;
+      }
+
+      const r = data.latestRadar || {};
+      const p = safeScore(r.presenceScore != null ? r.presenceScore : 88);
+      const v = safeScore(r.vocalScore != null ? r.vocalScore : 82);
+      const s = safeScore(r.subtextScore != null ? r.subtextScore : 91);
+      const f = safeScore(r.formatFitScore != null ? r.formatFitScore : 89);
+
+      const yP = 150 - (p / 100 * 120);
+      const xV = 150 + (v / 100 * 120);
+      const yS = 150 + (s / 100 * 120);
+      const xF = 150 - (f / 100 * 120);
+
+      document.getElementById("radarPolygon").setAttribute("points", `150,${yP} ${xV},150 150,${yS} ${xF},150`);
+      document.getElementById("nodeP").setAttribute("cy", yP);
+      document.getElementById("nodeV").setAttribute("cx", xV);
+      document.getElementById("nodeS").setAttribute("cy", yS);
+      document.getElementById("nodeF").setAttribute("cx", xF);
+
+      document.getElementById("lblP").textContent = `Stillness (${p})`;
+      document.getElementById("lblV").textContent = `Vocal (${v})`;
+      document.getElementById("lblS").textContent = `Subtext (${s})`;
+      document.getElementById("lblF").textContent = `Fit (${f})`;
+    }
+  </script>
+</body>
+</html>
