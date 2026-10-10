@@ -721,12 +721,24 @@
         '<a href="#vipCodeInput" onclick="wovHandlePaymentClick(event)" class="pdf-btn" style="background:var(--red);color:#fff;padding:6px 14px;border-radius:6px;font-size:11.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">' +
           (isCreator ? '💼 Unlock Media Kit (€49)' : '📄 Unlock Casting Deck (€49)') +
         '</a>';
-    } 
-    else {
+    } else {
+      const currentParams = new URLSearchParams(window.location.search);
+      const currentId = currentParams.get("id");
+      const safeName = rawTalentName || "Elena B.";
+      
+      const compCardHref = `comp-card.html?name=${encodeURIComponent(safeName)}${currentId ? `&id=${encodeURIComponent(currentId)}` : ""}`;
+
       headerActionBtnHtml = 
-        '<button onclick="wovSendMilestone(\'PDF_EXPORT_CLICKED\'); window.print();" class="pdf-btn">' +
-  (isCreator ? '📄 Export Verified PDF Kit' : '📄 Export PDF Deck') +
-'</button>';
+        (!isCreator ? `
+          <a href="${compCardHref}" target="_blank" rel="noopener noreferrer"
+             onclick="if (typeof wovSendMilestone === 'function') wovSendMilestone('COMP_CARD_OPENED');"
+             style="background:transparent;color:var(--ink);border:1.5px solid var(--border);padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:border-color 0.2s;">
+            📇 Comp Card (A4) ↗
+          </a>
+        ` : '') +
+        '<button onclick="if (typeof wovSendMilestone === \'function\') wovSendMilestone(\'PDF_EXPORT_CLICKED\'); window.print();" class="pdf-btn">' +
+          (isCreator ? '📄 Export Verified PDF Kit' : '📄 Export PDF Deck') +
+        '</button>';
     }
 
     // 8. ADAPTIVE LABELS (Cinema vs. Creator Economy)
