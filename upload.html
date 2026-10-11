@@ -230,14 +230,18 @@
       <div style="background:#FFF;border:1.5px solid var(--border);border-radius:12px;padding:18px;text-align:left;margin-bottom:24px;">
         <div style="font-size:11.5px;font-weight:800;text-transform:uppercase;color:var(--red);letter-spacing:1px;margin-bottom:8px;">What Happens Next:</div>
         <div style="font-size:13.5px;color:var(--ink);line-height:1.6;">
-          • An instant confirmation receipt has been sent to your email.<br>
-          • Director Claudio & CLAUD-IA are reviewing your performance.<br>
-          • Your Directorial Feedback, Timestamps, and Video Playback link will be delivered directly to your inbox.
+          • Your take is vaulted and being audited by CLAUD-IA's vision engine.<br>
+          • Directorial feedback, timestamps, and 4-axis telemetry are compiling.<br>
+          • You can inspect your live dossier and comp card directly below:
         </div>
       </div>
 
-      <button class="btn-submit" onclick="location.reload()" style="background:#FAF9F6;color:var(--ink);border:1.5px solid var(--border);">Submit Another Take (Optional)</button>
-    </div>
+      <a id="viewDossierBtn" href="#" style="display:block;background:var(--red);color:#FFF;padding:14px;border-radius:12px;font-size:14.5px;font-weight:700;text-decoration:none;margin-bottom:12px;text-align:center;">
+        🎬 Open Your Live Studio Screener ↗
+      </a>
+
+      <button class="btn-submit" onclick="location.reload()" style="background:#FAF9F6;color:var(--ink);border:1.5px solid var(--border);margin-top:0;">Submit Another Take (Optional)</button> 
+     </div>
   </div>
 </div>
 
@@ -413,11 +417,12 @@ notes: document.getElementById("notes").value.trim(),
         try {
           const data = JSON.parse(text);
           if (data && data.ok) {
-            setTimeout(function() {
-              document.getElementById("uploadForm").style.display = "none";
-              document.getElementById("progressBox").style.display = "none";
-              document.getElementById("successBox").style.display = "block";
-            }, 600);
+            const submittedName = document.getElementById("name").value.trim();
+            const chosenFormat = document.getElementById("targetFormat").value;
+            const isCreatorTrack = chosenFormat.indexOf("Short-Form") >= 0 || chosenFormat.indexOf("Creator") >= 0;
+            const liveUrl = "screener.html?name=" + encodeURIComponent(submittedName) + (isCreatorTrack ? "&type=creator" : "&type=cinema");
+            const viewBtn = document.getElementById("viewDossierBtn");
+            if (viewBtn) viewBtn.href = liveUrl;
           } else {
             alert("⚠️ Upload warning: " + (data ? (data.error || data.message) : text));
             resetFormState();
