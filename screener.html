@@ -1505,9 +1505,10 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
     const hookMultiplier = rawScore >= 85 ? 1.20 : (rawScore >= 75 ? 1.10 : 1.0);
     
     const reelRate = Math.round((baseMultiplier * hookMultiplier) / 10) * 10;
-    const adsRate = Math.round((reelRate * 0.40) / 10) * 10;
-    const rawRate = Math.round((reelRate * 0.25) / 10) * 10;
-    const totalPackage = reelRate + adsRate + rawRate;
+  const adsRate = Math.round((reelRate * 0.40) / 10) * 10;
+  const rawRate = Math.round((reelRate * 0.25) / 10) * 10;
+  const exclusivityRate = Math.round((reelRate * 0.35) / 10) * 10; // 👈 +35% Category Exclusivity
+  const totalPackage = reelRate + adsRate + rawRate + exclusivityRate;
 
     // 🔄 Update Live Rate Card Boxes
     const reelEl = document.getElementById("rateReelVal");
@@ -1540,10 +1541,11 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
       `You can inspect my verified video screener, retention telemetry, and directorial notes here:${crlf}` +
       `${cleanScreenerUrl}${crlf}${crlf}` +
       `RECOMMENDED DELIVERABLES & STUDIO RATE BENCHMARK:${crlf}` +
-      `• 1x Dedicated Vertical Reel / TikTok: €${reelRate}${crlf}` +
-      `• 30-Day Paid Whitelist / Spark Ad Rights (+40%): €${adsRate}${crlf}` +
-      `• Raw B-Roll Footage Buyout (+25%): €${rawRate}${crlf}` +
-      `• Total Package Anchor: €${totalPackage} (Complete campaign buyout)${crlf}${crlf}` +
+    `• 1x Dedicated Vertical Reel / TikTok: €${reelRate}${crlf}` +
+    `• 30-Day Paid Whitelist / Spark Ad Rights (+40%): €${adsRate}${crlf}` +
+    `• 30-Day Industry Category Exclusivity (+35%): €${exclusivityRate}${crlf}` +
+    `• Raw B-Roll Footage Buyout (+25%): €${rawRate}${crlf}` +
+    `• Total Package Anchor: €${totalPackage} (Full media buyout & exclusivity included)${crlf}${crlf}` +
       `Are you currently planning creator collaborations for the coming month? I would be glad to share the creative concept.${crlf}${crlf}` +
       `Best regards,${crlf}` +
       `${talentName}`;
