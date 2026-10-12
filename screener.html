@@ -1354,22 +1354,96 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
       if (btnLoc) btnLoc.classList.add('active');
     }
   };
+// 🚪 MODAL CONTROLLERS (Open, Close, Backdrop Dismissal & Stripe Binding)
+  window.wovOpenUnlockModal = function() {
+    const modal = document.getElementById("wovUnlockModal");
+    if (!modal) return;
 
-  // 🎟️ VIP PASS REDEMPTION & TELEMETRY DISPATCH
-  window.wovRedeemVipCode = function() {
-    const inputEl = document.getElementById("vipCodeInput");
-    const statusEl = document.getElementById("vipCodeStatus");
+    const urlParams = new URLSearchParams(window.location.search);
+    const state = window._screenerState || {};
+    const talentName = state.rawTalentName || urlParams.get("name") || urlParams.get("talent") || "Talent";
+    const dossierId = urlParams.get("id") || "";
+    const isCreator = state.isCreator || (urlParams.get("type") === "creator");
+
+    // Dynamic Persona Copy
+    const titleEl = document.getElementById("modalUnlockTitle");
+    const descEl = document.getElementById("modalUnlockDesc");
+    const btnTextEl = document.getElementById("modalStripeBtnText");
+    const checkoutLink = document.getElementById("stripeModalCheckoutLink");
+
+    if (isCreator) {
+      if (titleEl) titleEl.innerText = "Unlock Verified Media Kit & Rate Card";
+      if (descEl) descEl.innerText = "Access your full 0-3s hook velocity analysis, dynamic sponsorship rate card, and exportable 1-Page Press-Ready PDF.";
+      if (btnTextEl) btnTextEl.innerText = "💳 Unlock Verified Media Kit — €29.00";
+    } else {
+      if (titleEl) titleEl.innerText = "Unlock Official Casting Representation Deck";
+      if (descEl) descEl.innerText = "Access your verified 4-axis craft telemetry, silence discipline scores, and exportable A4 Casting Comp Card (Z-Card).";
+      if (btnTextEl) btnTextEl.innerText = "📄 Unlock Casting Deck (PDF) — €29.00";
+    }
+
+    // 🛡️ Safe Stripe Binding: Prioritize UUID over display name to prevent anti-fraud mismatches
+    if (checkoutLink) {
+      const baseStripe = (typeof baseStripeUrl !== "undefined" && baseStripeUrl.indexOf("YOUR_STRIPE_LINK") === -1)
+        ? baseStripeUrl
+        : "https://buy.stripe.com/YOUR_STRIPE_LINK";
+      
+      const trackingIdentifier = encodeURIComponent(dossierId || talentName);
+      checkoutLink.href = baseStripe + "?client_reference_id=" + trackingIdentifier;
+
+      checkoutLink.onclick = function(e) {
+        if (baseStripe.indexOf("YOUR_STRIPE_LINK") >= 0) {
+          e.preventDefault();
+          const status = document.getElementById("modalVipStatus");
+          if (status) {
+            status.style.color = "#A8492E";
+            status.innerHTML = "💡 Studio Demo: Enter <b>VENICE-VIP</b> below to unlock.";
+          }
+        }
+      };
+    }
+
+    modal.style.display = "flex";
+  };
+
+  window.wovCloseUnlockModal = function() {
+    const modal = document.getElementById("wovUnlockModal");
+    if (modal) modal.style.display = "none";
+  };
+
+  window.wovHandleBackdropClick = function(e) {
+    if (e.target.id === "wovUnlockModal") {
+      wovCloseUnlockModal();
+    }
+  };
+
+  // 🎟️ UNIFIED VIP PASS REDEMPTION (Supports Modal and In-Page Inputs with Enter Support)
+  window.wovRedeemVipCode = function(source) {
+    const isModal = source === 'modal';
+    const inputEl = isModal 
+      ? document.getElementById("modalVipCodeInput") 
+      : (document.getElementById("vipCodeInput") || document.getElementById("modalVipCodeInput"));
+    const statusEl = isModal 
+      ? document.getElementById("modalVipStatus") 
+      : (document.getElementById("vipCodeStatus") || document.getElementById("modalVipStatus"));
+
     if (!inputEl || !statusEl) return;
 
     const enteredCode = String(inputEl.value || "").trim().toUpperCase();
-    const validCodes = ["VENICE-VIP", "DIRECTOR-GUEST", "CLAUDIA-BETA", "SCHOLARSHIP-2026", "TNA-STUDIO"];
+    const validCodes = ["VENICE-VIP", "DIRECTOR-GUEST", "CLAUDIA-BETA", "SCHOLARSHIP-2026", "TNA-STUDIO", "VIP-KAIROS-2026"];
+
+    if (!enteredCode) {
+      statusEl.style.color = "#E24E42";
+      statusEl.innerHTML = "Please enter a studio code.";
+      return;
+    }
 
     if (validCodes.includes(enteredCode)) {
-      statusEl.style.color = "#4ADE80";
+      statusEl.style.color = "#166534";
       statusEl.innerHTML = "✓ Pass verified. Unlocking studio telemetry archive...";
 
+      const urlParams = new URLSearchParams(window.location.search);
       const state = window._screenerState || {};
-      const talentName = state.rawTalentName || (new URLSearchParams(window.location.search).get("name") || "Unknown Talent");
+      const talentName = state.rawTalentName || urlParams.get("name") || urlParams.get("talent") || "Unknown Talent";
       const talentKey = talentName.toLowerCase().replace(/[^a-z0-9]/g, "_");
 
       try {
@@ -1377,8 +1451,13 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
         localStorage.setItem("wov_auth_" + talentKey, btoa(enteredCode + "_VENICE_STUDIO_2026"));
       } catch(e) {}
 
+      // 🛡️ Real-Time Telegram Dispatch with Scoped EXEC Fallback
+      const targetExec = (typeof EXEC !== "undefined") 
+        ? EXEC 
+        : (window.EXEC || "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec");
+
       try {
-        fetch(EXEC, {
+        fetch(targetExec, {
           method: "POST",
           mode: "no-cors",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -1395,14 +1474,14 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
         const url = new URL(window.location.href);
         url.searchParams.set("pro", "true");
         window.location.replace(url.toString());
-      }, 700);
+      }, 650);
 
     } else {
-      statusEl.style.color = "#F87171";
+      statusEl.style.color = "#E24E42";
       statusEl.innerHTML = "⚠️ Invalid studio key. Contact curation desk.";
     }
   };
-
+  
   // ⏱️ INTERACTIVE TIMECODE CONTROLLER (Smooth-Scrolls, Displays HUD & Seeks Native Video)
   window.wovSeekTimecode = function(timeStr) {
     if (!timeStr) return;
