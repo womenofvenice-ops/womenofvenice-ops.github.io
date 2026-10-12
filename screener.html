@@ -1742,5 +1742,49 @@ function getDemoProfile_(key) {
   };
   
 </script>
+<!-- 💳 THE REVENUE HARNESS: PRO DOSSIER & MEDIA KIT UNLOCK MODAL -->
+<div id="wovUnlockModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.85);z-index:99999;align-items:center;justify-content:center;padding:20px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);" onclick="wovHandleBackdropClick(event)">
+  <div style="background:#FFF;border-radius:16px;max-width:440px;width:100%;padding:28px 24px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);text-align:center;position:relative;border:1px solid #E2E8F0;font-family:'Inter',-apple-system,sans-serif;" onclick="event.stopPropagation()">
+    
+    <!-- Close Icon -->
+    <button type="button" onclick="wovCloseUnlockModal()" aria-label="Close Modal" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:24px;color:#94A3B8;cursor:pointer;line-height:1;padding:4px;">&times;</button>
+    
+    <div style="display:inline-block;background:rgba(168,73,46,0.1);color:var(--red,#A8492E);font-family:monospace;font-size:11px;font-weight:800;letter-spacing:1.5px;padding:4px 12px;border-radius:99px;text-transform:uppercase;margin-bottom:10px;">
+      Verified Studio Artifact
+    </div>
+    
+    <h3 id="modalUnlockTitle" style="font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:700;color:#1C2B2C;margin-bottom:6px;">
+      Unlock Your Verified Dossier
+    </h3>
+    <p id="modalUnlockDesc" style="font-size:13px;color:#64748B;line-height:1.5;margin-bottom:20px;">
+      Access your full second-by-second viewer retention curve, high-resolution Spider Radar, and exportable 1-Page Press-Ready PDF.
+    </p>
+
+    <!-- Primary Action: Stripe Payment Link (Dynamically Injected with UUID/Name Tracking) -->
+    <a id="stripeModalCheckoutLink" href="#" 
+       style="display:flex;align-items:center;justify-content:center;gap:8px;background:var(--red,#A8492E);color:#FFF;padding:12px 20px;border-radius:99px;font-weight:700;font-size:14px;text-decoration:none;box-shadow:0 4px 14px rgba(168,73,46,0.3);transition:background 0.2s;margin-bottom:16px;">
+      <span id="modalStripeBtnText">💳 Instant Unlock — €29.00</span>
+      <span style="opacity:0.7;">↗</span>
+    </a>
+
+    <!-- Alternative: VIP Pass / PayPal Redemption -->
+    <div style="border-top:1px dashed #E2E8F0;padding-top:16px;margin-top:14px;">
+      <div style="font-size:11.5px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">
+        Have a Director's Scholarship Pass or Claim Code?
+      </div>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="modalVipCodeInput" placeholder="ENTER VIP PASS (E.G. VENICE-VIP)" 
+               onkeydown="if(event.key==='Enter') wovRedeemVipCode('modal')"
+               style="flex:1;padding:9px 12px;border:1.5px solid #CBD5E1;border-radius:8px;font-size:12px;outline:none;text-transform:uppercase;font-weight:700;font-family:monospace;letter-spacing:1px;text-align:center;">
+        <button type="button" onclick="wovRedeemVipCode('modal')" id="modalRedeemVipBtn"
+                style="background:#1C2B2C;color:#FFF;border:none;padding:9px 18px;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer;">
+          Claim
+        </button>
+      </div>
+      <div id="modalVipStatus" style="font-size:11.5px;font-weight:600;margin-top:6px;min-height:16px;"></div>
+    </div>
+
+  </div>
+</div>  
 </body>
 </html>
