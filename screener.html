@@ -454,6 +454,22 @@
       .meter-bar { height: 6px !important; }
       .meter-num { font-size: 11px !important; }
     }
+    /* ✨ High-Visibility Pro Unlock Button Glow */
+.pulse-glow-btn:hover {
+  transform: translateY(-1.5px) scale(1.02);
+  box-shadow: 0 6px 24px rgba(226, 78, 66, 0.65) !important;
+  background: #E24E42 !important;
+}
+
+@keyframes wovSubtlePulse {
+  0% { box-shadow: 0 4px 16px rgba(226, 78, 66, 0.35); }
+  50% { box-shadow: 0 4px 22px rgba(226, 78, 66, 0.65); }
+  100% { box-shadow: 0 4px 16px rgba(226, 78, 66, 0.35); }
+}
+
+.pulse-glow-btn {
+  animation: wovSubtlePulse 2.8s infinite ease-in-out;
+}
   </style>
 </head>
 <body>
