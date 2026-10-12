@@ -698,7 +698,7 @@
           '<h3 style="font-size:22px;font-weight:800;margin-bottom:10px;color:#FFF;line-height:1.3;">' + config.title + '</h3>' +
           '<p style="font-size:13.5px;color:#CBD5E1;max-width:520px;margin:0 auto 18px;line-height:1.6;">' + config.desc + '</p>' +
           '<div style="font-size:28px;font-weight:800;color:#F6E4B8;margin-bottom:16px;">' + config.anchor + '</div>' +
-          '<a href="#vipCodeInput" onclick="wovHandlePaymentClick(event)" style="display:inline-block;background:var(--red,#E24E42);color:#FFF;padding:13px 32px;border-radius:99px;text-decoration:none;font-weight:800;font-size:14px;box-shadow:0 4px 14px rgba(226,78,66,0.4);transition:all 0.2s;">' + config.btnText + '</a>' +
+          '<button type="button" onclick="wovOpenUnlockModal()" style="display:inline-block;background:var(--red,#E24E42);color:#FFF;border:none;padding:13px 32px;border-radius:99px;font-weight:800;font-size:14px;box-shadow:0 4px 14px rgba(226,78,66,0.4);cursor:pointer;transition:all 0.2s;">' + config.btnText + '</button>' +
           '<div style="font-size:11.5px;color:#94A3B8;margin-top:10px;">' + config.benefit + '</div>' +
 
           // 🎟️ VIP SCHOLARSHIP BYPASS (Guarantees #vipCodeInput exists in DOM!)
@@ -718,9 +718,10 @@
     let headerActionBtnHtml = "";
     if (!isPro) {
       headerActionBtnHtml = 
-        '<a href="#vipCodeInput" onclick="wovHandlePaymentClick(event)" class="pdf-btn" style="background:var(--red);color:#fff;padding:6px 14px;border-radius:6px;font-size:11.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">' +
-          (isCreator ? '💼 Unlock Media Kit (€49)' : '📄 Unlock Casting Deck (€49)') +
-        '</a>';
+        headerActionBtnHtml = 
+  '<button type="button" onclick="wovOpenUnlockModal()" class="pdf-btn" style="background:var(--red);color:#fff;border:none;cursor:pointer;padding:6px 14px;border-radius:6px;font-size:11.5px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">' +
+    (isCreator ? '💼 Unlock Media Kit (€29)' : '📄 Unlock Casting Deck (€29)') +
+  '</button>';
     } else {
       const currentParams = new URLSearchParams(window.location.search);
       const currentId = currentParams.get("id");
