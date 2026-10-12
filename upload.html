@@ -174,46 +174,20 @@
       <div class="form-group">
         <label id="mediaInputLabel">Audition Video Take *</label>
 
-        <!-- 🎛️ Ingestion Mode Tabs -->
-        <div style="display:flex;gap:8px;margin-bottom:12px;background:rgba(28,43,44,0.06);padding:4px;border-radius:10px;">
-          <button type="button" id="tabModeFile" onclick="wovSwitchUploadMode('file')" 
-                  style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;background:#FFF;color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,0.08);">
-            📁 Upload File (.mp4)
-          </button>
-          <button type="button" id="tabModeUrl" onclick="wovSwitchUploadMode('url')" 
-                  style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:var(--inkS);">
-            🔗 Paste Social Video URL
-          </button>
-        </div>
-
-        <!-- Mode A: Standard File Dropzone -->
-        <div id="fileModeContainer">
-          <div class="drop-zone" id="dropZone">
-            <input type="file" id="videoFile" accept="video/*" required>
-            <div class="drop-icon">🎬</div>
-            <div style="font-weight: 700; font-size: 14px;">Tap to Record or Choose Video</div>
-            <div class="file-hint">1080p camera rolls &amp; MP4/MOV accepted (Under 35.5 MB)</div>
-            <div style="font-size: 11px; color: #92400E; background: #FEF3C7; padding: 4px 10px; border-radius: 6px; margin-top: 8px; display: inline-block;">
-              💡 <b>Mobile Tip:</b> Record in standard 1080p 30fps (not 4K) to stay comfortably under 35 MB.
-            </div>
-            <div class="file-name" id="fileNameDisplay"></div>
+        <!-- Standard Video File Dropzone -->
+        <div class="drop-zone" id="dropZone">
+          <input type="file" id="videoFile" accept="video/*" required>
+          <div class="drop-icon">🎬</div>
+          <div style="font-weight: 700; font-size: 14px;">Tap to Record or Choose Video</div>
+          <div class="file-hint">1080p camera rolls &amp; MP4/MOV accepted (Under 35.5 MB)</div>
+          <div style="font-size: 11px; color: #92400E; background: #FEF3C7; padding: 4px 10px; border-radius: 6px; margin-top: 8px; display: inline-block;">
+            💡 <b>Mobile Tip:</b> Record in standard 1080p 30fps (not 4K) to stay comfortably under 35 MB.
           </div>
-        </div>
-
-        <!-- Mode B: Direct Social Video URL Input -->
-        <div id="urlModeContainer" style="display:none;background:#FFF;border:1.5px dashed var(--border);border-radius:12px;padding:20px 16px;">
-          <div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--red);margin-bottom:6px;">
-            ⚡ Direct Cloud Stream Ingestion
-          </div>
-          <p style="font-size:12.5px;color:var(--inkS);line-height:1.5;margin-bottom:12px;">
-            Paste an unwatermarked video CDN stream or public TikTok link. The studio will vault it directly to Drive without requiring local downloads.
-          </p>
-          <input type="url" id="socialVideoUrl" placeholder="https://www.tiktok.com/@user/video/... or direct .mp4 stream" 
-                 style="font-family:monospace;font-size:13px;background:#FAF8F5;">
+          <div class="file-name" id="fileNameDisplay"></div>
         </div>
       </div>
       
-<!-- 🛡️ Invisible Bot Honeypot (Hidden from humans, catches bots) -->
+      <!-- 🛡️ Invisible Bot Honeypot (Catches automated spam) -->
       <div style="display:none !important;" aria-hidden="true">
         <input type="text" id="studioSecurity" tabindex="-1" autocomplete="off">
       </div>
