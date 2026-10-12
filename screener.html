@@ -986,7 +986,7 @@
       </div>
     `;
 
-    return `
+   return `
       <div class="telemetry-card" style="background:#FAF5FF;border:1.5px solid #E9D5FF;border-left:4px solid #8B5CF6;border-radius:14px;padding:22px;margin-bottom:24px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;">
           <div style="flex:1;min-width:260px;">
@@ -1005,6 +1005,7 @@
           </div>
           <div style="align-self:center;">
             <a href="${esc(uploadUrl)}" 
+               onclick="sessionStorage.setItem('wov_take_notes', '${esc(targetDirective).replace(/'/g, "\\'")}')"
                class="btn-primary" 
                style="display:inline-block;background:#7C3AED;color:#FFF;padding:12px 24px;border-radius:99px;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;box-shadow:0 4px 14px rgba(124,58,237,0.3);transition:background 0.2s;">
               🎬 Submit Take #${nextTakeNum} Adjustment ↗
