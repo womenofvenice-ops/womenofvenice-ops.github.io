@@ -724,41 +724,102 @@
     </div>
   </div>
 
-  <!-- 🌟 Dual Interactive Live Demo Anchors -->
-    <div class="demo-anchors-box">
-      <div class="demo-anchors-tag">Interactive Studio Demonstrations</div>
-      <div class="demo-anchors-title">Inspect live certified telemetry decks before submitting your take:</div>
-      <div class="demo-btn-group">
-        <a href="screener.html?name=Elena+B&type=cinema&pro=true" target="_blank" rel="noopener noreferrer" class="demo-btn demo-btn-cinema">
-        <span>🎬 Sample Arthouse Casting Brief</span> <span style="opacity:0.6;" aria-hidden="true">↗</span>
-      </a>
-      <a href="screener.html?name=Marta+Creator&type=creator&pro=true" target="_blank" rel="noopener noreferrer" class="demo-btn demo-btn-creator">
-        <span>⚡ Sample Creator Media Kit</span> <span style="opacity:0.6;" aria-hidden="true">↗</span>
-      </a>
+  <!-- ========================================== -->
+  <!-- 🏛️ THE ATELIER SHOP: INCUBATED TALENT ROSTER -->
+  <!-- ========================================== -->
+  <div class="atelier-shop-container">
+    <div class="atelier-shop-header">
+      <div style="font-family:'Inter',monospace;font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--red);margin-bottom:6px;">
+        Venetian Talent Showcase · Commercial &amp; Film Roster
+      </div>
+      <h3 style="font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:700;color:var(--text);margin-bottom:6px;">
+        Curated Studio Talents &amp; Directorial Benchmarks
+      </h3>
+      <p style="font-size:13.5px;color:var(--text-light);max-width:580px;margin:0 auto;line-height:1.6;">
+        Inspect verified performance telemetry, A4 casting comp cards, and audience retention rates for our active atelier cohort:
+      </p>
+    </div>
+
+    <div class="atelier-shop-grid">
+      
+      <!-- Talent 1: Elena B. (Arthouse Screen Actress) -->
+      <div class="talent-shop-card" id="cardElena">
+        <div>
+          <div class="talent-shop-badge talent-shop-badge-cinema">🎬 Arthouse Screen Actress</div>
+          <div class="talent-shop-name">Elena B.</div>
+          <div class="talent-shop-archetype">Grounded Dramatic Lead · Rome / Venice</div>
+          <div class="talent-shop-stats">
+            • <b>Stillness Discipline:</b> 88/100 (Top 6% Gaze Stability)<br>
+            • <b>Subtext Depth:</b> 91/100 · High Emotional Interiority<br>
+            • <b>Director Lane:</b> A24 / European Festival (Joachim Trier, Wells)
+          </div>
+        </div>
+        <div class="talent-shop-actions">
+          <a href="screener.html?name=Elena+B&type=cinema&pro=true" target="_blank" rel="noopener noreferrer" class="btn-shop-deck">
+            Inspect Live Screener <span style="opacity:0.6;">↗</span>
+          </a>
+          <a href="comp-card.html?name=Elena+B" target="_blank" rel="noopener noreferrer" class="btn-shop-card">
+            📇 Comp Card (A4)
+          </a>
+        </div>
+      </div>
+
+      <!-- Talent 2: Marta Creator (Luxury UGC / Short-Form) -->
+      <div class="talent-shop-card" id="cardMarta">
+        <div>
+          <div class="talent-shop-badge talent-shop-badge-creator">⚡ Short-Form Creator &amp; UGC</div>
+          <div class="talent-shop-name">Marta Creator</div>
+          <div class="talent-shop-archetype">Viral Relatable Host · Milan / Paris</div>
+          <div class="talent-shop-stats">
+            • <b>3-Second Hook Velocity:</b> 89/100 (Top 5% Category Retention)<br>
+            • <b>Parasocial Intimacy:</b> 92/100 · Direct-to-Lens Trust<br>
+            • <b>Sponsorship Tier:</b> €750 Base Reel / €1,240 Package Anchor
+          </div>
+        </div>
+        <div class="talent-shop-actions">
+          <a href="screener.html?name=Marta+Creator&type=creator&pro=true" target="_blank" rel="noopener noreferrer" class="btn-shop-deck">
+            Inspect Media Kit &amp; Rates <span style="opacity:0.6;">↗</span>
+          </a>
+          <a href="comp-card.html?name=Marta+Creator" target="_blank" rel="noopener noreferrer" class="btn-shop-card">
+            📇 Portfolio Z-Card
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- ⚡ THE INBOUND GRADER: AUTONOMOUS TALENT GATE -->
+    <!-- ========================================== -->
+    <div class="inbound-grader-box">
+      <div style="font-family:'Inter',monospace;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--peach);margin-bottom:6px;">
+        Autonomous Curation Desk · Talent Ingestion Gate
+      </div>
+      <h3 style="font-family:'Playfair Display',Georgia,serif;font-size:24px;font-weight:700;color:#FAF8F5;margin-bottom:8px;">
+        Benchmark Your Craft for Studio Representation
+      </h3>
+      <p style="font-size:13.5px;color:rgba(250,248,245,0.8);max-width:540px;margin:0 auto;line-height:1.55;">
+        Enter your name and primary discipline to launch an automated directability audit and test your eligibility for our Venice Studio Roster:
+      </p>
+
+      <div class="grader-input-group">
+        <input type="text" id="graderNameInput" class="grader-input" placeholder="Your Full Name (e.g. Giulia M.)" 
+               autocomplete="off" onkeydown="if(event.key==='Enter') wovLaunchGraderAudit()">
+        <select id="graderTrackSelect" class="grader-select">
+          <option value="cinema" selected>🎬 Screen Acting (Self-Tapes)</option>
+          <option value="creator">⚡ Creator / UGC (Reels &amp; TikTok)</option>
+          <option value="headshot">📷 Headshot A/B Triage (Stills)</option>
+        </select>
+        <button type="button" class="btn-grader-launch" onclick="wovLaunchGraderAudit()">
+          <span>Launch Performance Audit</span> <span>↗</span>
+        </button>
+      </div>
+      <div id="graderValidationMsg" style="display:none;color:#E24E42;font-size:12px;font-weight:700;margin-top:8px;"></div>
+      <div style="font-size:11px;color:rgba(250,248,245,0.5);margin-top:14px;">
+        ✓ Ephemeral cloud processing · Art. 85 GDPR compliant · Zero public data exposure without consent
       </div>
     </div>
 
-  <!-- 🎬 Dual-Track Submission Portal (Pre-selects lane in upload.html) -->
-  <div class="portal-box">
-    <h3>Ready to Benchmark Your Craft?</h3>
-    <p>Select your discipline to access the dedicated studio upload portal:</p>
-    <div class="portal-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
-        <a href="upload.html?track=cinema&format=Indie%20%2F%20Feature%20Cinema" class="portal-card portal-card-cinema">
-          <div class="p-icon" aria-hidden="true">🎭</div>
-          <div class="p-title">Screen Actress</div>
-          <div class="p-sub">Monologues &amp; Self-Tapes</div>
-        </a>
-        <a href="upload.html?track=creator&format=Short-Form%20Narrative%20Creator" class="portal-card portal-card-creator">
-          <div class="p-icon" aria-hidden="true">⚡</div>
-          <div class="p-title">Short-Form Creator</div>
-          <div class="p-sub">Talking Reels &amp; UGC Pitch</div>
-        </a>
-        <a href="headshot-triage.html" class="portal-card" style="border-color: rgba(212,175,55,0.4);">
-          <div class="p-icon" aria-hidden="true">📷</div>
-          <div class="p-title">Headshot Triage</div>
-          <div class="p-sub">A/B Casting Predictor</div>
-        </a>
-      </div>
   </div>
 </section>
   
