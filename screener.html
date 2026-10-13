@@ -1397,6 +1397,95 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
       if (btnLoc) btnLoc.classList.add('active');
     }
   };
+
+// 💼 B2B DIRECTORIAL INQUIRY CONTROLLERS
+  window.wovOpenB2BModal = function() {
+    const modal = document.getElementById("wovB2BModal");
+    if (!modal) return;
+
+    const state = window._screenerState || {};
+    const urlParams = new URLSearchParams(window.location.search);
+    const talentName = state.rawTalentName || urlParams.get("name") || "Talent";
+    const isCreator = state.isCreator || (urlParams.get("type") === "creator");
+
+    const titleEl = document.getElementById("b2bModalTitle");
+    if (titleEl) {
+      titleEl.innerText = isCreator
+        ? `Book ${talentName} · Campaign Inquiry`
+        : `Check Availability: ${talentName}`;
+    }
+
+    modal.style.display = "flex";
+  };
+
+  window.wovCloseB2BModal = function() {
+    const modal = document.getElementById("wovB2BModal");
+    if (modal) modal.style.display = "none";
+  };
+
+  window.wovHandleB2BBackdropClick = function(e) {
+    if (e.target.id === "wovB2BModal") {
+      wovCloseB2BModal();
+    }
+  };
+
+  window.wovSubmitB2BInquiry = function(e) {
+    e.preventDefault();
+    const btn = document.getElementById("b2bSubmitBtn");
+    const statusEl = document.getElementById("b2bStatusMsg");
+    
+    const state = window._screenerState || {};
+    const urlParams = new URLSearchParams(window.location.search);
+    const talentName = state.rawTalentName || urlParams.get("name") || "Elena B.";
+
+    const payload = {
+      action: "b2bBookingInquiry",
+      talentName: talentName,
+      company: document.getElementById("b2bCompany") ? document.getElementById("b2bCompany").value.trim() : "",
+      contactName: document.getElementById("b2bContactName") ? document.getElementById("b2bContactName").value.trim() : "",
+      email: document.getElementById("b2bEmail") ? document.getElementById("b2bEmail").value.trim() : "",
+      projectType: document.getElementById("b2bProjectType") ? document.getElementById("b2bProjectType").value : "",
+      budget: document.getElementById("b2bBudget") ? document.getElementById("b2bBudget").value : "",
+      message: document.getElementById("b2bMessage") ? document.getElementById("b2bMessage").value.trim() : ""
+    };
+
+    btn.disabled = true;
+    btn.innerHTML = "<span>⏳ Dispatching to Studio Desk...</span>";
+
+    const targetExec = (typeof EXEC !== "undefined")
+      ? EXEC
+      : (window.EXEC || "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec");
+
+    fetch(targetExec, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.ok) {
+        if (statusEl) {
+          statusEl.style.color = "#166534";
+          statusEl.innerText = "✓ Inquiry registered. Studio desk will respond within 4 business hours.";
+          statusEl.style.display = "block";
+        }
+        btn.innerHTML = "<span>✓ Brief Dispatched</span>";
+        setTimeout(wovCloseB2BModal, 2400);
+      } else {
+        throw new Error(data.error || "Unable to submit brief.");
+      }
+    })
+    .catch(err => {
+      if (statusEl) {
+        statusEl.style.color = "#E24E42";
+        statusEl.innerText = "⚠️ Submission error: " + err.message;
+        statusEl.style.display = "block";
+      }
+      btn.disabled = false;
+      btn.innerHTML = "<span>🚀 Dispatch Ingestion to Studio Desk</span> <span>↗</span>";
+    });
+  };
+  
 // 🚪 MODAL CONTROLLERS (Open, Close, Backdrop Dismissal & Stripe Binding)
   window.wovOpenUnlockModal = function() {
     const modal = document.getElementById("wovUnlockModal");
