@@ -1243,7 +1243,54 @@
   var timeout = setTimeout(function(){ if (!loaded) gallery.innerHTML = '<div class="load">\u23f1\ufe0f Loading timed out. Refresh.</div>'; }, 15000);
   fetchPortfolio();
   setInterval(fetchPortfolio, 5 * 60 * 1000);
- // 🧭 DUAL-FUNNEL CONTEXT ROUTER (Cinema vs Creator Sticky Funnel)
+
+  // 🚀 FAST-START INBOUND GRADER CONTROLLER (Non-blocking Validation & Context Preservation)
+  window.wovLaunchGraderAudit = function() {
+    var nameInput = document.getElementById("graderNameInput");
+    var trackSelect = document.getElementById("graderTrackSelect");
+    var errorMsg = document.getElementById("graderValidationMsg");
+    
+    var rawName = nameInput ? nameInput.value.trim() : "";
+    if (!rawName) {
+      if (nameInput) {
+        nameInput.style.borderColor = "#E24E42";
+        nameInput.placeholder = "⚠️ Please enter your full name first";
+        nameInput.focus();
+      }
+      if (errorMsg) {
+        errorMsg.textContent = "Please enter your name to initiate the studio audit.";
+        errorMsg.style.display = "block";
+      }
+      return;
+    }
+
+    var track = (trackSelect && trackSelect.value) ? trackSelect.value : "cinema";
+    
+    // Store context for session continuity across page reloads
+    try {
+      sessionStorage.setItem("wov_applicant_name", rawName);
+      sessionStorage.setItem("wov_applicant_track", track);
+    } catch(e) {}
+
+    // Route 1: Still Headshot Triage
+    if (track === "headshot") {
+      window.location.href = "headshot-triage.html?name=" + encodeURIComponent(rawName) + "&track=cinema";
+      return;
+    }
+
+    // Route 2: Video Screen Tests (Cinema vs Creator)
+    var format = (track === "creator") 
+      ? "Short-Form Narrative Creator" 
+      : "Indie / Feature Cinema";
+
+    var dest = "upload.html?track=" + encodeURIComponent(track) + 
+               "&name=" + encodeURIComponent(rawName) + 
+               "&format=" + encodeURIComponent(format);
+               
+    window.location.href = dest;
+  };
+  
+  // 🧭 DUAL-FUNNEL CONTEXT ROUTER (Cinema vs Creator Sticky Funnel)
   (function() {
     var params = new URLSearchParams(window.location.search);
     var track = (params.get("track") || "").toLowerCase();
