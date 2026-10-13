@@ -1290,81 +1290,51 @@
     window.location.href = dest;
   };
   
-  // 🧭 DUAL-FUNNEL CONTEXT ROUTER (Cinema vs Creator Sticky Funnel)
+  // 🧭 DUAL-FUNNEL CONTEXT ROUTER (Synchronized with Atelier Shop & Grader)
   (function() {
     var params = new URLSearchParams(window.location.search);
     var track = (params.get("track") || "").toLowerCase();
 
-    // 🛡️ Test Reset: Allows testing default Maison view via ?track=reset
-    if (track === "reset" || track === "default") {
-      sessionStorage.removeItem("wov_track");
-      return;
-    }
-
-    // 1. Session Storage Memory (Preserves context across internal site navigation)
     if (track === "cinema" || track === "creator") {
-      sessionStorage.setItem("wov_track", track);
+      try { sessionStorage.setItem("wov_track", track); } catch(e) {}
     } else {
-      track = sessionStorage.getItem("wov_track") || "";
+      try { track = sessionStorage.getItem("wov_track") || ""; } catch(e) {}
     }
 
-    if (!track) return; // Leave default Maison view untouched
+    if (!track) return;
 
-    // 2. DOM Elements
     var unveilHeadline = document.querySelector(".unveil-headline");
     var heroSub = document.querySelector(".hero-content .sub");
     var labBtn = document.querySelector(".hero-btn-lab");
-    var cinemaCard = document.querySelector(".portal-card-cinema");
-    var creatorCard = document.querySelector(".portal-card-creator");
-    var triageCard = document.querySelector('a[href*="headshot-triage"]');
+    var cardElena = document.getElementById("cardElena");
+    var cardMarta = document.getElementById("cardMarta");
+    var trackSelect = document.getElementById("graderTrackSelect");
 
     if (track === "cinema") {
-      // Screen Actress View
       document.title = "Screen Acting Telemetry & Directorial Audits · Women of Venice";
       if (unveilHeadline) unveilHeadline.textContent = "Directorial Intelligence for Screen Actresses.";
       if (heroSub) heroSub.textContent = "Arthouse Monologues, Silence Discipline & A4 Comp Cards · Venezia";
-      if (labBtn) {
-        labBtn.textContent = "🎬 Inspect Cinema Telemetry Lab";
-        labBtn.href = "#casting-studio";
+      if (labBtn) labBtn.textContent = "🎬 Inspect Cinema Telemetry Lab";
+      if (trackSelect) trackSelect.value = "cinema";
+      if (cardElena) {
+        cardElena.style.borderColor = "#D4AF37";
+        cardElena.style.boxShadow = "0 8px 30px rgba(212, 175, 55, 0.25)";
       }
-
-      // Visual Emphasis on Portal Cards
-      if (cinemaCard) {
-        cinemaCard.style.borderColor = "#D4AF37";
-        cinemaCard.style.boxShadow = "0 0 25px rgba(212, 175, 55, 0.35)";
-        cinemaCard.style.transform = "scale(1.02)";
-      }
-      if (creatorCard) {
-        creatorCard.style.opacity = "0.5";
-      }
-      if (triageCard) {
-        triageCard.href = "headshot-triage.html?track=cinema&format=Indie%20%2F%20Feature%20Cinema";
-      }
+      if (cardMarta) { cardMarta.style.opacity = "0.7"; }
 
     } else if (track === "creator") {
-      // Commercial Creator View
       document.title = "Creator Retention Audits & Brand Rate Cards · Women of Venice";
       if (unveilHeadline) unveilHeadline.textContent = "Algorithmic Retention & Rate Justification.";
       if (heroSub) heroSub.textContent = "0–3s Hook Velocity, Brand Media Kits & Sponsorship Rates · Venezia";
-      if (labBtn) {
-        labBtn.textContent = "⚡ Inspect Creator Monetization Lab";
-        labBtn.href = "#casting-studio";
+      if (labBtn) labBtn.textContent = "⚡ Inspect Creator Monetization Lab";
+      if (trackSelect) trackSelect.value = "creator";
+      if (cardMarta) {
+        cardMarta.style.borderColor = "var(--peach, #E09A73)";
+        cardMarta.style.boxShadow = "0 8px 30px rgba(224, 154, 115, 0.25)";
       }
-
-      // Visual Emphasis on Portal Cards
-      if (creatorCard) {
-        creatorCard.style.borderColor = "var(--peach, #E09A73)";
-        creatorCard.style.boxShadow = "0 0 25px rgba(224, 154, 115, 0.35)";
-        creatorCard.style.transform = "scale(1.02)";
-      }
-      if (cinemaCard) {
-        cinemaCard.style.opacity = "0.5";
-      }
-      if (triageCard) {
-        triageCard.href = "headshot-triage.html?track=creator&format=Short-Form%20Narrative%20Creator";
-      }
+      if (cardElena) { cardElena.style.opacity = "0.7"; }
     }
-  })(); 
+  })();
 })();
 </script>
 </body>
