@@ -734,35 +734,45 @@
     let headerActionBtnHtml = "";
     if (!isPro) {
       headerActionBtnHtml = 
-      '<button type="button" onclick="wovOpenUnlockModal()" class="pdf-btn pulse-glow-btn" style="' +
-        'background: linear-gradient(135deg, #E24E42 0%, #C83B2F 100%);' +
-        'color: #FFFFFF;' +
-        'border: none;' +
-        'cursor: pointer;' +
-        'padding: 8px 16px;' +
-        'border-radius: 99px;' +
-        'font-family: \'Inter\', sans-serif;' +
-        'font-size: 12px;' +
-        'font-weight: 800;' +
-        'letter-spacing: 0.3px;' +
-        'display: inline-flex;' +
-        'align-items: center;' +
-        'gap: 6px;' +
-        'box-shadow: 0 4px 18px rgba(226, 78, 66, 0.45);' +
-        'transition: all 0.2s ease;' +
-      '">' +
-        (isCreator ? '⚡ Unlock Media Kit (€29)' : '🎬 Unlock Casting Deck (€29)') +
-      '</button>';
+        '<button type="button" onclick="wovOpenUnlockModal()" class="pdf-btn pulse-glow-btn" style="' +
+          'background: linear-gradient(135deg, #E24E42 0%, #C83B2F 100%);' +
+          'color: #FFFFFF;' +
+          'border: none;' +
+          'cursor: pointer;' +
+          'padding: 8px 16px;' +
+          'border-radius: 99px;' +
+          'font-family: \'Inter\', sans-serif;' +
+          'font-size: 12px;' +
+          'font-weight: 800;' +
+          'letter-spacing: 0.3px;' +
+          'display: inline-flex;' +
+          'align-items: center;' +
+          'gap: 6px;' +
+          'box-shadow: 0 4px 18px rgba(226, 78, 66, 0.45);' +
+          'transition: all 0.2s ease;' +
+        '">' +
+          (isCreator ? '⚡ Unlock Media Kit (€29)' : '🎬 Unlock Casting Deck (€29)') +
+        '</button>';
     } else {
+      // 🛡️ Safe Parameter & Comp Card URL Resolution (Prevents ReferenceError)
       const currentParams = new URLSearchParams(window.location.search);
       const currentId = currentParams.get("id");
       const safeName = rawTalentName || "Elena B.";
-      
       const compCardHref = `comp-card.html?name=${encodeURIComponent(safeName)}${currentId ? `&id=${encodeURIComponent(currentId)}` : ""}`;
 
+      // 💼 B2B Directorial Trigger Button (Suppressed on Print)
+      const b2bBtnLabel = isCreator ? '💼 Inquire to Book' : '🎬 Check Availability';
+      const b2bButtonHtml = `
+        <button type="button" onclick="wovOpenB2BModal()" class="no-print"
+                style="background:#1C2B2C;color:#FAF8F5;border:1px solid rgba(255,255,255,0.2);padding:6px 14px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:background 0.2s;">
+          ${b2bBtnLabel} ↗
+        </button>
+      `;
+
       headerActionBtnHtml = 
+        b2bButtonHtml +
         (!isCreator ? `
-          <a href="${compCardHref}" target="_blank" rel="noopener noreferrer"
+          <a href="${compCardHref}" target="_blank" rel="noopener noreferrer" class="no-print"
              onclick="if (typeof wovSendMilestone === 'function') wovSendMilestone('COMP_CARD_OPENED');"
              style="background:transparent;color:var(--ink);border:1.5px solid var(--border);padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:border-color 0.2s;">
             📇 Comp Card (A4) ↗
