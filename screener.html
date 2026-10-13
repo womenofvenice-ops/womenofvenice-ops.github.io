@@ -1999,5 +1999,77 @@ function getDemoProfile_(key) {
 
   </div>
 </div>  
+<!-- 💼 B2B DIRECTORIAL INQUIRY MODAL -->
+<div id="wovB2BModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.85);z-index:99999;align-items:center;justify-content:center;padding:20px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);" onclick="wovHandleB2BBackdropClick(event)">
+  <div style="background:#FFF;border-radius:16px;max-width:480px;width:100%;padding:28px 24px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);text-align:left;position:relative;border:1px solid #E2E8F0;font-family:'Inter',-apple-system,sans-serif;" onclick="event.stopPropagation()">
+    
+    <button type="button" onclick="wovCloseB2BModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:24px;color:#94A3B8;cursor:pointer;line-height:1;">&times;</button>
+    
+    <div style="display:inline-block;background:rgba(168,73,46,0.1);color:var(--red,#A8492E);font-family:monospace;font-size:10.5px;font-weight:800;letter-spacing:1.5px;padding:3px 10px;border-radius:99px;text-transform:uppercase;margin-bottom:8px;">
+      Directorial Desk · Availability &amp; Booking
+    </div>
+
+    <h3 id="b2bModalTitle" style="font-family:'Playfair Display',Georgia,serif;font-size:21px;font-weight:700;color:#1C2B2C;margin-bottom:6px;">
+      Check Production Availability
+    </h3>
+    <p style="font-size:12.5px;color:#64748B;line-height:1.5;margin-bottom:18px;">
+      Submit casting dates, project scope, or commercial campaign briefs directly to the Venice Studio Desk:
+    </p>
+
+    <form onsubmit="wovSubmitB2BInquiry(event)">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div>
+          <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#475569;display:block;margin-bottom:3px;">Entity / Production *</label>
+          <input type="text" id="b2bCompany" placeholder="e.g. A24 / Netflix / Brand" required
+                 style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #CBD5E1;border-radius:6px;font-size:12.5px;outline:none;">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#475569;display:block;margin-bottom:3px;">Contact Lead *</label>
+          <input type="text" id="b2bContactName" placeholder="Name / Title" required
+                 style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #CBD5E1;border-radius:6px;font-size:12.5px;outline:none;">
+        </div>
+      </div>
+
+      <div style="margin-bottom:10px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#475569;display:block;margin-bottom:3px;">Official Contact Email *</label>
+        <input type="email" id="b2bEmail" placeholder="casting@production.com" required
+               style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #CBD5E1;border-radius:6px;font-size:12.5px;outline:none;">
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div>
+          <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#475569;display:block;margin-bottom:3px;">Project Format</label>
+          <select id="b2bProjectType" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #CBD5E1;border-radius:6px;font-size:12px;outline:none;background:#FFF;">
+            <option value="Feature Film / Arthouse">Feature Film / Arthouse</option>
+            <option value="Episodic Series (Streaming)">Episodic Series (Streaming)</option>
+            <option value="Commercial / Luxury Campaign">Commercial / Luxury Campaign</option>
+            <option value="UGC / Brand Sponsorship">UGC / Brand Sponsorship</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#475569;display:block;margin-bottom:3px;">Budget Tier</label>
+          <select id="b2bBudget" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #CBD5E1;border-radius:6px;font-size:12px;outline:none;background:#FFF;">
+            <option value="Under €2,500">Under €2,500</option>
+            <option value="€2,500 – €10,000" selected>€2,500 – €10,000</option>
+            <option value="€10,000+ Production Scale">€10,000+ Production Scale</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:#475569;display:block;margin-bottom:3px;">Production Brief / Callback Dates</label>
+        <textarea id="b2bMessage" rows="2" placeholder="Brief project description, shooting dates, or callback instructions..."
+                  style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #CBD5E1;border-radius:6px;font-size:12.5px;outline:none;font-family:inherit;resize:none;"></textarea>
+      </div>
+
+      <div id="b2bStatusMsg" style="display:none;font-size:12px;font-weight:700;margin-bottom:10px;text-align:center;"></div>
+
+      <button type="submit" id="b2bSubmitBtn" style="width:100%;background:var(--red,#A8492E);color:#FFF;border:none;padding:11px;border-radius:99px;font-size:13.5px;font-weight:700;cursor:pointer;transition:background 0.2s;">
+        <span>🚀 Dispatch Brief to Studio Desk ↗</span>
+      </button>
+    </form>
+  </div>
+</div>
+  
 </body>
 </html>
