@@ -228,32 +228,37 @@
       </div>
     </form>
      
-    <!-- ✅ High-Status Confirmation -->
-    <div id="successBox">
-      <div style="font-size:52px;margin-bottom:10px;">✅</div>
-      <h2 style="font-size:22px;font-weight:800;color:var(--ink);margin-bottom:6px;">You are All Done!</h2>
-      <div style="display:inline-block;background:#F0FDF4;color:#166534;font-size:12px;font-weight:700;padding:4px 12px;border-radius:99px;margin-bottom:16px;border:1px solid #BBF7D0;">
-        Audition Take Logged & Secured
+    <!-- ✅ High-Status Confirmation & Live Screener Bridge -->
+    <div id="successBox" style="display:none;background:#FFF;border-radius:16px;padding:36px 24px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.06);border:1.5px solid var(--border,#E2E8F0);max-width:540px;margin:20px auto;">
+      <div style="font-size:42px;margin-bottom:12px;">🎬</div>
+      <div style="font-family:'Inter',monospace;font-size:10.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--red,#A8492E);margin-bottom:6px;">
+        Vaulted to Studio Cloud
       </div>
-      <p style="font-size:14.5px;color:var(--inkS);line-height:1.6;margin-bottom:20px;">
-        Your audition take has been successfully received by the studio. <b>You may now safely close this window.</b>
+      <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:700;color:var(--ink,#1C2B2C);margin-bottom:8px;">
+        Take #1 Successfully Registered
+      </h2>
+      <p style="font-size:13.5px;color:var(--inkS,#64748B);line-height:1.6;margin-bottom:24px;max-width:440px;margin-left:auto;margin-right:auto;">
+        Your audition take for <b id="successCandidateName">Talent</b> has been vaulted to our Venice directorial engine. Telemetry extraction is now primed.
       </p>
 
-      <div style="background:#FFF;border:1.5px solid var(--border);border-radius:12px;padding:18px;text-align:left;margin-bottom:24px;">
-        <div style="font-size:11.5px;font-weight:800;text-transform:uppercase;color:var(--red);letter-spacing:1px;margin-bottom:8px;">What Happens Next:</div>
-        <div style="font-size:13.5px;color:var(--ink);line-height:1.6;">
-          • Your take is vaulted and being audited by CLAUD-IA's vision engine.<br>
-          • Directorial feedback, timestamps, and 4-axis telemetry are compiling.<br>
-          • You can inspect your live dossier and comp card directly below:
-        </div>
-      </div>
-
-      <a id="viewDossierBtn" href="#" style="display:block;background:var(--red);color:#FFF;padding:14px;border-radius:12px;font-size:14.5px;font-weight:700;text-decoration:none;margin-bottom:12px;text-align:center;">
-        🎬 Open Your Live Studio Screener ↗
+      <!-- 🎬 The Live Screener Action Button -->
+      <a id="viewDossierBtn" href="#" 
+         style="display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--red,#A8492E);color:#FFF;padding:14px 32px;border-radius:99px;font-weight:700;font-size:14px;text-decoration:none;box-shadow:0 4px 18px rgba(168,73,46,0.35);transition:background 0.2s;margin-bottom:16px;">
+        <span>🎬 Open Your Live Studio Screener</span>
+        <span style="opacity:0.8;">↗</span>
       </a>
 
-      <button class="btn-submit" onclick="location.reload()" style="background:#FAF9F6;color:var(--ink);border:1.5px solid var(--border);margin-top:0;">Submit Another Take (Optional)</button> 
-     </div>
+      <div style="font-size:11.5px;color:#94A3B8;margin-bottom:20px;">
+        Your private dossier link: <br>
+        <span id="screenerUrlDisplay" style="font-family:monospace;color:var(--inkS,#64748B);word-break:break-all;">womenofvenice.com/screener.html</span>
+      </div>
+
+      <div style="border-top:1px dashed var(--border,#E2E8F0);padding-top:18px;">
+        <button type="button" class="btn-submit" onclick="location.reload()" style="background:#FAF9F6;color:var(--ink,#1C2B2C);border:1.5px solid var(--border,#E2E8F0);margin-top:0;padding:11px 24px;font-size:13px;">
+          Submit Another Take (Optional)
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
