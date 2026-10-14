@@ -285,62 +285,88 @@
     e.preventDefault();
     e.returnValue = 'Upload in progress. Are you sure you want to leave?';
   }
-  // URL Parameter Auto-Fill (Clean Slug & Session Support)
+  
+  // =========================================================================
+  // 📥 INBOUND ATELIER PARAMETER INGESTION & AUTO-FILL CONTROLLER (Hardened)
+  // =========================================================================
   window.addEventListener("DOMContentLoaded", function() {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("name")) document.getElementById("name").value = params.get("name");
-    if (params.get("email")) document.getElementById("email").value = params.get("email");
-    if (params.get("take")) document.getElementById("takeNum").value = params.get("take");
+
+    // 🛡️ Safe Storage Reader (Prevents fatal SecurityErrors in iframe / private modes)
+    function safeStorage(key, action = "get") {
+      try {
+        if (action === "get") return sessionStorage.getItem(key) || "";
+        if (action === "remove") sessionStorage.removeItem(key);
+      } catch (e) {
+        return "";
+      }
+      return "";
+    }
     
-    // 🛡️ Clean Track Mapping (cinema -> Feature Cinema / creator -> Short-Form)
-    const track = (params.get("track") || "").toLowerCase();
+    // 1. Resolve Candidate Name (URL Param -> SessionStorage Fallback)
+    const rawName = params.get("name") || safeStorage("wov_applicant_name");
+    const nameInput = document.getElementById("name") || document.getElementById("talentName");
+    if (rawName && nameInput) {
+      nameInput.value = rawName;
+    }
+
+    // 2. Resolve Contact & Take Metadata (All with DOM null-guards)
+    if (params.get("email") && document.getElementById("email")) {
+      document.getElementById("email").value = params.get("email");
+    }
+    if (params.get("take") && document.getElementById("takeNum")) {
+      document.getElementById("takeNum").value = params.get("take");
+    }
+    const socialInput = document.getElementById("talentSocial") || document.getElementById("talentHandle");
+    const socialVal = params.get("social") || params.get("handle") || params.get("ig");
+    if (socialInput && socialVal) {
+      socialInput.value = socialVal;
+    }
+
+    // 3. Intelligent Track & Ambition Format Mapping
+    const track = (params.get("track") || safeStorage("wov_applicant_track")).toLowerCase();
     const format = params.get("format") || "";
     const formatEl = document.getElementById("targetFormat");
-    
+    let resolvedTrackLabel = "Screen Acting (Cinema)";
+
     if (track === "creator" || format.indexOf("Short-Form") >= 0 || format.indexOf("Creator") >= 0) {
       if (formatEl) formatEl.value = "Short-Form Narrative Creator";
+      resolvedTrackLabel = "Commercial UGC / Creator";
+    } else if (track === "commercial" || format.indexOf("Commercial") >= 0 || format.indexOf("Fashion") >= 0) {
+      if (formatEl) formatEl.value = "Commercial / Luxury Fashion";
+      resolvedTrackLabel = "Commercial / Luxury Fashion";
+    } else if (track === "streaming" || format.indexOf("Streaming") >= 0 || format.indexOf("Episodic") >= 0) {
+      if (formatEl) formatEl.value = "Streaming Episodic";
+      resolvedTrackLabel = "Streaming Episodic";
+    } else if (track === "voice" || track === "audio" || format.indexOf("Voice") >= 0) {
+      if (formatEl) formatEl.value = "Voice / Narrative Audio";
+      resolvedTrackLabel = "Voice & Narrative Audio";
     } else if (track === "cinema" || format.indexOf("Cinema") >= 0) {
       if (formatEl) formatEl.value = "Indie / Feature Cinema";
+      resolvedTrackLabel = "Screen Acting (Cinema)";
     } else if (format && formatEl) {
       formatEl.value = format;
+      resolvedTrackLabel = format;
     }
 
-    if (params.get("social") || params.get("handle") || params.get("ig")) {
-      document.getElementById("talentSocial").value = params.get("social") || params.get("handle") || params.get("ig");
+    // 4. Activate Studio Personalization Banner (If Name Exists)
+    if (rawName) {
+      const banner = document.getElementById("atelierCandidateBanner");
+      const bannerName = document.getElementById("bannerCandidateName");
+      const bannerTrack = document.getElementById("bannerTargetTrack");
+      
+      if (banner && bannerName) {
+        bannerName.textContent = rawName;
+        if (bannerTrack) bannerTrack.textContent = resolvedTrackLabel;
+        banner.style.display = "block";
+      }
     }
 
-    // 🔒 Auto-fill Director's Note safely from sessionStorage or URL fallback
-    const savedNotes = sessionStorage.getItem("wov_take_notes") || (params && params.get("notes")) || "";
+    // 5. Director's Notes Auto-Fill (From Screener Take 2 Bridge)
+    const savedNotes = safeStorage("wov_take_notes") || params.get("notes") || "";
     if (savedNotes && document.getElementById("notes")) {
       document.getElementById("notes").value = savedNotes;
-      sessionStorage.removeItem("wov_take_notes");
-    }
-
-    // 🌉 STUDIO BRIDGE: Auto-fill from 1-Click Instagram Bookmarklet (Independent Block)
-    const videoUrlParam = params && params.get("videoUrl");
-    if (videoUrlParam) {
-      if (typeof wovSwitchUploadMode === "function") wovSwitchUploadMode("url");
-      
-      const urlInput = document.getElementById("socialVideoUrl");
-      if (urlInput) urlInput.value = videoUrlParam;
-
-      // Populate Name if passed
-      const nameParam = params.get("name");
-      const nameInput = document.getElementById("talentName") || document.getElementById("name");
-      if (nameInput && nameParam) nameInput.value = nameParam;
-
-      // Populate Handle if passed
-      const handleParam = params.get("handle");
-      const socialInput = document.getElementById("talentSocial") || document.getElementById("talentHandle");
-      if (socialInput && handleParam) socialInput.value = handleParam;
-
-      // Auto-submit if triggered by bookmarklet
-      if (params.get("auto") === "true") {
-        setTimeout(function() {
-          const sBtn = document.getElementById("submitBtn");
-          if (sBtn) sBtn.click();
-        }, 400);
-      }
+      safeStorage("wov_take_notes", "remove");
     }
   });
 
