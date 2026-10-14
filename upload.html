@@ -458,42 +458,44 @@ notes: document.getElementById("notes").value.trim(),
  // ⚡ Release screen lock & allow tab closing (Transfer is complete)
         releaseWakeLock();
         window.removeEventListener('beforeunload', preventTabClose);
+
+        // 🎬 Helper: Safely configure and reveal the Live Screener Bridge
+        function showScreenerBridge() {
+          const nameInput = document.getElementById("name");
+          const formatInput = document.getElementById("targetFormat");
+          const urlParams = new URLSearchParams(window.location.search);
+
+          const candidateName = (nameInput && nameInput.value.trim()) || urlParams.get("name") || "Talent";
+          const rawFormat = (formatInput && formatInput.value) || urlParams.get("track") || "";
+          const isCreator = rawFormat.indexOf("Short-Form") >= 0 || rawFormat.indexOf("Creator") >= 0;
+          const cleanTrack = isCreator ? "creator" : "cinema";
+
+          const relativeUrl = `screener.html?name=${encodeURIComponent(candidateName)}&type=${cleanTrack}`;
+
+          const nameEl = document.getElementById("successCandidateName");
+          const viewBtn = document.getElementById("viewDossierBtn");
+          const urlDisplay = document.getElementById("screenerUrlDisplay");
+
+          if (nameEl) nameEl.textContent = candidateName;
+          if (viewBtn) viewBtn.href = relativeUrl;
+          if (urlDisplay) urlDisplay.textContent = `womenofvenice.com/${relativeUrl}`;
+
+          document.getElementById("uploadForm").style.display = "none";
+          document.getElementById("progressBox").style.display = "none";
+          document.getElementById("successBox").style.display = "block";
+        }
+
         try {
-          try {
           const data = JSON.parse(text);
           if (data && data.ok) {
-            setTimeout(function() {
-              const candidateName = document.getElementById("name").value.trim() || "Talent";
-              const rawFormat = document.getElementById("targetFormat").value;
-              const isCreator = rawFormat.indexOf("Short-Form") >= 0 || rawFormat.indexOf("Creator") >= 0;
-              const cleanTrack = isCreator ? "creator" : "cinema";
-              
-              const relativeUrl = `screener.html?name=${encodeURIComponent(candidateName)}&type=${cleanTrack}`;
-
-              // Populate the new elements from Step 1
-              const nameEl = document.getElementById("successCandidateName");
-              const viewBtn = document.getElementById("viewDossierBtn");
-              const urlDisplay = document.getElementById("screenerUrlDisplay");
-
-              if (nameEl) nameEl.textContent = candidateName;
-              if (viewBtn) viewBtn.href = relativeUrl;
-              if (urlDisplay) urlDisplay.textContent = `womenofvenice.com/${relativeUrl}`;
-
-              // Hide upload elements and reveal the success screen
-              document.getElementById("uploadForm").style.display = "none";
-              document.getElementById("progressBox").style.display = "none";
-              document.getElementById("successBox").style.display = "block";
-            }, 600);
+            setTimeout(showScreenerBridge, 600);
           } else {
             alert("⚠️ Upload warning: " + (data ? (data.error || data.message) : text));
             resetFormState();
           }
-        }
-        catch(parseErr) {
+        } catch (parseErr) {
           if (text.indexOf("ok") >= 0 || text.indexOf("true") >= 0) {
-            document.getElementById("uploadForm").style.display = "none";
-            document.getElementById("progressBox").style.display = "none";
-            document.getElementById("successBox").style.display = "block";
+            setTimeout(showScreenerBridge, 600);
           } else {
             alert("⚠️ Server communication error: " + text);
             resetFormState();
