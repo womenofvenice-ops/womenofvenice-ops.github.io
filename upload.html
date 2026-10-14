@@ -459,19 +459,37 @@ notes: document.getElementById("notes").value.trim(),
         releaseWakeLock();
         window.removeEventListener('beforeunload', preventTabClose);
         try {
+          try {
           const data = JSON.parse(text);
           if (data && data.ok) {
-            const submittedName = document.getElementById("name").value.trim();
-            const chosenFormat = document.getElementById("targetFormat").value;
-            const isCreatorTrack = chosenFormat.indexOf("Short-Form") >= 0 || chosenFormat.indexOf("Creator") >= 0;
-            const liveUrl = "screener.html?name=" + encodeURIComponent(submittedName) + (isCreatorTrack ? "&type=creator" : "&type=cinema");
-            const viewBtn = document.getElementById("viewDossierBtn");
-            if (viewBtn) viewBtn.href = liveUrl;
+            setTimeout(function() {
+              const candidateName = document.getElementById("name").value.trim() || "Talent";
+              const rawFormat = document.getElementById("targetFormat").value;
+              const isCreator = rawFormat.indexOf("Short-Form") >= 0 || rawFormat.indexOf("Creator") >= 0;
+              const cleanTrack = isCreator ? "creator" : "cinema";
+              
+              const relativeUrl = `screener.html?name=${encodeURIComponent(candidateName)}&type=${cleanTrack}`;
+
+              // Populate the new elements from Step 1
+              const nameEl = document.getElementById("successCandidateName");
+              const viewBtn = document.getElementById("viewDossierBtn");
+              const urlDisplay = document.getElementById("screenerUrlDisplay");
+
+              if (nameEl) nameEl.textContent = candidateName;
+              if (viewBtn) viewBtn.href = relativeUrl;
+              if (urlDisplay) urlDisplay.textContent = `womenofvenice.com/${relativeUrl}`;
+
+              // Hide upload elements and reveal the success screen
+              document.getElementById("uploadForm").style.display = "none";
+              document.getElementById("progressBox").style.display = "none";
+              document.getElementById("successBox").style.display = "block";
+            }, 600);
           } else {
             alert("⚠️ Upload warning: " + (data ? (data.error || data.message) : text));
             resetFormState();
           }
-        } catch(parseErr) {
+        }
+        catch(parseErr) {
           if (text.indexOf("ok") >= 0 || text.indexOf("true") >= 0) {
             document.getElementById("uploadForm").style.display = "none";
             document.getElementById("progressBox").style.display = "none";
