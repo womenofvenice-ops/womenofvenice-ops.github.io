@@ -570,31 +570,109 @@
       return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     };
 
-    // 2. Fetch Live Database Record
-    fetch(EXEC + "?action=screener&name=" + encodeURIComponent(rawTarget))
+    // 2. Fetch Live Database Record with In-Place Auto-Polling (Hardened & Syntax-Clean)
+  let pollAttempts = 0;
+  const maxPolls = 14; // Polls for up to 70 seconds (14 x 5s)
+
+  // 🛡️ Inline escaping fallback (Prevents ReferenceErrors if safeEsc is undeclared)
+  function safeEsc(str) {
+    if (typeof window.safeEsc === "function") return window.safeEsc(str);
+    return String(str || "").replace(/[&<>"']/g, function(m) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+    });
+  }
+
+  function fetchLiveScreener() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const dossierId = urlParams.get("id");
+    // 🛡️ Safely extract rawTarget inside the function scope
+    const rawTarget = urlParams.get("name") || urlParams.get("talent") || "Candidate";
+
+    const targetQuery = dossierId 
+      ? "id=" + encodeURIComponent(dossierId) 
+      : "name=" + encodeURIComponent(rawTarget);
+
+    const targetExec = (typeof EXEC !== "undefined")
+      ? EXEC
+      : "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
+
+    fetch(targetExec + "?action=screener&" + targetQuery)
       .then(res => res.json())
       .then(data => {
-        // Tolerant check for ok, found, or direct talent object
-        if (!data || (!data.ok && !data.found && !data.dossier && !data.talent)) {
-          const errMsg = (data && (data.error || data.message)) ? (data.error || data.message) : "No audition dossier available for this profile.";
-          container.innerHTML = 
-            '<div style="text-align:center;padding:60px 20px;">' +
-              '<h2 style="font-size:22px;color:var(--text,#1C2B2C);margin-bottom:8px;">⚠️ Talent Brief Not Found</h2>' +
-              '<p style="color:var(--inkS,#64748B);font-size:14px;max-width:440px;margin:0 auto 20px;">' + safeEsc(errMsg) + '</p>' +
-              '<a href="index.html#casting-studio" style="display:inline-block;padding:9px 20px;background:var(--red,#A8492E);color:#FFF;border-radius:99px;text-decoration:none;font-size:13px;font-weight:700;">← Return to Studio Lab</a>' +
-            '</div>';
+        // 🔄 1. IN-PLACE POLLING: If take is still processing in the queue, keep polling
+        const isProcessing = data && (data.status === "processing" || (data.ok && (!data.takes || data.takes.length === 0)));
+        
+        if (isProcessing) {
+          pollAttempts++;
+          if (pollAttempts <= maxPolls) {
+            // 🛡️ Updates the loading state ONLY. Leaves deckContent intact!
+            const statusBox = document.getElementById("pollingStatus") || document.getElementById("loadingState");
+            if (statusBox) {
+              statusBox.innerHTML = 
+                '<div style="max-width:520px;margin:80px auto;background:#FFF;border-radius:16px;padding:40px 24px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.06);border:1.5px solid #E2E8F0;font-family:\'Inter\',sans-serif;">' +
+                  '<div style="width:40px;height:40px;border:3.5px solid rgba(168,73,46,0.15);border-top-color:var(--red,#A8492E);border-radius:50%;margin:0 auto 16px;animation:wovSpin 1s infinite linear;"></div>' +
+                  '<div style="font-family:monospace;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--red,#A8492E);margin-bottom:6px;">Directorial Engine Active</div>' +
+                  '<h2 style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#1C2B2C;margin-bottom:8px;">Indexing Audition Telemetry...</h2>' +
+                  '<p style="font-size:13.5px;color:#64748B;line-height:1.5;margin-bottom:16px;">CLAUD-IA is evaluating scene beats, frame stillness, and acoustic resonance for <b>' + safeEsc(rawTarget) + '</b>.</p>' +
+                  '<div style="font-size:11.5px;color:#94A3B8;">Auto-refreshing dossier (Attempt ' + pollAttempts + ' of ' + maxPolls + ')...</div>' +
+                  '<style>@keyframes wovSpin { to { transform: rotate(360deg); } }</style>' +
+                '</div>';
+            }
+
+            setTimeout(fetchLiveScreener, 5000);
+            return;
+          }
+        }
+
+        // 2. Data is ready: reveal and render the full screener
+        if (data && (data.ok || data.status === "ok" || data.talent || data.marketArchetype || (data.takes && data.takes.length > 0))) {
+          const loadEl = document.getElementById("loadingState");
+          const deckEl = document.getElementById("deckContent");
+          
+          if (loadEl) loadEl.style.display = "none";
+          if (deckEl) deckEl.style.display = "block";
+          
+          if (typeof renderScreener === "function") {
+            renderScreener(data);
+          }
           return;
         }
-        renderScreener(data);
+
+        // 3. Fallback: Not Found / Timed Out
+        const errMsg = (data && (data.error || data.message)) ? (data.error || data.message) : "No audition dossier available for this profile.";
+        const loadEl = document.getElementById("loadingState");
+        if (loadEl) {
+          loadEl.style.display = "block";
+          loadEl.innerHTML = 
+            '<div style="max-width:480px;margin:80px auto;background:#FFF;border-radius:16px;padding:40px 24px;text-align:center;font-family:\'Inter\',sans-serif;border:1.5px solid #E2E8F0;box-shadow:0 10px 40px rgba(0,0,0,0.06);">' +
+              '<div style="font-size:36px;margin-bottom:12px;">⏳</div>' +
+              '<h2 style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#1C2B2C;margin-bottom:8px;">Session In Studio Queue</h2>' +
+              '<p style="font-size:13px;color:#64748B;line-height:1.5;margin-bottom:20px;">' + safeEsc(errMsg) + '</p>' +
+              '<a href="index.html#casting-studio" style="display:inline-block;padding:10px 24px;background:var(--red,#A8492E);color:#FFF;border-radius:99px;text-decoration:none;font-size:13px;font-weight:700;">← Return to Studio Lab</a>' +
+            '</div>';
+        }
       })
       .catch(err => {
-        container.innerHTML = 
-          '<div style="text-align:center;padding:60px 20px;">' +
-            '<h2 style="font-size:22px;color:var(--text,#1C2B2C);margin-bottom:8px;">📡 Studio Connection Error</h2>' +
-            '<p style="color:var(--inkS,#64748B);font-size:13.5px;max-width:440px;margin:0 auto 20px;">' + safeEsc(err.message || err) + '</p>' +
-            '<button onclick="window.location.reload()" style="padding:9px 20px;background:var(--text,#1C2B2C);color:#FFF;border:none;border-radius:99px;cursor:pointer;font-size:13px;font-weight:700;">Retry Connection</button>' +
-          '</div>';
+        pollAttempts++;
+        if (pollAttempts <= maxPolls) {
+          setTimeout(fetchLiveScreener, 5000);
+        } else {
+          const loadEl = document.getElementById("loadingState");
+          if (loadEl) {
+            loadEl.style.display = "block";
+            loadEl.innerHTML = 
+              '<div style="max-width:480px;margin:80px auto;background:#FFF;border-radius:16px;padding:40px 24px;text-align:center;font-family:\'Inter\',sans-serif;border:1.5px solid #E2E8F0;box-shadow:0 10px 40px rgba(0,0,0,0.06);">' +
+                '<h2 style="font-size:20px;color:#1C2B2C;margin-bottom:8px;">📡 Studio Connection Error</h2>' +
+                '<p style="color:#64748B;font-size:13px;margin-bottom:20px;">' + safeEsc(err.message || err) + '</p>' +
+                '<button onclick="window.location.reload()" style="padding:9px 22px;background:#1C2B2C;color:#FFF;border:none;border-radius:99px;cursor:pointer;font-size:13px;font-weight:700;">Retry Connection</button>' +
+              '</div>';
+          }
+        }
       });
+  }
+
+  // Trigger initial fetch
+  fetchLiveScreener();
   });
 
   function renderScreener(talent) {
