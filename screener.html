@@ -502,19 +502,35 @@
   window.addEventListener("DOMContentLoaded", function() {
     const params = new URLSearchParams(window.location.search);
     
-    // 🛡️ Safe Parameter Resolution: Only recovers from localStorage if returning from Stripe/VIP (?pro=true)
-    let targetName = params.get("name") || params.get("talent") || "";
-    if (!targetName && params.get("pro")) {
-      targetName = localStorage.getItem("wov_screener_talent") || "";
+    // 🛡️ Safe Parameter Resolution with Case & Whitespace Normalization
+    let targetName = String(params.get("name") || params.get("talent") || "").trim();
+    const stripeSessionId = String(params.get("session_id") || params.get("token") || "").trim();
+
+    if (!targetName && (params.get("pro") || stripeSessionId)) {
+      targetName = String(localStorage.getItem("wov_screener_talent") || "").trim();
     }
 
-    // Remember candidate in localStorage whenever explicitly viewed
-    if (params.get("name") || params.get("talent")) {
+    // 🛡️ Immediate Recovery Guard: Candidate context missing on Stripe return (intercepts before line 68)
+    if (stripeSessionId && !targetName) {
+      const appEl = getAppEl();
+      if (appEl) {
+        appEl.innerHTML = 
+          '<div style="max-width:520px;margin:80px auto;background:#FFF;border-radius:16px;padding:40px 24px;text-align:center;font-family:\'Inter\',sans-serif;border:1.5px solid #FCA5A5;box-shadow:0 10px 40px rgba(0,0,0,0.06);">' +
+            '<div style="font-size:36px;margin-bottom:12px;">⚠️</div>' +
+            '<h2 style="font-family:\'Playfair Display\',Georgia,serif;font-size:20px;color:#1C2B2C;margin-bottom:8px;">Candidate Profile Context Required</h2>' +
+            '<p style="color:#64748B;font-size:13.5px;line-height:1.5;margin-bottom:20px;">We received your payment receipt, but the candidate profile link was incomplete. Please return to your original invitation link or contact support with your receipt session ID:<br><code style="font-size:11px;background:#F1F5F9;padding:4px 8px;border-radius:4px;display:inline-block;margin-top:8px;word-break:break-all;">' + String(stripeSessionId).slice(0, 24) + '...</code></p>' +
+            '<a href="mailto:' + (typeof STUDIO_INQUIRY_EMAIL !== "undefined" ? STUDIO_INQUIRY_EMAIL : "studio.wov@gmail.com") + '?subject=Payment%20Session%20Recovery%20—%20' + encodeURIComponent(stripeSessionId) + '" style="display:inline-block;background:#1C2B2C;color:#FFF;padding:10px 24px;border-radius:99px;font-size:12.5px;font-weight:700;text-decoration:none;">Contact Studio Desk ↗</a>' +
+          '</div>';
+      }
+      return;
+    }
+
+    if (targetName) {
       localStorage.setItem("wov_screener_talent", targetName);
     }
 
-    // 🔄 Auto-repair address bar on return from payment/VIP
-    if (!params.get("name") && targetName && window.history.replaceState) {
+    // 🔄 Auto-repair address bar on return from VIP (DO NOT strip session_id if verification is pending)
+    if (!params.get("name") && targetName && window.history.replaceState && !stripeSessionId) {
       const cleanUrl = window.location.pathname + '?name=' + encodeURIComponent(targetName) + (params.get("pro") ? '&pro=true' : '');
       window.history.replaceState({}, '', cleanUrl);
     }
@@ -666,9 +682,91 @@
       });
   }
 
-  // Trigger initial fetch
-  fetchLiveScreener();
-  });
+  // =========================================================================
+  // 💳 DETERMINISTIC PIPELINE: verifyPayment -> unlockDirectorialDesk -> render
+  // =========================================================================
+  const normKey = targetName.toLowerCase().replace(/\s+/g, "_");
+
+  if (stripeSessionId) {
+    const loadEl = document.getElementById("loadingState");
+
+    // 1. Show studio verification banner inside #loadingState
+    if (loadEl) {
+      loadEl.style.display = "block";
+      loadEl.innerHTML = 
+        '<div style="max-width:520px;margin:80px auto;background:#FFF;border-radius:16px;padding:40px 24px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.06);border:1.5px solid #E2E8F0;font-family:\'Inter\',sans-serif;">' +
+          '<div style="width:40px;height:40px;border:3.5px solid rgba(168,73,46,0.15);border-top-color:var(--red,#A8492E);border-radius:50%;margin:0 auto 16px;animation:wovSpin 1s infinite linear;"></div>' +
+          '<div style="font-family:monospace;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--red,#A8492E);margin-bottom:6px;">Directorial Calibration Desk</div>' +
+          '<h2 style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#1C2B2C;margin-bottom:8px;">Activating Calibration Session...</h2>' +
+          '<p style="font-size:13.5px;color:#64748B;line-height:1.5;margin-bottom:16px;">CLAUD-IA is verifying your Stripe checkout receipt and retrieving Director Claudio\'s Take #2 directive.</p>' +
+          '<style>@keyframes wovSpin { to { transform: rotate(360deg); } }</style>' +
+        '</div>';
+    }
+
+    // Step 1: Verify payment with Stripe and update CRM (Route 3)
+    const verifyUrl = EXEC + "?action=verifyPayment" +
+      "&name=" + encodeURIComponent(targetName) +
+      "&session_id=" + encodeURIComponent(stripeSessionId);
+
+    fetch(verifyUrl)
+      .then(res => res.json())
+      .then(payRes => {
+        if (!payRes || !payRes.ok || !payRes.paid) {
+          throw new Error((payRes && payRes.error) || "Payment confirmation pending with bank.");
+        }
+
+        // Step 2: Payment verified; fetch unlocked Take #2 directive & comp card (Route 2B)
+        const unlockUrl = EXEC + "?action=unlockDirectorialDesk" +
+          "&name=" + encodeURIComponent(targetName) +
+          "&session_id=" + encodeURIComponent(stripeSessionId);
+        return fetch(unlockUrl);
+      })
+      .then(res => res.json())
+      .then(auth => {
+        if (auth && auth.ok && auth.unlocked) {
+          localStorage.setItem("wov_unlocked_" + normKey, "true");
+          if (auth.nextSessionDirective) {
+            localStorage.setItem("wov_directive_" + normKey, auth.nextSessionDirective);
+          }
+          if (auth.compCardUrl) {
+            localStorage.setItem("wov_compcard_" + normKey, auth.compCardUrl);
+          }
+
+          if (typeof wovSendMilestone === "function") {
+            wovSendMilestone("STRIPE_VERIFIED_UNLOCK", { sessionId: stripeSessionId.slice(-8) });
+          }
+
+          // Clean address bar: remove session_id, append ?pro=true (only after success!)
+          if (window.history.replaceState) {
+            const cleanUrl = window.location.pathname + '?name=' + encodeURIComponent(targetName) + '&pro=true';
+            window.history.replaceState({}, '', cleanUrl);
+          }
+
+          // Step 3: Fetch screener data; renders unlocked on the very first pass!
+          fetchLiveScreener();
+        } else {
+          throw new Error((auth && auth.error) || "Failed to unlock directorial desk.");
+        }
+      })
+      .catch(err => {
+        console.warn("Stripe verification error:", err);
+        if (loadEl) {
+          const safeErrorText = String(err.message || err).replace(/[&<>"']/g, "");
+          loadEl.innerHTML = 
+            '<div style="max-width:480px;margin:80px auto;background:#FFF;border-radius:16px;padding:40px 24px;text-align:center;font-family:\'Inter\',sans-serif;border:1.5px solid #FCA5A5;box-shadow:0 10px 40px rgba(0,0,0,0.06);">' +
+              '<div style="font-size:36px;margin-bottom:12px;">⚠️</div>' +
+              '<h2 style="font-size:20px;color:#1C2B2C;margin-bottom:8px;">Payment Verification Notice</h2>' +
+              '<p style="color:#64748B;font-size:13px;line-height:1.5;margin-bottom:20px;">' + safeErrorText + '</p>' +
+              '<button onclick="window.location.reload()" style="padding:9px 22px;background:#1C2B2C;color:#FFF;border:none;border-radius:99px;cursor:pointer;font-size:13px;font-weight:700;">Retry Verification</button>' +
+            '</div>';
+        }
+      });
+  } else {
+    // Normal visit: Trigger fetchLiveScreener immediately
+    fetchLiveScreener();
+  }
+  }); 
+  // End of DOMContentLoaded
 
   function renderScreener(talent) {
     // 🛡️ 1. SAFE NAMES FIRST: Eliminates ReferenceError Temporal Dead Zone (TDZ)
