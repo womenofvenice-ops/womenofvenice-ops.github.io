@@ -785,12 +785,34 @@
     const certHash = Math.abs(rawTalentName.split("").reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0)).toString(16).toUpperCase().padStart(8, "0");
     const certId = "WOV-2026-" + certHash;
    
-    // 💳 3. PRO MONETIZATION GATE & PERSISTENT UNLOCK
-    const isPro = params.get("pro") === "true" || params.get("pro") === "1" || talent.isPro === true || localStorage.getItem("wov_unlocked_" + rawTalentName) === "true";
+    // 💳 3. PRO MONETIZATION GATE & SECURE HYDRATION (Safe Normalized Key)
+    const safeTargetName = String(rawTalentName || (talent && (talent.name || talent.talent)) || "").trim();
+    const normKey = safeTargetName.toLowerCase().replace(/\s+/g, "_");
+    const isUnlockedLocally = localStorage.getItem("wov_unlocked_" + normKey) === "true";
+    const isPro = isUnlockedLocally || talent.isPro === true;
+
+    // Hydrate unlocked directive & compCard from storage if unlocked
     if (isPro) {
-      localStorage.setItem("wov_unlocked_" + rawTalentName, "true");
+      const cachedDirective = localStorage.getItem("wov_directive_" + normKey);
+      const cachedCompCard = localStorage.getItem("wov_compcard_" + normKey);
+
+      if (cachedDirective) {
+        talent.nextSessionDirective = cachedDirective;
+        if (Array.isArray(talent.takes) && talent.takes.length > 0) {
+          const latest = talent.takes[talent.takes.length - 1];
+          if (latest) {
+            latest.directorNotes = latest.directorNotes || {};
+            latest.directorNotes.nextSessionDirective = cachedDirective;
+          }
+        }
+      }
+      if (cachedCompCard) {
+        talent.compCardUrl = cachedCompCard;
+      }
     }
-    localStorage.setItem("wov_screener_talent", rawTalentName);
+    if (safeTargetName) {
+      localStorage.setItem("wov_screener_talent", safeTargetName);
+    }
     
   // 🛡️ 4. TRACKABLE STRIPE PAYMENT LINK & SMART CHECKOUT ROUTER
     const baseStripeUrl = "https://buy.stripe.com/YOUR_STRIPE_LINK"; // 👈 Replace with live Stripe link when ready
@@ -1140,6 +1162,91 @@
       wovUpdatePitchScript();
     }
   }
+
+  // 🔑 VIP SCHOLARSHIP & INNER CIRCLE DESK UNLOCK ENGINE
+  window.wovRedeemVipCode = function() {
+    const inputEl = document.getElementById("vipCodeInput");
+    const statusEl = document.getElementById("vipCodeStatus");
+    if (!inputEl) return;
+
+    const submittedCode = String(inputEl.value || "").trim().toUpperCase();
+    if (!submittedCode) {
+      if (statusEl) {
+        statusEl.style.color = "#FCA5A5";
+        statusEl.innerText = "⚠️ Please enter an access code.";
+      }
+      inputEl.focus();
+      return;
+    }
+
+    const rawTargetName = String(
+      (window._screenerState && window._screenerState.rawTalentName) ||
+      new URLSearchParams(window.location.search).get("name") ||
+      localStorage.getItem("wov_screener_talent") ||
+      ""
+    ).trim();
+
+    if (!rawTargetName) {
+      if (statusEl) {
+        statusEl.style.color = "#FCA5A5";
+        statusEl.innerText = "⚠️ Missing talent profile context.";
+      }
+      return;
+    }
+
+    const normKey = rawTargetName.toLowerCase().replace(/\s+/g, "_");
+
+    if (statusEl) {
+      statusEl.style.color = "#F6E4B8";
+      statusEl.innerHTML = "⏳ Authenticating with studio vault...";
+    }
+
+    const unlockEndpoint = EXEC + "?action=unlockDirectorialDesk" +
+      "&name=" + encodeURIComponent(rawTargetName) +
+      "&passcode=" + encodeURIComponent(submittedCode);
+
+    fetch(unlockEndpoint)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.ok && data.unlocked) {
+          if (statusEl) {
+            statusEl.style.color = "#4ADE80";
+            statusEl.innerHTML = "✓ Passcode verified. Unlocking directorial calibration...";
+          }
+
+          // Persist verified unlock using normalized key
+          localStorage.setItem("wov_unlocked_" + normKey, "true");
+          if (data.nextSessionDirective) {
+            localStorage.setItem("wov_directive_" + normKey, data.nextSessionDirective);
+          }
+          if (data.compCardUrl) {
+            localStorage.setItem("wov_compcard_" + normKey, data.compCardUrl);
+          }
+
+          if (typeof wovSendMilestone === "function") {
+            wovSendMilestone("VIP_PASSCODE_REDEEMED", { authMethod: data.authMethod || "VIP_PASSCODE" });
+          }
+
+          // Smooth transition to unlocked view
+          setTimeout(function() {
+            const url = new URL(window.location.href);
+            url.searchParams.set("pro", "true");
+            window.location.href = url.toString();
+          }, 500);
+        } else {
+          if (statusEl) {
+            statusEl.style.color = "#FCA5A5";
+            statusEl.innerText = (data && data.error) ? data.error : "⚠️ Invalid Studio Passcode. Please check your credentials.";
+          }
+        }
+      })
+      .catch(err => {
+        if (statusEl) {
+          statusEl.style.color = "#FCA5A5";
+          statusEl.innerText = "📡 Network error connecting to studio desk. Please retry.";
+        }
+      });
+  };
 
   // 🎬 HELPER: Take 2 Directability Benchmark Bridge (Pro View Only)
   function renderTake2BridgeHtml(talent, isPro, isCreator, rawTalentName) {
