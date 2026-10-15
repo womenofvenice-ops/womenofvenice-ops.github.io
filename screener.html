@@ -571,16 +571,15 @@
     };
 
     // 2. Fetch Live Database Record with In-Place Auto-Polling (Hardened & Syntax-Clean)
-  let pollAttempts = 0;
-  const maxPolls = 14; // Polls for up to 70 seconds (14 x 5s)
+    let pollAttempts = 0;
+    const maxPolls = 14;
 
-  // 🛡️ Inline escaping fallback (Prevents ReferenceErrors if safeEsc is undeclared)
-  function safeEsc(str) {
-    if (typeof window.safeEsc === "function") return window.safeEsc(str);
-    return String(str || "").replace(/[&<>"']/g, function(m) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
-    });
-  }
+    function safeEsc(str) {
+      if (typeof window.safeEsc === "function") return window.safeEsc(str);
+      return String(str || "").replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+      });
+    }
 
   function fetchLiveScreener() {
     const urlParams = new URLSearchParams(window.location.search);
