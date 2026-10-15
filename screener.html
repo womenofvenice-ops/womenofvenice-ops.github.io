@@ -565,21 +565,17 @@
       }
     }
 
-    // Helper: Safe HTML escape fallback
-    const safeEsc = typeof esc === "function" ? esc : function(s) {
-      return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    // 🛡️ Helper: Safe HTML escape fallback (Single, crash-proof declaration)
+    const safeEsc = function(s) {
+      if (typeof esc === "function") return esc(s);
+      return String(s || "").replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+      });
     };
 
     // 2. Fetch Live Database Record with In-Place Auto-Polling (Hardened & Syntax-Clean)
     let pollAttempts = 0;
     const maxPolls = 14;
-
-    function safeEsc(str) {
-      if (typeof window.safeEsc === "function") return window.safeEsc(str);
-      return String(str || "").replace(/[&<>"']/g, function(m) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
-      });
-    }
 
   function fetchLiveScreener() {
     const urlParams = new URLSearchParams(window.location.search);
