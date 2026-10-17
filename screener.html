@@ -1232,7 +1232,9 @@ if (isPro && talentObj) {
     }
   }
 
-  // 🔑 VIP SCHOLARSHIP & INNER CIRCLE DESK UNLOCK ENGINE
+  // =========================================================================
+  // 🔑 VIP SCHOLARSHIP DESK UNLOCK ENGINE (Encrypted POST · Synchronized UI)
+  // =========================================================================
   window.wovRedeemVipCode = function() {
     const inputEl = document.getElementById("vipCodeInput");
     const statusEl = document.getElementById("vipCodeStatus");
@@ -1248,14 +1250,15 @@ if (isPro && talentObj) {
       return;
     }
 
-    const rawTargetName = String(
+    // Resolves candidate identity across name, talent, cid, or id
+    const urlP = new URLSearchParams(window.location.search);
+    const rawTarget = String(
       (window._screenerState && window._screenerState.rawTalentName) ||
-      new URLSearchParams(window.location.search).get("name") ||
-      localStorage.getItem("wov_screener_talent") ||
+      urlP.get("name") || urlP.get("talent") || urlP.get("cid") || urlP.get("id") ||
       ""
     ).trim();
 
-    if (!rawTargetName) {
+    if (!rawTarget) {
       if (statusEl) {
         statusEl.style.color = "#FCA5A5";
         statusEl.innerText = "⚠️ Missing talent profile context.";
@@ -1263,60 +1266,89 @@ if (isPro && talentObj) {
       return;
     }
 
-    const normKey = rawTargetName.toLowerCase().replace(/\s+/g, "_");
+    const normKey = rawTarget.toLowerCase().replace(/\s+/g, "_");
 
     if (statusEl) {
       statusEl.style.color = "#F6E4B8";
       statusEl.innerHTML = "⏳ Authenticating with studio vault...";
     }
 
-    const unlockEndpoint = EXEC + "?action=unlockDirectorialDesk" +
-      "&name=" + encodeURIComponent(rawTargetName) +
-      "&passcode=" + encodeURIComponent(submittedCode);
+    const targetExec = (typeof EXEC !== "undefined") ? EXEC : (window.EXEC || "");
 
-    fetch(unlockEndpoint)
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.ok && data.unlocked) {
-          if (statusEl) {
-            statusEl.style.color = "#4ADE80";
-            statusEl.innerHTML = "✓ Passcode verified. Unlocking directorial calibration...";
-          }
-
-          // Persist verified unlock using normalized key
-          localStorage.setItem("wov_unlocked_" + normKey, "true");
-          if (data.nextSessionDirective) {
-            localStorage.setItem("wov_directive_" + normKey, data.nextSessionDirective);
-          }
-          if (data.compCardUrl) {
-            localStorage.setItem("wov_compcard_" + normKey, data.compCardUrl);
-          }
-
-          if (typeof wovSendMilestone === "function") {
-            wovSendMilestone("VIP_PASSCODE_REDEEMED", { authMethod: data.authMethod || "VIP_PASSCODE" });
-          }
-
-          // Smooth transition to unlocked view
-          setTimeout(function() {
-            const url = new URL(window.location.href);
-            url.searchParams.set("pro", "true");
-            window.location.href = url.toString();
-          }, 500);
-        } else {
-          if (statusEl) {
-            statusEl.style.color = "#FCA5A5";
-            statusEl.innerText = (data && data.error) ? data.error : "⚠️ Invalid Studio Passcode. Please check your credentials.";
-          }
-        }
+    // 🛡️ Encrypted POST payload: Passcode is NEVER exposed in URL or history
+    fetch(targetExec, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "unlockDirectorialDesk",
+        id: urlP.get("cid") || urlP.get("id") || "",
+        name: rawTarget,
+        passcode: submittedCode
       })
-      .catch(err => {
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.ok && data.unlocked) {
+        if (statusEl) {
+          statusEl.style.color = "#4ADE80";
+          statusEl.innerHTML = "✓ Passcode verified. Directorial desk unlocked.";
+        }
+
+        // Dual-Key Storage Synchronization
+        const keysToStore = new Set([
+          rawTarget,
+          rawTarget.toLowerCase().replace(/\s+/g, "_")
+        ]);
+        if (data.candidate) {
+          keysToStore.add(data.candidate);
+          keysToStore.add(data.candidate.toLowerCase().replace(/\s+/g, "_"));
+        }
+        if (data.candidateId) {
+          keysToStore.add(data.candidateId);
+          keysToStore.add(data.candidateId.toLowerCase().replace(/\s+/g, "_"));
+        }
+
+        try {
+          keysToStore.forEach(k => {
+            localStorage.setItem("wov_unlocked_" + k, "true");
+            if (data.nextSessionDirective) {
+              localStorage.setItem("wov_directive_" + k, data.nextSessionDirective);
+            }
+            if (data.compCardUrl) {
+              localStorage.setItem("wov_compcard_" + k, data.compCardUrl);
+            }
+          });
+        } catch (eStorage) {}
+
+        // ⚡ In-Place Dissolve: Invokes unified DOM updater
+        if (typeof window.applyProDomState === "function") {
+          window.applyProDomState(data);
+        }
+
+        // Address Bar Sanitation: Uses real human name, never UUID
+        if (window.history && window.history.replaceState) {
+          const verifiedName = data.candidate || (rawTarget.indexOf("-") === -1 ? rawTarget : "Talent");
+          const candidateId = data.candidateId || urlP.get("cid") || urlP.get("id") || "";
+          let cleanUrl = window.location.pathname + '?name=' + encodeURIComponent(verifiedName);
+          if (candidateId) cleanUrl += '&cid=' + encodeURIComponent(candidateId);
+          window.history.replaceState({}, '', cleanUrl);
+        }
+
+      } else {
         if (statusEl) {
           statusEl.style.color = "#FCA5A5";
-          statusEl.innerText = "📡 Network error connecting to studio desk. Please retry.";
+          statusEl.innerText = (data && data.error) ? data.error : "⚠️ Invalid Studio Passcode. Please check your credentials.";
         }
-      });
+      }
+    })
+    .catch(err => {
+      if (statusEl) {
+        statusEl.style.color = "#FCA5A5";
+        statusEl.innerText = "📡 Network error connecting to studio desk. Please retry.";
+      }
+    });
   };
-
+  
   // 🎬 HELPER: Take 2 Directability Benchmark Bridge (Pro View Only)
   function renderTake2BridgeHtml(talent, isPro, isCreator, rawTalentName) {
     if (!isPro) return "";
