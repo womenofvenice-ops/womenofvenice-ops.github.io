@@ -785,34 +785,103 @@
     const certHash = Math.abs(rawTalentName.split("").reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0)).toString(16).toUpperCase().padStart(8, "0");
     const certId = "WOV-2026-" + certHash;
    
-    // 💳 3. PRO MONETIZATION GATE & SECURE HYDRATION (Safe Normalized Key)
-    const safeTargetName = String(rawTalentName || (talent && (talent.name || talent.talent)) || "").trim();
-    const normKey = safeTargetName.toLowerCase().replace(/\s+/g, "_");
-    const isUnlockedLocally = localStorage.getItem("wov_unlocked_" + normKey) === "true";
-    const isPro = isUnlockedLocally || talent.isPro === true;
+    // =========================================================================
+// 💳 3. PRO MONETIZATION GATE & SECURE HYDRATION (Dual-Key & Full DOM Sync)
+// =========================================================================
+const urlParams = (typeof params !== "undefined" && params) ? params : new URLSearchParams(window.location.search);
+const urlCid = urlParams.get("cid") || urlParams.get("id") || "";
 
-    // Hydrate unlocked directive & compCard from storage if unlocked
-    if (isPro) {
-      const cachedDirective = localStorage.getItem("wov_directive_" + normKey);
-      const cachedCompCard = localStorage.getItem("wov_compcard_" + normKey);
+const talentObj = (typeof talent !== "undefined" && talent) ? talent : {};
 
-      if (cachedDirective) {
-        talent.nextSessionDirective = cachedDirective;
-        if (Array.isArray(talent.takes) && talent.takes.length > 0) {
-          const latest = talent.takes[talent.takes.length - 1];
-          if (latest) {
-            latest.directorNotes = latest.directorNotes || {};
-            latest.directorNotes.nextSessionDirective = cachedDirective;
-          }
-        }
-      }
-      if (cachedCompCard) {
-        talent.compCardUrl = cachedCompCard;
+// 🛡️ Multi-Param Identity Resolution (Guards against undefined rawTalentName & preserves human name)
+const safeTargetName = String(
+  (typeof rawTalentName !== "undefined" && rawTalentName) ||
+  urlParams.get("name") || urlParams.get("talent") ||
+  talentObj.name || talentObj.candidate || talentObj.talent ||
+  ""
+).trim();
+
+const normKey = safeTargetName ? safeTargetName.toLowerCase().replace(/\s+/g, "_") : "";
+const normCid = urlCid ? urlCid.toLowerCase().replace(/\s+/g, "_") : "";
+
+// 🛡️ Multi-Key LocalStorage Verifier (Checks both Name and UUID to prevent lockout asymmetry)
+let isVaultUnlocked = false;
+let cachedDirective = null;
+let cachedCompCard = null;
+
+const keysToCheck = [normKey, safeTargetName, normCid, urlCid].filter(Boolean);
+for (let k = 0; k < keysToCheck.length; k++) {
+  const key = keysToCheck[k];
+  try {
+    const dir = localStorage.getItem("wov_directive_" + key);
+    const card = localStorage.getItem("wov_compcard_" + key);
+    const unl = localStorage.getItem("wov_unlocked_" + key);
+
+    if (dir) cachedDirective = dir;
+    if (card) cachedCompCard = card;
+    if (unl === "true" || dir) {
+      isVaultUnlocked = true;
+      break;
+    }
+  } catch (eStorageRead) {}
+}
+
+const isTalentPro = Boolean(talentObj.isPro === true);
+const isPro = isVaultUnlocked || isTalentPro;
+
+// 🛡️ Unified DOM Sync Helper: Keeps master desk AND .header-actions unlocked on reload
+window.applyProDomState = function(talentData) {
+  const t = talentData || talentObj;
+  const safeName = (t && (t.name || t.candidate)) || safeTargetName || "Talent";
+  const candidateCid = (t && (t.candidateId || t.cid || t.id)) || urlCid || localStorage.getItem("wov_cid_" + normKey) || "";
+  const directive = cachedDirective || (t && t.nextSessionDirective) || "";
+
+  // 1. Lift blur on master desk and remove paywall card
+  const gatedDesk = document.getElementById("gatedMasterDesk") || document.querySelector(".gated-wrapper");
+  if (gatedDesk) gatedDesk.classList.remove("is-locked");
+
+  document.querySelectorAll(".telemetry-card").forEach(card => {
+    if (card.innerHTML.indexOf("vipCodeInput") >= 0) card.remove();
+  });
+
+  // 2. Inject Directive text and show gold VIP badge
+  const directiveDisplay = document.getElementById("directorDirectiveDisplay");
+  if (directiveDisplay && directive) directiveDisplay.textContent = directive;
+
+  const vipIndicator = document.getElementById("vipIndicator");
+  if (vipIndicator) vipIndicator.style.display = "inline-block";
+
+  // 3. Synchronize Header Actions (Check Availability, Comp Card A4, VIP badge)
+  const headerActions = document.querySelector(".header-actions");
+  if (headerActions) {
+    const compCardHref = cachedCompCard || (t && t.compCardUrl) || `comp-card.html?name=${encodeURIComponent(safeName)}${candidateCid ? `&candidate=${encodeURIComponent(candidateCid)}` : ""}`;
+    headerActions.innerHTML = 
+      `<button type="button" onclick="wovOpenB2BModal()" class="no-print" style="background:#1C2B2C;color:#FAF8F5;border:1px solid rgba(255,255,255,0.2);padding:6px 14px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">🎬 Check Availability ↗</button>` +
+      `<a href="${compCardHref}" target="_blank" rel="noopener noreferrer" class="no-print" style="background:transparent;color:var(--ink,#1C2B2C);border:1.5px solid var(--border,#CBD5E1);padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">📇 Comp Card (A4) ↗</a>` +
+      `<button onclick="window.print();" class="pdf-btn" style="padding:6px 14px;font-size:11.5px;font-weight:700;">📄 Export PDF Deck</button>` +
+      `<div class="verified-pill" style="font-size:10px;padding:4px 10px;background:rgba(34,197,94,0.1);color:#166534;border-radius:99px;font-weight:700;">👑 VIP CALIBRATION ACTIVE</div>`;
+  }
+};
+
+// Hydrate Directive & Comp Card into memory
+if (isPro && talentObj) {
+  if (cachedDirective) {
+    talentObj.nextSessionDirective = cachedDirective;
+    if (Array.isArray(talentObj.takes) && talentObj.takes.length > 0) {
+      const latest = talentObj.takes[talentObj.takes.length - 1];
+      if (latest) {
+        latest.directorNotes = latest.directorNotes || {};
+        latest.directorNotes.nextSessionDirective = cachedDirective;
       }
     }
-    if (safeTargetName) {
-      localStorage.setItem("wov_screener_talent", safeTargetName);
-    }
+  }
+  if (cachedCompCard) {
+    talentObj.compCardUrl = cachedCompCard;
+  }
+
+  // Executes safely after renderScreener finishes painting all DOM cards
+  setTimeout(() => window.applyProDomState(talentObj), 50);
+}
     
   // 🛡️ 4. TRACKABLE STRIPE PAYMENT LINK & SMART CHECKOUT ROUTER
     const baseStripeUrl = "https://buy.stripe.com/YOUR_STRIPE_LINK"; // 👈 Replace with live Stripe link when ready
