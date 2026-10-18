@@ -884,10 +884,10 @@ if (isPro && talentObj) {
 }
     
   // 🛡️ 4. TRACKABLE STRIPE PAYMENT LINK & SMART CHECKOUT ROUTER
-    https://buy.stripe.com/test_fZubJ22f1cy05apbA42wU00
-    const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
-      ? baseStripeUrl
-      : (baseStripeUrl + "?client_reference_id=" + encodeURIComponent(rawTalentName));
+const baseStripeUrl = "https://buy.stripe.com/test_fZubJ22f1cy05apbA42wU00";
+const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
+  ? baseStripeUrl
+  : (baseStripeUrl + "?client_reference_id=" + encodeURIComponent(rawTalentName));
 
    // 💳 SMART CHECKOUT ROUTER (Never Freezes · Auto-Scroll & Demo Safe)
     window.wovHandlePaymentClick = function(e) {
