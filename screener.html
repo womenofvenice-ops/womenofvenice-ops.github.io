@@ -897,7 +897,7 @@ if (isPro && talentObj) {
       } catch (err) {}
 
       const cleanLowerName = rawTalentName.toLowerCase();
-      const isDemo = cleanLowerName.indexOf("elena") >= 0 || cleanLowerName.indexOf("marta") >= 0;
+      const isDemo = false;
       const isPlaceholder = !stripePaymentUrl || stripePaymentUrl.indexOf("YOUR_STRIPE_LINK") >= 0;
 
       // 🛡️ Demo Mode OR Unconfigured Stripe: Guide to VIP Scholarship
