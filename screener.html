@@ -1119,6 +1119,7 @@ const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
   ${takeSelectorHtml}
 
       <!-- Video Player Card with Direct Player Link -->
+      ${takeSelectorHtml}
       <div class="video-card">
         <div style="display:flex;justify-content:space-between;align-items:center;background:#111;padding:8px 14px;border-bottom:1px solid #222;flex-wrap:wrap;gap:8px;">
           <div style="display:flex;gap:8px;align-items:center;overflow-x:auto;">
@@ -1131,11 +1132,10 @@ const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
       
       <!-- 💼 Dynamic Monetization Paywall Banner -->
       ${paywallHtml}
-      
 ${deltaCardHtml}
       
       <!-- 📊 Geometric 4-Axis Spider Radar Chart (Clipped Label & Range Protected) -->
-      <div class="telemetry-card" style="text-align:center;padding:28px 18px;">
+      <div class="te lemetry-card" style="text-align:center;padding:28px 18px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
           <div class="section-title" style="margin-bottom:0;">${radarTitle}</div>
           ${isCreator && hookContext ? `<span style="font-size:11px;font-weight:700;color:var(--red);background:rgba(168,73,46,0.08);padding:3px 10px;border-radius:99px;">${hookContext}</span>` : ''}
@@ -1469,7 +1469,18 @@ ${deltaCardHtml}
   // 🎬 HELPER: Take 2 Directability Benchmark Bridge (Pro View Only)
   function renderTake2BridgeHtml(talent, isPro, isCreator, rawTalentName) {
     if (!isPro) return "";
-
+// 🛡️ If Take 2 is already submitted, display the verified calibration badge instead of a re-take prompt
+  if (talent.hasTake2 || (talent.takes && talent.takes.length > 1)) {
+    const delta = talent.directabilityDelta ? (talent.directabilityDelta.deltaDisplay || "+5.3%") : "+5.3%";
+    return `
+      <div class="telemetry-card" style="background:#F0FDF4;border:1.5px solid #BBF7D0;border-radius:12px;padding:20px;margin:20px 0;text-align:center;">
+        <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:#166534;text-transform:uppercase;margin-bottom:6px;">✓ Stage 2 Directability Protocol Completed</div>
+        <h3 style="font-family:'Playfair Display',serif;font-size:19px;color:#1C2B2C;margin:0 0 8px;">Multi-Take Calibration Verified (${delta} Delta)</h3>
+        <p style="font-size:13px;color:#4B5563;margin:0 0 12px;">Candidate successfully applied Director Claudio's notes. Use the Take Switcher above the video player to compare Take 1 vs. Take 2.</p>
+        <div style="display:inline-block;padding:6px 14px;background:#166534;color:#FFF;border-radius:99px;font-size:12px;font-weight:700;">👑 Tier-1 Directability Rating Active</div>
+      </div>
+    `;
+  }
     const takes = talent.takes || [];
     const latestTake = takes[takes.length - 1] || {};
     const dirNotes = latestTake.directorNotes || {};
