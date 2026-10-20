@@ -1293,6 +1293,108 @@ const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
       }
     });
   };
+
+  // =========================================================================
+  // 🎬 TAKE #2 CLIENT SUBMISSION CONTROLLER (Direct Sibling Function)
+  // =========================================================================
+  window.wovSubmitTake2 = function() {
+    const videoInput = document.getElementById("take2VideoInput");
+    const notesInput = document.getElementById("take2NotesInput");
+    const statusEl = document.getElementById("take2SubmitStatus");
+    const submitBtn = document.getElementById("take2SubmitBtn");
+
+    if (!videoInput) return;
+
+    const rawVideo = String(videoInput.value || "").trim();
+    const actorNotes = notesInput ? String(notesInput.value || "").trim() : "";
+
+    if (!rawVideo) {
+      if (statusEl) {
+        statusEl.style.color = "#FCA5A5";
+        statusEl.innerText = "⚠️ Please provide a video link (Google Drive, YouTube, or Vimeo).";
+      }
+      videoInput.focus();
+      return;
+    }
+
+    // 🛡️ Resolve candidate identity dynamically (Zero hardcoded names)
+    const urlP = new URLSearchParams(window.location.search);
+    const targetName = String(
+      (window._screenerState && window._screenerState.rawTalentName) ||
+      urlP.get("name") || urlP.get("talent") ||
+      (window._currentTalent && (window._currentTalent.name || window._currentTalent.talent)) ||
+      localStorage.getItem("wov_screener_talent") ||
+      ""
+    ).trim();
+
+    const normKey = targetName ? targetName.toLowerCase().replace(/\s+/g, "_") : "";
+    const activeCid = String(
+      urlP.get("cid") || 
+      urlP.get("id") || 
+      (normKey ? localStorage.getItem("wov_cid_" + normKey) : "") || 
+      (targetName ? localStorage.getItem("wov_cid_" + targetName) : "") || 
+      ""
+    ).trim();
+
+    if (!activeCid) {
+      if (statusEl) {
+        statusEl.style.color = "#FCA5A5";
+        statusEl.innerText = "⚠️ Owner verification missing. Please re-open via your private vault link.";
+      }
+      return;
+    }
+
+    if (statusEl) {
+      statusEl.style.color = "#F6E4B8";
+      statusEl.innerHTML = "⏳ Uploading to Directorial Engine & calculating Directability Delta...";
+    }
+    if (submitBtn) submitBtn.disabled = true;
+
+    const targetExec = (typeof EXEC !== "undefined") ? EXEC : (window.EXEC || "");
+
+    // 🛡️ CORS Preflight-Safe POST: Matches your exact text/plain header pattern
+    fetch(targetExec, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "submitTake2",
+        cid: activeCid,
+        name: targetName,
+        videoUrl: rawVideo,
+        actorNotes: actorNotes
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.ok && data.submitted) {
+        if (statusEl) {
+          statusEl.style.color = "#4ADE80";
+          statusEl.innerHTML = "✓ Take #2 Ingested! Directability Delta: <b>+" + (data.delta ? data.delta.deltaPercent : "5") + "%</b>. Refreshing studio deck...";
+        }
+        // Refresh screener to mount multi-take player and delta scorecard
+        setTimeout(function() {
+          if (typeof fetchLiveScreener === "function") {
+            fetchLiveScreener();
+          } else {
+            window.location.reload();
+          }
+        }, 1200);
+      } else {
+        if (submitBtn) submitBtn.disabled = false;
+        if (statusEl) {
+          statusEl.style.color = "#FCA5A5";
+          statusEl.innerText = (data && data.error) ? data.error : "⚠️ Submission failed. Please verify your video link.";
+        }
+      }
+    })
+    .catch(err => {
+      if (submitBtn) submitBtn.disabled = false;
+      if (statusEl) {
+        statusEl.style.color = "#FCA5A5";
+        statusEl.innerText = "📡 Network error connecting to studio desk. Please retry.";
+      }
+    });
+  };
   
   // 🎬 HELPER: Take 2 Directability Benchmark Bridge (Pro View Only)
   function renderTake2BridgeHtml(talent, isPro, isCreator, rawTalentName) {
