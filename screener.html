@@ -1116,10 +1116,10 @@ const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
         </div>
       </div>
 
-  ${takeSelectorHtml}
+      <!-- 🎬 Multi-Take Selector (Renders single bar when Take 2 exists) -->
+      ${takeSelectorHtml}
 
       <!-- Video Player Card with Direct Player Link -->
-      ${takeSelectorHtml}
       <div class="video-card">
         <div style="display:flex;justify-content:space-between;align-items:center;background:#111;padding:8px 14px;border-bottom:1px solid #222;flex-wrap:wrap;gap:8px;">
           <div style="display:flex;gap:8px;align-items:center;overflow-x:auto;">
@@ -1132,10 +1132,12 @@ const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
       
       <!-- 💼 Dynamic Monetization Paywall Banner -->
       ${paywallHtml}
-${deltaCardHtml}
+
+      <!-- 📈 Directability Delta Benchmark Scorecard -->
+      ${deltaCardHtml}
       
-      <!-- 📊 Geometric 4-Axis Spider Radar Chart (Clipped Label & Range Protected) -->
-      <div class="te lemetry-card" style="text-align:center;padding:28px 18px;">
+      <!-- 📊 Geometric 4-Axis Spider Radar Chart (Class Name Fixed) -->
+      <div class="telemetry-card" style="text-align:center;padding:28px 18px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
           <div class="section-title" style="margin-bottom:0;">${radarTitle}</div>
           ${isCreator && hookContext ? `<span style="font-size:11px;font-weight:700;color:var(--red);background:rgba(168,73,46,0.08);padding:3px 10px;border-radius:99px;">${hookContext}</span>` : ''}
