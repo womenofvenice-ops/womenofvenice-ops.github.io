@@ -711,7 +711,8 @@
         }
       });
   }
-
+ fetchLiveScreener();
+});
   function renderScreener(talent) {
     // 🛡️ 1. SAFE NAMES FIRST: Eliminates ReferenceError Temporal Dead Zone (TDZ)
     const rawTalentName = String(talent.name || "Talent").trim();
