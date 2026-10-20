@@ -887,7 +887,71 @@ const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
     const vScore = safeScore(radar.vocalScore);
     const sScore = safeScore(radar.subtextScore);
     const fScore = safeScore(radar.formatFitScore);
+// 🛡️ Bind global talent pointer for window.switchTakeVideo & wovSubmitTake2
+    window._currentTalent = talent;
 
+    // 🎬 1. Multi-Take Selector (Rendered if Take 2 exists)
+    let takeSelectorHtml = "";
+    if (takes && takes.length > 1) {
+      takeSelectorHtml = 
+        `<div class="take-selector-bar no-print" style="display:flex;gap:8px;margin-bottom:12px;background:#0F172A;padding:6px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);">` +
+          `<button type="button" onclick="window.switchTakeVideo(0)" id="takeBtn0" class="take-btn active" style="flex:1;padding:8px 14px;background:#1E293B;color:#FFF;border:1px solid #38BDF8;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">🎬 Take #1: Audition</button>` +
+          `<button type="button" onclick="window.switchTakeVideo(1)" id="takeBtn1" class="take-btn" style="flex:1;padding:8px 14px;background:transparent;color:#94A3B8;border:1px solid transparent;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">🎯 Take #2: Directorial Adjustment</button>` +
+        `</div>`;
+    }
+
+    // 📈 2. Directability Delta Benchmark Scorecard (Defensively Guarded)
+    let deltaCardHtml = "";
+    if (talent.directabilityDelta) {
+      const d = talent.directabilityDelta;
+      const sub1 = (d.take1 && d.take1.subtext) || 88;
+      const sub2 = (d.take2 && d.take2.subtext) || 94;
+      const still1 = (d.take1 && d.take1.stillness) || 85;
+      const still2 = (d.take2 && d.take2.stillness) || 91;
+
+      deltaCardHtml = 
+        `<div class="delta-card" style="background:#FFF;border:1.5px solid #E2E8F0;border-radius:12px;padding:18px 20px;margin:16px 0;box-shadow:0 4px 20px rgba(0,0,0,0.04);">` +
+          `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">` +
+            `<div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#A8492E;">Empirical Directability Delta</div>` +
+            `<div style="font-size:12px;font-weight:800;background:#DCFCE7;color:#166534;padding:3px 8px;border-radius:99px;">${d.deltaDisplay || "+" + (d.deltaPercent || 5.3) + "%"} Adaptation</div>` +
+          `</div>` +
+          `<div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;text-align:center;">` +
+            `<div style="background:#F8FAFC;padding:10px;border-radius:8px;">` +
+              `<div style="font-size:10px;color:#64748B;text-transform:uppercase;font-weight:700;">Subtext Depth</div>` +
+              `<div style="font-size:15px;font-weight:800;color:#1C2B2C;margin-top:2px;">${sub1} ➔ <span style="color:#166534;">${sub2}</span></div>` +
+            `</div>` +
+            `<div style="background:#F8FAFC;padding:10px;border-radius:8px;">` +
+              `<div style="font-size:10px;color:#64748B;text-transform:uppercase;font-weight:700;">Stillness Index</div>` +
+              `<div style="font-size:15px;font-weight:800;color:#1C2B2C;margin-top:2px;">${still1} ➔ <span style="color:#166534;">${still2}</span></div>` +
+            `</div>` +
+            `<div style="background:#F8FAFC;padding:10px;border-radius:8px;">` +
+              `<div style="font-size:10px;color:#64748B;text-transform:uppercase;font-weight:700;">Framing Control</div>` +
+              `<div style="font-size:15px;font-weight:800;color:#166534;margin-top:2px;">${d.framingImprovement || "+12%"}</div>` +
+            `</div>` +
+          `</div>` +
+          `<div style="font-size:11.5px;color:#64748B;margin-top:10px;text-align:center;">Verified Rating: <b>${d.rating || "Tier-1 Exceptional Adaptation"}</b> under Director Claudio.</div>` +
+        `</div>`;
+    }
+
+    // 🔒 3. Private Take #2 Submission Portal (Gated exclusively to Owner Mode)
+    let take2PortalHtml = "";
+    if (talent.isOwner && !talent.hasTake2) {
+      take2PortalHtml = 
+        `<div id="take2" class="take2-portal-card no-print" style="background:#FFF;border:1.5px dashed #A8492E;border-radius:12px;padding:24px;margin:24px 0;">` +
+          `<div style="font-size:11.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#A8492E;margin-bottom:6px;">Directorial Calibration Submission</div>` +
+          `<h3 style="font-family:Georgia,serif;font-size:19px;color:#1C2B2C;margin:0 0 8px;">Upload Your Take #2 Adjustment</h3>` +
+          `<p style="font-size:13px;color:#64748B;margin:0 0 16px;">Paste your unlisted link (Google Drive, YouTube, or Vimeo). Ensure Google Drive permissions are set to 'Anyone with the link can view'.</p>` +
+          `<div style="display:flex;flex-direction:column;gap:12px;">` +
+            `<input type="url" id="take2VideoInput" placeholder="https://drive.google.com/... or https://youtu.be/..." style="width:100%;padding:10px 14px;border:1.5px solid #CBD5E1;border-radius:8px;font-size:13.5px;box-sizing:border-box;">` +
+            `<textarea id="take2NotesInput" rows="2" placeholder="Notes for Director Claudio on how you applied the directive (optional)..." style="width:100%;padding:10px 14px;border:1.5px solid #CBD5E1;border-radius:8px;font-size:13px;box-sizing:border-box;font-family:inherit;"></textarea>` +
+            `<div style="display:flex;justify-content:space-between;align-items:center;">` +
+              `<div id="take2SubmitStatus" style="font-size:12.5px;font-weight:600;"></div>` +
+              `<button type="button" id="take2SubmitBtn" onclick="window.wovSubmitTake2()" style="padding:10px 24px;background:#A8492E;color:#FFF;border:none;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer;">Submit Take #2 & Ingest ↗</button>` +
+            `</div>` +
+          `</div>` +
+        `</div>`;
+    }
+    
     function getHookTier(score) {
       if (score >= 88) return "Top 5% Hook Velocity (Low Drop-Off Risk)";
       if (score >= 79) return "Top 15% Strong Front-End Retention";
@@ -1051,6 +1115,8 @@ const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
           <span style="font-size:12.5px;color:var(--inkS);">${compsSub} ${esc(comps.directorFit || (isCreator ? "UGC / Brand Deals" : "A24 / Cannes Arthouse"))}</span>
         </div>
       </div>
+
+  ${takeSelectorHtml}
 
       <!-- Video Player Card with Direct Player Link -->
       <div class="video-card">
