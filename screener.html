@@ -1680,7 +1680,10 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
 
   // 🔄 SYNCHRONIZED TAKE SWITCHER: Updates Video, Critique, Notes, and Beat Breakdown
   window.switchTakeVideo = function(idx) {
-    const state = window._screenerState;
+    // 🛡️ Safe State Resolver: reads _screenerState with fallback to _currentTalent
+    const state = window._screenerState || 
+      (window._currentTalent ? { takes: window._currentTalent.takes, rawTalentName: window._currentTalent.name, isCreator: false } : null);
+    
     if (!state || !state.takes) return;
 
     const takes = state.takes;
@@ -1773,14 +1776,22 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
       }
     }
 
-    // 2. Synchronize Tab Highlights
+    // 2. ⚡ Synchronize Tab & Take-Selector Highlights (Separated to prevent index collision)
     document.querySelectorAll(".v-tab").forEach((btn, bIdx) => {
       btn.classList.toggle("active", bIdx === idx);
     });
 
+    document.querySelectorAll(".take-btn").forEach((btn, bIdx) => {
+      const isActive = (bIdx === idx);
+      btn.classList.toggle("active", isActive);
+      btn.style.background = isActive ? "#1E293B" : "transparent";
+      btn.style.color = isActive ? "#FFF" : "#94A3B8";
+      btn.style.borderColor = isActive ? "#38BDF8" : "transparent";
+    });
+
     // 3. Render Take-Specific Critique, Notes, & Beat Map
     const dynamicContainer = document.getElementById("dynamicTakeContainer");
-    if (dynamicContainer) {
+    if (dynamicContainer && typeof buildTakeContentHtml === "function") {
       dynamicContainer.innerHTML = buildTakeContentHtml(targetTake, state.isCreator, idx, takes.length);
     }
   };
