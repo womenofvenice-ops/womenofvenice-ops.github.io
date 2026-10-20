@@ -1131,7 +1131,9 @@ const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
       
       <!-- 💼 Dynamic Monetization Paywall Banner -->
       ${paywallHtml}
-
+      
+${deltaCardHtml}
+      
       <!-- 📊 Geometric 4-Axis Spider Radar Chart (Clipped Label & Range Protected) -->
       <div class="telemetry-card" style="text-align:center;padding:28px 18px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
@@ -1185,6 +1187,8 @@ const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
       <!-- 🎬 Take 2 Directability Benchmark Bridge (Unlocked Pro View Only) -->
       ${renderTake2BridgeHtml(talent, isPro, isCreator, rawTalentName)}
 
+ ${take2PortalHtml}
+ 
       <!-- Multi-Take Directability Delta (Permanent if multiple takes exist) -->
       ${renderProgressionHtml(talent)}
       <!-- 💼 1-Click Brand Pitch Outreach Generator (Unlocked Creator View Only) -->
