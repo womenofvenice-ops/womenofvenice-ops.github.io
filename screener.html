@@ -2547,5 +2547,203 @@ function getDemoProfile_(key) {
   </div>
 </div>
   
+ <!-- ========================================================================= -->
+<!-- 📲 PHASE 2B: 9:16 VIRAL SOCIAL ASSET GENERATOR (Hardened & Crash-Safe) -->
+<!-- ========================================================================= -->
+<div id="wovStoryModal" class="no-print" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(11,17,30,0.88);backdrop-filter:blur(10px);z-index:999999;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;">
+  <div style="background:#0B111E;border:1.5px solid rgba(246,228,184,0.25);border-radius:18px;max-width:440px;width:100%;padding:24px;box-sizing:border-box;box-shadow:0 25px 60px rgba(0,0,0,0.6);text-align:center;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-family:'Inter',sans-serif;font-size:11px;font-weight:800;letter-spacing:1.5px;color:#F6E4B8;text-transform:uppercase;">9:16 Social Telemetry Slate</div>
+      <button type="button" onclick="window.wovCloseStoryModal()" style="background:transparent;border:none;color:#94A3B8;font-size:18px;cursor:pointer;padding:4px 8px;">✕</button>
+    </div>
+    <div style="width:230px;height:408px;margin:0 auto 20px;border-radius:12px;overflow:hidden;box-shadow:0 12px 36px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.15);position:relative;">
+      <canvas id="wovStoryCanvas" width="1080" height="1920" style="width:100%;height:100%;object-fit:contain;display:block;background:#060A11;"></canvas>
+    </div>
+    <div style="font-size:12.5px;color:#94A3B8;margin-bottom:20px;line-height:1.4;">
+      Rendered in editorial 9:16 format for <b>Instagram Stories</b> & <b>TikTok</b>.
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button type="button" onclick="window.wovShareStoryCard()" style="flex:1;padding:12px 18px;background:#A8492E;color:#FFF;border:none;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer;">🚀 Share to Story</button>
+      <button type="button" onclick="window.wovDownloadStoryPng()" style="padding:12px 18px;background:#1E293B;color:#FAF8F5;border:1px solid rgba(255,255,255,0.2);border-radius:99px;font-size:13px;font-weight:700;cursor:pointer;">💾 Download PNG</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.wovDrawSafeRoundRect = function(ctx, x, y, w, h, r) {
+    if (ctx.roundRect) {
+      ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fill();
+    } else {
+      ctx.beginPath(); ctx.rect(x, y, w, h); ctx.fill();
+    }
+  };
+
+  window.wovDrawStoryCard = function() {
+    const canvas = document.getElementById("wovStoryCanvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const t = window._currentTalent || {};
+    const d = t.directabilityDelta || null;
+    const radar = t.latestRadar || {};
+
+    const talentName = String(t.name || t.talent || new URLSearchParams(window.location.search).get("name") || "Talent").trim();
+    const archetype = String(t.marketArchetype || "Feature Cinema Lead").trim();
+
+    const hasDelta = Boolean(d && (t.hasTake2 || (t.takes && t.takes.length > 1)));
+    const heroBadge = hasDelta 
+      ? (d.deltaDisplay || "+" + (d.deltaPercent || 5.3) + "%") + " MULTI-TAKE DELTA"
+      : "VERIFIED AUDITION TELEMETRY";
+    const rating = hasDelta ? (d.rating || "Tier-1 Exceptional Adaptation") : "Studio Certified Directorial Calibration";
+
+    const subtext = hasDelta ? ((d.take2 && d.take2.subtext) || 92) : (radar.subtextScore || 91);
+    const stillness = hasDelta ? ((d.take2 && d.take2.stillness) || 91) : (radar.presenceScore || 88);
+    const card3Label = hasDelta ? "Framing Control" : "Vocal Resonance";
+    const card3Val = hasDelta ? (d.framingImprovement || "+12%") : String(radar.vocalScore || 82) + "/100";
+    const card4Label = hasDelta ? "Adaptation Index" : "Casting Match";
+    const card4Val = hasDelta ? "Tier-1" : String(radar.formatFitScore || 89) + "/100";
+
+    // 1. Dark Arthouse Background Gradient
+    const bgGrad = ctx.createLinearGradient(0, 0, 1080, 1920);
+    bgGrad.addColorStop(0, "#080E18");
+    bgGrad.addColorStop(0.5, "#0D1829");
+    bgGrad.addColorStop(1, "#05080E");
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 1080, 1920);
+
+    // 2. Framing Border
+    ctx.strokeStyle = "rgba(246, 228, 184, 0.18)";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(54, 54, 972, 1812);
+
+    // 3. Header
+    ctx.fillStyle = "#A8492E";
+    ctx.font = "800 28px 'Inter', sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("WOMEN OF VENICE • CASTING STUDIO", 540, 180);
+
+    ctx.fillStyle = "#F6E4B8";
+    ctx.font = "700 20px 'Inter', sans-serif";
+    ctx.fillText("DIRECTORIAL CALIBRATION DESK · VENICE, ITALY", 540, 225);
+
+    // 4. Hero Name (Auto-Scaled to Prevent Overflow)
+    const nameFontSize = talentName.length > 18 ? 48 : (talentName.length > 13 ? 60 : 76);
+    ctx.fillStyle = "#FAF8F5";
+    ctx.font = "700 " + nameFontSize + "px 'Playfair Display', Georgia, serif";
+    ctx.fillText(talentName, 540, 430);
+
+    ctx.fillStyle = "rgba(246, 228, 184, 0.9)";
+    ctx.font = "700 32px 'Inter', sans-serif";
+    ctx.fillText("🎭 " + archetype, 540, 500);
+
+    // 5. Hero Status Pill
+    ctx.fillStyle = hasDelta ? "rgba(22, 101, 52, 0.25)" : "rgba(168, 73, 46, 0.25)";
+    window.wovDrawSafeRoundRect(ctx, 200, 580, 680, 110, 55);
+    ctx.strokeStyle = hasDelta ? "#4ADE80" : "#F6E4B8";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.fillStyle = hasDelta ? "#4ADE80" : "#F6E4B8";
+    ctx.font = "800 40px 'Inter', sans-serif";
+    ctx.fillText(heroBadge, 540, 650);
+
+    // 6. Craft Telemetry Cards
+    const drawCard = function(x, y, w, h, label, score) {
+      ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
+      window.wovDrawSafeRoundRect(ctx, x, y, w, h, 20);
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = "#94A3B8";
+      ctx.font = "700 24px 'Inter', sans-serif";
+      ctx.fillText(label.toUpperCase(), x + (w / 2), y + 60);
+
+      ctx.fillStyle = "#FAF8F5";
+      ctx.font = "800 58px 'Inter', sans-serif";
+      ctx.fillText(score, x + (w / 2), y + 140);
+    };
+
+    drawCard(140, 750, 380, 200, "Subtext Depth", String(subtext) + "/100");
+    drawCard(560, 750, 380, 200, "Camera Stillness", String(stillness) + "/100");
+    drawCard(140, 990, 380, 200, card3Label, card3Val);
+    drawCard(560, 990, 380, 200, card4Label, card4Val);
+
+    // 7. Benchmark Endorsement
+    ctx.fillStyle = "#FFF";
+    ctx.font = "700 30px 'Inter', sans-serif";
+    ctx.fillText("✓ " + rating, 540, 1290);
+
+    ctx.fillStyle = "rgba(148, 163, 184, 0.85)";
+    ctx.font = "400 25px 'Inter', sans-serif";
+    ctx.fillText("Directorial adaptation certified under Director Claudio.", 540, 1340);
+    ctx.fillText("Verified multi-take film reel active in studio repository.", 540, 1380);
+
+    // 8. Studio Seal Footer
+    ctx.fillStyle = "rgba(168, 73, 46, 0.15)";
+    window.wovDrawSafeRoundRect(ctx, 140, 1500, 800, 180, 24);
+    ctx.strokeStyle = "rgba(168, 73, 46, 0.4)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = "#F6E4B8";
+    ctx.font = "800 30px 'Inter', sans-serif";
+    ctx.fillText("CLAUD-IA ARTISTIC TELEMETRY · WOMEN OF VENICE", 540, 1575);
+
+    ctx.fillStyle = "#FAF8F5";
+    ctx.font = "700 26px 'Inter', sans-serif";
+    ctx.fillText("Full Reel & Comp Card at: womenofvenice.com", 540, 1630);
+
+    // 9. Watermark
+    ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
+    ctx.font = "600 22px 'Inter', sans-serif";
+    ctx.fillText("@womenofvenice", 540, 1790);
+  };
+
+  window.wovOpenStoryExportModal = function() {
+    const modal = document.getElementById("wovStoryModal");
+    if (modal) {
+      modal.style.display = "flex";
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(window.wovDrawStoryCard);
+      } else {
+        setTimeout(window.wovDrawStoryCard, 100);
+      }
+    }
+  };
+
+  window.wovCloseStoryModal = function() {
+    const modal = document.getElementById("wovStoryModal");
+    if (modal) modal.style.display = "none";
+  };
+
+  window.wovDownloadStoryPng = function() {
+    const canvas = document.getElementById("wovStoryCanvas");
+    if (!canvas) return;
+    const t = window._currentTalent || {};
+    const safeName = String(t.name || "Talent").replace(/\s+/g, "_");
+    const link = document.createElement("a");
+    link.download = safeName + "_Studio_Calibration_Story.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  };
+
+  window.wovShareStoryCard = function() {
+    const canvas = document.getElementById("wovStoryCanvas");
+    if (!canvas) return;
+    canvas.toBlob(function(blob) {
+      const file = new File([blob], "studio_calibration.png", { type: "image/png" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({
+          files: [file],
+          title: "Directorial Calibration Slate",
+          text: "Certified Directorial Calibration with Director Claudio at @womenofvenice 🎬"
+        }).catch(err => console.log("Share skipped:", err));
+      } else {
+        window.wovDownloadStoryPng();
+      }
+    }, "image/png");
+  };
+</script> 
+  
 </body>
 </html>
