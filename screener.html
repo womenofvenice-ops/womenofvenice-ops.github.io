@@ -2859,10 +2859,21 @@ function getDemoProfile_(key) {
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Generate dynamic referral URL
-    const cid = new URLSearchParams(window.location.search).get("cid") || new URLSearchParams(window.location.search).get("id") || "";
-    const refUrl = "https://womenofvenice.com/screener.html?ref=" + encodeURIComponent(cid);
+    // 🛡️ 100% Dynamic Identity Resolution (Zero hardcoded names)
+    const urlParams = new URLSearchParams(window.location.search);
+    const resolvedTalent = urlParams.get("name") || 
+                           urlParams.get("talent") || 
+                           (window._currentTalent && (window._currentTalent.name || window._currentTalent.talent)) || 
+                           (window._screenerState && window._screenerState.rawTalentName) || 
+                           "";
+    const cid = urlParams.get("cid") || urlParams.get("id") || urlParams.get("ref") || "";
 
+    // Build query string dynamically based on actual candidate data
+    const queryParts = [];
+    if (resolvedTalent) queryParts.push("name=" + encodeURIComponent(resolvedTalent));
+    if (cid) queryParts.push("ref=" + encodeURIComponent(cid));
+
+    const refUrl = "https://womenofvenice.com/screener.html" + (queryParts.length ? "?" + queryParts.join("&") : "");
     // Draw high-contrast vector QR code badge on left side of seal box
     if (typeof window.wovDrawAuthenticQR === "function") {
       window.wovDrawAuthenticQR(ctx, refUrl, 175, 1495, 180);
