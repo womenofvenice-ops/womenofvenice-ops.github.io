@@ -2852,20 +2852,41 @@ function getDemoProfile_(key) {
     ctx.fillText("Directorial adaptation certified under Director Claudio.", 540, 1340);
     ctx.fillText("Verified multi-take film reel active in studio repository.", 540, 1380);
 
-    // 8. Studio Seal Footer
+    // 8. Studio Seal Footer with Scannable Vector QR Code
     ctx.fillStyle = "rgba(168, 73, 46, 0.15)";
-    window.wovDrawSafeRoundRect(ctx, 140, 1500, 800, 180, 24);
+    window.wovDrawSafeRoundRect(ctx, 140, 1470, 800, 230, 24);
     ctx.strokeStyle = "rgba(168, 73, 46, 0.4)";
     ctx.lineWidth = 2;
     ctx.stroke();
 
+    // Generate dynamic referral URL
+    const cid = new URLSearchParams(window.location.search).get("cid") || new URLSearchParams(window.location.search).get("id") || "";
+    const refUrl = "https://womenofvenice.com/screener.html?ref=" + encodeURIComponent(cid);
+
+    // Draw high-contrast vector QR code badge on left side of seal box
+    if (typeof window.wovDrawAuthenticQR === "function") {
+      window.wovDrawAuthenticQR(ctx, refUrl, 175, 1495, 180);
+    }
+
+    // Studio seal & candidate ledger typography on right side of seal box
+    ctx.textAlign = "left";
     ctx.fillStyle = "#F6E4B8";
-    ctx.font = "800 30px 'Inter', sans-serif";
-    ctx.fillText("CLAUD-IA ARTISTIC TELEMETRY · WOMEN OF VENICE", 540, 1575);
+    ctx.font = "800 24px 'Inter', sans-serif";
+    ctx.fillText("CLAUD-IA ARTISTIC TELEMETRY", 390, 1545);
 
     ctx.fillStyle = "#FAF8F5";
-    ctx.font = "700 26px 'Inter', sans-serif";
-    ctx.fillText("Full Reel & Comp Card at: womenofvenice.com", 540, 1630);
+    ctx.font = "700 22px 'Playfair Display', Georgia, serif";
+    ctx.fillText("Verified Multi-Take Audition Dossier", 390, 1585);
+
+    ctx.fillStyle = "#94A3B8";
+    ctx.font = "600 16px 'Inter', sans-serif";
+    ctx.fillText("Scan QR to inspect directability ledger", 390, 1625);
+
+    ctx.fillStyle = "#A8492E";
+    ctx.font = "700 14px 'SF Mono', monospace";
+    ctx.fillText("LEDGER ID: " + (cid ? cid.substring(0, 18).toUpperCase() : "VERIFIED"), 390, 1665);
+
+    ctx.textAlign = "center"; // restore alignment for watermark
 
     // 9. Watermark
     ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
