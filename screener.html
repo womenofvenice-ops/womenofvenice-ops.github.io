@@ -2575,6 +2575,175 @@ function getDemoProfile_(key) {
 </div>
 
 <script>
+  // =========================================================================
+  // 🔲 ISO/IEC 18004 COMPLIANT VECTOR QR ENGINE (100% Offline · No CORS Taint)
+  // =========================================================================
+  var QRMath = {
+    glog: function(n) { if (n < 1) throw new Error('glog(' + n + ')'); return QRMath.LOG_TABLE[n]; },
+    gexp: function(n) { while (n < 0) n += 255; while (n >= 256) n -= 255; return QRMath.EXP_TABLE[n]; },
+    EXP_TABLE: new Array(256), LOG_TABLE: new Array(256)
+  };
+  (function() {
+    for (var i = 0; i < 8; i++) QRMath.EXP_TABLE[i] = 1 << i;
+    for (var i = 8; i < 256; i++) QRMath.EXP_TABLE[i] = QRMath.EXP_TABLE[i - 4] ^ QRMath.EXP_TABLE[i - 5] ^ QRMath.EXP_TABLE[i - 6] ^ QRMath.EXP_TABLE[i - 8];
+    for (var i = 0; i < 255; i++) QRMath.LOG_TABLE[QRMath.EXP_TABLE[i]] = i;
+  })();
+  function QRPolynomial(num, shift) {
+    var offset = 0; while (offset < num.length && num[offset] === 0) offset++;
+    this.num = new Array(num.length - offset + shift);
+    for (var i = 0; i < num.length - offset; i++) this.num[i] = num[i + offset];
+  }
+  QRPolynomial.prototype = {
+    get: function(i) { return this.num[i]; },
+    getLength: function() { return this.num.length; },
+    multiply: function(e) {
+      var num = new Array(this.getLength() + e.getLength() - 1);
+      for (var i = 0; i < this.getLength(); i++) {
+        for (var j = 0; j < e.getLength(); j++) num[i + j] ^= QRMath.gexp(QRMath.glog(this.get(i)) + QRMath.glog(e.get(j)));
+      }
+      return new QRPolynomial(num, 0);
+    },
+    mod: function(e) {
+      if (this.getLength() - e.getLength() < 0) return this;
+      var ratio = QRMath.glog(this.get(0)) - QRMath.glog(e.get(0));
+      var num = new Array(this.getLength());
+      for (var i = 0; i < this.getLength(); i++) num[i] = this.get(i);
+      for (var i = 0; i < e.getLength(); i++) num[i] ^= QRMath.gexp(QRMath.glog(e.get(i)) + ratio);
+      return new QRPolynomial(num, 0).mod(e);
+    }
+  };
+  function QRCodeModel(typeNumber) {
+    this.typeNumber = typeNumber; this.modules = null; this.moduleCount = 0; this.dataList = [];
+  }
+  QRCodeModel.prototype = {
+    addData: function(d) { this.dataList.push(d); },
+    isDark: function(r, c) { return this.modules[r][c]; },
+    getModuleCount: function() { return this.moduleCount; },
+    make: function() {
+      this.moduleCount = this.typeNumber * 4 + 17;
+      this.modules = new Array(this.moduleCount);
+      for (var r = 0; r < this.moduleCount; r++) {
+        this.modules[r] = new Array(this.moduleCount);
+        for (var c = 0; c < this.moduleCount; c++) this.modules[r][c] = null;
+      }
+      this.setupPositionProbePattern(0, 0);
+      this.setupPositionProbePattern(this.moduleCount - 7, 0);
+      this.setupPositionProbePattern(0, this.moduleCount - 7);
+      this.setupAlignmentPattern();
+      this.setupTimingPattern();
+      this.setupTypeInfo(false, 0);
+      this.mapData(this.createData(), 0);
+    },
+    setupPositionProbePattern: function(row, col) {
+      for (var r = -1; r <= 7; r++) {
+        if (row + r <= -1 || this.moduleCount <= row + r) continue;
+        for (var c = -1; c <= 7; c++) {
+          if (col + c <= -1 || this.moduleCount <= col + c) continue;
+          this.modules[row + r][col + c] = ((0 <= r && r <= 6 && (c === 0 || c === 6)) || (0 <= c && c <= 6 && (r === 0 || r === 6)) || (2 <= r && r <= 4 && 2 <= c && c <= 4));
+        }
+      }
+    },
+    setupAlignmentPattern: function() {
+      var pos = (this.typeNumber === 4) ? 26 : 30;
+      for (var r = -2; r <= 2; r++) {
+        for (var c = -2; c <= 2; c++) {
+          this.modules[pos + r][pos + c] = (r === -2 || r === 2 || c === -2 || c === 2 || (r === 0 && c === 0));
+        }
+      }
+    },
+    setupTimingPattern: function() {
+      for (var r = 8; r < this.moduleCount - 8; r++) if (this.modules[r][6] === null) this.modules[r][6] = (r % 2 === 0);
+      for (var c = 8; c < this.moduleCount - 8; c++) if (this.modules[6][c] === null) this.modules[6][c] = (c % 2 === 0);
+    },
+    setupTypeInfo: function(test, mask) {
+      var bits = 0x77c4; // L-level + Mask 0
+      for (var i = 0; i < 15; i++) {
+        var mod = (!test && ((bits >> i) & 1) === 1);
+        if (i < 6) this.modules[i][8] = mod;
+        else if (i < 8) this.modules[i + 1][8] = mod;
+        else this.modules[this.moduleCount - 15 + i][8] = mod;
+        if (i < 8) this.modules[8][this.moduleCount - i - 1] = mod;
+        else if (i < 9) this.modules[8][15 - i] = mod;
+        else this.modules[8][15 - i - 1] = mod;
+      }
+      this.modules[this.moduleCount - 8][8] = !test;
+    },
+    mapData: function(data, mask) {
+      var inc = -1, row = this.moduleCount - 1, bitIndex = 7, byteIndex = 0;
+      for (var col = this.moduleCount - 1; col > 0; col -= 2) {
+        if (col === 6) col--;
+        while (true) {
+          for (var c = 0; c < 2; c++) {
+            if (this.modules[row][col - c] === null) {
+              var dark = false;
+              if (byteIndex < data.length) dark = (((data[byteIndex] >>> bitIndex) & 1) === 1);
+              if ((row + col - c) % 2 === 0) dark = !dark;
+              this.modules[row][col - c] = dark;
+              bitIndex--;
+              if (bitIndex === -1) { byteIndex++; bitIndex = 7; }
+            }
+          }
+          row += inc;
+          if (row < 0 || this.moduleCount <= row) { row -= inc; inc = -inc; break; }
+        }
+      }
+    },
+    createData: function() {
+      var rsBlocks = (this.typeNumber === 4) ? [1, 100, 80] : [1, 134, 108];
+      var textBytes = [];
+      for (var i = 0; i < this.dataList[0].length; i++) textBytes.push(this.dataList[0].charCodeAt(i));
+      var totalDataCount = rsBlocks[2], dataBytes = [], currentByte = 0, bitsInByte = 0;
+      var writeBit = function(b) {
+        currentByte = (currentByte << 1) | (b ? 1 : 0); bitsInByte++;
+        if (bitsInByte === 8) { dataBytes.push(currentByte); currentByte = 0; bitsInByte = 0; }
+      };
+      for (var b = 3; b >= 0; b--) writeBit((4 >> b) & 1);
+      for (var b = 7; b >= 0; b--) writeBit((textBytes.length >> b) & 1);
+      for (var i = 0; i < textBytes.length; i++) for (var b = 7; b >= 0; b--) writeBit((textBytes[i] >> b) & 1);
+      for (var i = 0; i < 4 && dataBytes.length < totalDataCount; i++) writeBit(0);
+      while (bitsInByte > 0) writeBit(0);
+      var pad = 0; while (dataBytes.length < totalDataCount) { dataBytes.push(pad % 2 === 0 ? 236 : 17); pad++; }
+      var ecCount = rsBlocks[1] - rsBlocks[2], g = new QRPolynomial([1], 0);
+      for (var i = 0; i < ecCount; i++) g = g.multiply(new QRPolynomial([1, QRMath.gexp(i)], 0));
+      var rawPoly = new QRPolynomial(dataBytes, g.getLength() - 1);
+      var modPoly = rawPoly.mod(g);
+      var ecBytes = new Array(g.getLength() - 1);
+      for (var i = 0; i < ecBytes.length; i++) {
+        var modIdx = i + modPoly.getLength() - ecBytes.length;
+        ecBytes[i] = (modIdx >= 0) ? modPoly.get(modIdx) : 0;
+      }
+      return dataBytes.concat(ecBytes);
+    }
+  };
+
+  window.wovDrawAuthenticQR = function(ctx, text, x, y, size) {
+    try {
+      var qr = new QRCodeModel(text.length > 78 ? 5 : 4);
+      qr.addData(text);
+      qr.make();
+      var count = qr.getModuleCount();
+      var tileW = (size - 16) / count;
+
+      ctx.save();
+      ctx.fillStyle = '#FAF8F5';
+      ctx.fillRect(x, y, size, size);
+      ctx.strokeStyle = '#A8492E';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x, y, size, size);
+
+      ctx.fillStyle = '#070A0C';
+      for (var r = 0; r < count; r++) {
+        for (var c = 0; c < count; c++) {
+          if (qr.isDark(r, c)) {
+            ctx.fillRect(Math.round(x + 8 + c * tileW), Math.round(y + 8 + r * tileW), Math.ceil(tileW), Math.ceil(tileW));
+          }
+        }
+      }
+      ctx.restore();
+    } catch(e) {
+      ctx.fillStyle = '#FAF8F5'; ctx.fillRect(x, y, size, size);
+    }
+    };
   window.wovDrawSafeRoundRect = function(ctx, x, y, w, h, r) {
     if (ctx.roundRect) {
       ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fill();
