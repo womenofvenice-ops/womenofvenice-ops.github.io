@@ -1470,7 +1470,12 @@ const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
           <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:#166534;text-transform:uppercase;margin-bottom:6px;">✓ Stage 2 Directability Protocol Completed</div>
           <h3 style="font-family:'Playfair Display',serif;font-size:19px;color:#1C2B2C;margin:0 0 8px;">Multi-Take Calibration Verified (${delta} Delta)</h3>
           <p style="font-size:13px;color:#4B5563;margin:0 0 14px;line-height:1.5;">Candidate successfully applied Director Claudio's notes. Use the Take Switcher above the video player to review Take 1 vs. Take 2.</p>
-          <div style="display:inline-block;padding:6px 16px;background:#166534;color:#FFF;border-radius:99px;font-size:12px;font-weight:700;">👑 Tier-1 Directability Rating Active</div>
+          <div style="display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:4px;">
+            <div style="display:inline-block;padding:7px 16px;background:#166534;color:#FFF;border-radius:99px;font-size:12px;font-weight:700;">👑 Tier-1 Directability Rating Active</div>
+            <button type="button" onclick="window.wovOpenStoryExportModal()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 20px;background:linear-gradient(135deg, #A8492E, #7A2F1B);color:#FFF;border:none;border-radius:99px;font-size:12.5px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(168,73,46,0.35);transition:transform 0.15s ease;">
+              <span>📲</span><span>Share Directability Slate (Story / TikTok)</span>
+            </button>
+          </div>
         </div>
       `;
     }
@@ -2701,13 +2706,26 @@ function getDemoProfile_(key) {
 
   window.wovOpenStoryExportModal = function() {
     const modal = document.getElementById("wovStoryModal");
-    if (modal) {
-      modal.style.display = "flex";
-      if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(window.wovDrawStoryCard);
-      } else {
-        setTimeout(window.wovDrawStoryCard, 100);
-      }
+    if (!modal) return;
+    modal.style.display = "flex";
+
+    const canvas = document.getElementById("wovStoryCanvas");
+    const t = window._currentTalent || {};
+    const d = t.directabilityDelta || (t.takes && t.takes[1] && t.takes[1].progression ? { overall_delta_pct: 14 } : null);
+    const talentName = String(t.name || t.talent || new URLSearchParams(window.location.search).get("name") || "Elena Cone").trim();
+    const candidateId = new URLSearchParams(window.location.search).get("cid") || new URLSearchParams(window.location.search).get("id") || "";
+
+    // 🛡️ Use hardened WovViralEngine if available, fallback to legacy wovDrawStoryCard
+    if (window.WovViralEngine && typeof window.WovViralEngine.renderEditorialSlate === "function") {
+      window.WovViralEngine.renderEditorialSlate(canvas, {
+        talentName: talentName,
+        candidateId: candidateId,
+        delta: d || { overall_delta_pct: 14 }
+      });
+    } else if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(window.wovDrawStoryCard);
+    } else {
+      setTimeout(window.wovDrawStoryCard, 100);
     }
   };
 
@@ -2722,7 +2740,7 @@ function getDemoProfile_(key) {
     const t = window._currentTalent || {};
     const safeName = String(t.name || "Talent").replace(/\s+/g, "_");
     const link = document.createElement("a");
-    link.download = safeName + "_Studio_Calibration_Story.png";
+    link.download = safeName + "_Directability_Slate.png";
     link.href = canvas.toDataURL("image/png");
     link.click();
   };
@@ -2730,18 +2748,28 @@ function getDemoProfile_(key) {
   window.wovShareStoryCard = function() {
     const canvas = document.getElementById("wovStoryCanvas");
     if (!canvas) return;
-    canvas.toBlob(function(blob) {
-      const file = new File([blob], "studio_calibration.png", { type: "image/png" });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({
-          files: [file],
-          title: "Directorial Calibration Slate",
-          text: "Certified Directorial Calibration with Director Claudio at @womenofvenice 🎬"
-        }).catch(err => console.log("Share skipped:", err));
-      } else {
-        window.wovDownloadStoryPng();
-      }
-    }, "image/png");
+    const t = window._currentTalent || {};
+    const talentName = String(t.name || t.talent || new URLSearchParams(window.location.search).get("name") || "Elena Cone").trim();
+    const candidateId = new URLSearchParams(window.location.search).get("cid") || new URLSearchParams(window.location.search).get("id") || "";
+
+    // 🛡️ Fast-path WebKit gesture-safe share via WovViralEngine
+    if (window.WovViralEngine && typeof window.WovViralEngine.shareOrDownloadSlate === "function") {
+      window.WovViralEngine.shareOrDownloadSlate(canvas, {
+        talentName: talentName,
+        candidateId: candidateId
+      });
+    } else {
+      // Legacy fallback
+      canvas.toBlob(function(blob) {
+        const file = new File([blob], "directability_slate.png", { type: "image/png" });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          navigator.share({ files: [file], title: talentName + " • Directability Audit" })
+            .catch(err => console.log("Share skipped:", err));
+        } else {
+          window.wovDownloadStoryPng();
+        }
+      }, "image/png");
+    }
   };
 </script>
 
