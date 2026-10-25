@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Directorial Talent Roster · Women of Venice Casting Desk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #080C0E;
+      --card-bg: #10161D;
+      --card-inner: #0B1015;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(168, 73, 46, 0.5);
+      --ink: #FAF8F5;
+      --ink-muted: #94A3B8;
+      --red: #A8492E;
+      --red-hover: #833722;
+      --sand: #F6E4B8;
+      --emerald: #4ADE80;
+      --font-serif: 'Playfair Display', Georgia, serif;
+      --font-sans: 'Inter', -apple-system, sans-serif;
+      --font-mono: 'Space Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      padding: 0 0 80px 0;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* 🏛️ Sticky Top Navigation */
+    .nav-bar {
+      border-bottom: 1px solid var(--border);
+      padding: 16px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(8, 12, 14, 0.85);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 99;
+    }
+    .brand-mark {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: var(--red);
+      text-transform: uppercase;
+      text-decoration: none;
+    }
+    .availability-pulse {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--emerald);
+      background: rgba(74, 222, 128, 0.08);
+      border: 1px solid rgba(74, 222, 128, 0.2);
+      padding: 4px 12px;
+      border-radius: 99px;
+    }
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--emerald);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--emerald);
+    }
+
+    /* 🎭 Hero Header */
+    .hero {
+      max-width: 1240px;
+      margin: 48px auto 36px;
+      padding: 0 24px;
+      text-align: center;
+    }
+    .hero-eyebrow {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: var(--sand);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .hero-title {
+      font-family: var(--font-serif);
+      font-size: clamp(30px, 5vw, 48px);
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.15;
+      margin-bottom: 14px;
+    }
+    .hero-desc {
+      font-size: 14px;
+      color: var(--ink-muted);
+      max-width: 620px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* 🎛️ Control Deck */
+    .control-deck {
+      max-width: 1240px;
+      margin: 0 auto 36px;
+      padding: 0 24px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+    .filter-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .filter-pill {
+      background: var(--card-bg);
+      color: var(--ink-muted);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .filter-pill.active, .filter-pill:hover {
+      background: var(--red);
+      color: #FFF;
+      border-color: var(--red);
+      box-shadow: 0 4px 14px rgba(168, 73, 46, 0.3);
+    }
+    .search-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--ink);
+      padding: 9px 18px;
+      border-radius: 99px;
+      font-size: 13px;
+      outline: none;
+      width: 260px;
+      transition: border-color 0.2s;
+    }
+    .search-box:focus {
+      border-color: var(--red);
+    }
+
+    /* 🎬 Performer Cards Grid (Fluid Overflow-Safe Layout) */
+    .catalog-grid {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+      gap: 28px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.45);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-hover);
+    }
+
+    /* 📺 Video Viewport & Facade (Poster Backdrop) */
+    .video-viewport {
+      width: 100%;
+      height: 230px;
+      background: #000;
+      position: relative;
+      overflow: hidden;
+    }
+    .video-facade {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 2;
+      transition: opacity 0.2s ease;
+    }
+    .video-facade:hover .play-btn {
+      transform: scale(1.08);
+      background: var(--red);
+    }
+    .play-btn {
+      width: 54px;
+      height: 54px;
+      background: rgba(168, 73, 46, 0.9);
+      color: #FFF;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      padding-left: 4px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      transition: transform 0.2s ease, background 0.2s ease;
+      margin-bottom: 8px;
+    }
+    .facade-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--sand);
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    }
+    .video-player-frame {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    /* Segmented Take Tabs */
+    .take-nav {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 5;
+      display: flex;
+      gap: 6px;
+    }
+    .take-tab {
+      background: rgba(8, 12, 14, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: var(--ink-muted);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 10.5px;
+      font-weight: 700;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+      transition: all 0.15s;
+    }
+    .take-tab.active {
+      background: var(--red);
+      color: #FFF;
+      border-color: var(--red);
+    }
+
+    /* 📋 Card Content Area */
+    .card-body {
+      padding: 22px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+    .talent-title {
+      font-family: var(--font-serif);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .delta-pill {
+      background: rgba(74, 222, 128, 0.12);
+      color: var(--emerald);
+      border: 1px solid rgba(74, 222, 128, 0.25);
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: 11.5px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      white-space: nowrap;
+    }
+    .archetype-tag {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--sand);
+      margin-bottom: 12px;
+    }
+    .note-box {
+      background: var(--card-inner);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-left: 3px solid var(--red);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12.5px;
+      color: var(--ink-muted);
+      line-height: 1.5;
+      margin-bottom: 18px;
+      flex: 1;
+    }
+
+    /* 🚀 Action Buttons Suite */
+    .card-actions {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 10px;
+      margin-top: auto;
+    }
+    .btn-hold {
+      background: var(--red);
+      color: #FFF;
+      border: none;
+      padding: 11px 16px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s ease;
+    }
+    .btn-hold:hover {
+      background: var(--red-hover);
+    }
+    .btn-secondary {
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid var(--border);
+      padding: 11px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* 💼 Modal Window */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 10, 12, 0.88);
+      z-index: 99999;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+    }
+    .modal-window {
+      background: #FFF;
+      color: #1C2B2C;
+      border-radius: 16px;
+      max-width: 480px;
+      width: 100%;
+      padding: 28px 24px;
+      position: relative;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+    }
+    .modal-close {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: #94A3B8;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+    }
+    .modal-eyebrow {
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: var(--red);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .modal-title {
+      font-family: var(--font-serif);
+      font-size: 22px;
+      font-weight: 700;
+      color: #1C2B2C;
+      margin-bottom: 6px;
+    }
+    .modal-desc {
+      font-size: 12.5px;
+      color: #64748B;
+      margin-bottom: 18px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .form-field {
+      margin-bottom: 10px;
+    }
+    .form-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #475569;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .form-input {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid #CBD5E1;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+      font-family: inherit;
+    }
+    .form-input:focus {
+      border-color: var(--red);
+    }
+    .btn-submit-inquiry {
+      width: 100%;
+      background: var(--red);
+      color: #FFF;
+      border: none;
+      padding: 12px;
+      border-radius: 99px;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-top: 6px;
+    }
+    .btn-submit-inquiry:hover {
+      background: var(--red-hover);
+    }
+    .status-alert {
+      display: none;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 12px;
+      padding: 8px;
+      border-radius: 6px;
+    }
+
+    /* 📱 Responsive Mobile Adjustments */
+    @media (max-width: 480px) {
+      body { padding: 0 0 60px 0; }
+      .nav-bar { padding: 12px 16px; }
+      .hero { margin: 32px auto 24px; padding: 0 16px; }
+      .control-deck { padding: 0 16px; margin-bottom: 24px; }
+      .search-box { width: 100%; }
+      .catalog-grid { padding: 0 16px; gap: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 🏛️ Top Navigation -->
+  <nav class="nav-bar">
+    <a href="#" class="brand-mark">Women of Venice · Studio Casting Desk</a>
+    <div class="availability-pulse">
+      <span class="pulse-dot"></span>
+      <span>Directorial Availability Live</span>
+    </div>
+  </nav>
+
+  <!-- 🎭 Editorial Hero Header -->
+  <header class="hero">
+    <div class="hero-eyebrow">Accredited Casting Registry · Venice, Italy</div>
+    <h1 class="hero-title">Directorial Roster &amp; Soft-Hold Registry</h1>
+    <p class="hero-desc">Curated European cinema leads and verified commercial creators with certified multi-take Directability Deltas under Director Claudio.</p>
+  </header>
+
+  <!-- 🎛️ Interactive Filter & Search Controls -->
+  <section class="control-deck">
+    <div class="filter-group">
+      <button class="filter-pill active" data-filter="all">All Talents</button>
+      <button class="filter-pill" data-filter="high_delta">Top Directability (+10%)</button>
+      <button class="filter-pill" data-filter="cinema">Feature Cinema</button>
+      <button class="filter-pill" data-filter="creator">Commercial Creators</button>
+    </div>
+    <input type="text" id="searchInput" class="search-box" placeholder="Search talent or archetype...">
+  </section>
+
+  <!-- 🎬 Performer Cards Grid -->
+  <main class="catalog-grid" id="rosterGrid">
+    <div style="grid-column: 1/-1; text-align: center; color: var(--ink-muted); padding: 60px 0;">
+      ⏳ Synchronizing certified studio roster...
+    </div>
+  </main>
+
+  <!-- 💼 Phase 2C Soft-Hold Booking Modal (Connected to CASTING_DEALS) -->
+  <div id="bookingModalBackdrop" class="modal-backdrop">
+    <div class="modal-window">
+      <button type="button" class="modal-close" id="modalCloseBtn">&times;</button>
+      <div class="modal-eyebrow">Directorial Desk · Availability &amp; Booking</div>
+      <h3 class="modal-title" id="modalTitle">Check Availability</h3>
+      <p class="modal-desc">Submit commercial shooting dates or project scope directly to Director Claudio and the studio desk:</p>
+      
+      <div id="bookingStatusAlert" class="status-alert"></div>
+
+      <form id="bookingInquiryForm">
+        <input type="hidden" id="inquiryTalentName">
+        
+        <div class="form-grid">
+          <div>
+            <label class="form-label">Production / Entity *</label>
+            <input type="text" id="inquiryCompany" class="form-input" placeholder="e.g. A24 / Netflix" required>
+          </div>
+          <div>
+            <label class="form-label">Contact Lead *</label>
+            <input type="text" id="inquiryContactName" class="form-input" placeholder="Producer / Casting" required>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label class="form-label">Official Email *</label>
+          <input type="email" id="inquiryEmail" class="form-input" placeholder="producer@agency.com" required>
+        </div>
+
+        <div class="form-grid">
+          <div>
+            <label class="form-label">Project Format</label>
+            <select id="inquiryFormat" class="form-input" style="background:#FFF;">
+              <option value="Feature Film / Arthouse">Feature Film / Arthouse</option>
+              <option value="Commercial / Luxury Campaign" selected>Commercial / Luxury Campaign</option>
+              <option value="Episodic Series (Streaming)">Episodic Series (Streaming)</option>
+              <option value="UGC / Brand Sponsorship">UGC / Brand Sponsorship</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Budget Tier</label>
+            <select id="inquiryBudget" class="form-input" style="background:#FFF;">
+              <option value="Under €2,500">Under €2,500</option>
+              <option value="€2,500 – €10,000" selected>€2,500 – €10,000</option>
+              <option value="€10,000+ Production Scale">€10,000+ Production Scale</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label class="form-label">Shooting Dates / Callback Window</label>
+          <input type="text" id="inquiryDates" class="form-input" placeholder="e.g. Nov 14–18, Venice or Milan">
+        </div>
+
+        <div class="form-field">
+          <label class="form-label">Project Scope / Creative Brief</label>
+          <textarea id="inquiryMessage" class="form-input" rows="2" placeholder="Role description, casting parameters, or directorial requirements..." style="resize:none;"></textarea>
+        </div>
+
+        <button type="submit" id="inquirySubmitBtn" class="btn-submit-inquiry">
+          🚀 Dispatch Availability Inquiry ↗
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // ⚙️ BACKEND WEB APP CONFIGURATION
+    const BACKEND_URL = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
+
+    let _rosterData = [];
+    let _activeFilter = 'all';
+
+    // 🛡️ XSS & Apostrophe Defense (Safe Data Attributes)
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // 🛡️ Extract Video Thumbnail (Tokenized against chat link-stripping)
+    function getThumbnailUrl(url) {
+      if (!url) return '';
+      const ytMatch = url.match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|shorts\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+      if (ytMatch) {
+        const host = ['img', 'youtube', 'com'].join('.');
+        return 'https://' + host + '/vi/' + ytMatch[1] + '/hqdefault.jpg';
+      }
+      return '';
+    }
+
+    // 🛡️ Normalize Watch Links & Inject Autoplay=1 (Tokenized against chat link-stripping)
+    function resolvePlayerUrl(rawUrl) {
+      if (!rawUrl) return '';
+
+      // 1. YouTube & Shorts Normalization (Auto-injects autoplay=1)
+      const ytMatch = rawUrl.match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|shorts\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+      if (ytMatch) {
+        const host = ['www', 'youtube', 'com'].join('.');
+        return 'https://' + host + '/embed/' + ytMatch[1] + '?autoplay=1&rel=0&modestbranding=1';
+      }
+
+      // 2. Vimeo Normalization (Injects autoplay=1 & preserves security hash ?h=)
+      const vimeoMatch = rawUrl.match(/(?:vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/[^\/]+\/videos\/|album\/\d+\/video\/|manage\/videos\/|video\/|)(\d+)(?:\/([a-zA-Z0-9]+))?|player\.vimeo\.com\/video\/(\d+)(?:[?&]h=([a-zA-Z0-9]+))?)/);
+      if (vimeoMatch) {
+        const vId = vimeoMatch[1] || vimeoMatch[3];
+        const vHash = vimeoMatch[2] || vimeoMatch[4];
+        const host = ['player', 'vimeo', 'com'].join('.');
+        return 'https://' + host + '/video/' + vId + '?autoplay=1&dnt=1' + (vHash ? '&h=' + vHash : '');
+      }
+
+      // 3. Google Drive Preview Embed
+      if (rawUrl.includes('drive.google.com')) {
+        const driveMatch = rawUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || rawUrl.match(/id=([a-zA-Z0-9_-]+)/);
+        if (driveMatch) {
+          const host = ['drive', 'google', 'com'].join('.');
+          return 'https://' + host + '/file/d/' + driveMatch[1] + '/preview';
+        }
+      }
+
+      return rawUrl;
+    }
+
+    // 1. Fetch Roster from Code.gs Endpoint
+    async function initRoster() {
+      try {
+        const res = await fetch(BACKEND_URL + "?action=getRoster");
+        const data = await res.json();
+        
+        if (data && data.ok && Array.isArray(data.roster)) {
+          _rosterData = data.roster;
+          renderCatalog();
+        } else {
+          document.getElementById('rosterGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#F87171;padding:60px 0;">⚠️ No roster records found.</div>';
+        }
+      } catch (err) {
+        document.getElementById('rosterGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#F87171;padding:60px 0;">📡 Network error connecting to studio desk. Please reload.</div>';
+      }
+    }
+
+    // 2. Render Cards with the Poster Facade Pattern
+    function renderCatalog() {
+      const q = document.getElementById('searchInput').value.toLowerCase().trim();
+      const grid = document.getElementById('rosterGrid');
+
+      // 🛡️ Edit 1: Broadened Archetype Keyword Matching
+      const filtered = _rosterData.filter(t => {
+        const name = (t.name || '').toLowerCase();
+        const arch = (t.archetype || '').toLowerCase();
+        const matchesQuery = !q || name.includes(q) || arch.includes(q);
+        if (!matchesQuery) return false;
+
+        if (_activeFilter === 'high_delta') return (t.deltaPercent || 0) >= 10;
+        if (_activeFilter === 'cinema') return arch.includes('cinema') || arch.includes('feature') || arch.includes('dramatic') || arch.includes('arthouse') || arch.includes('episodic');
+        if (_activeFilter === 'creator') return arch.includes('creator') || arch.includes('viral') || arch.includes('commercial') || arch.includes('ugc') || arch.includes('brand');
+        return true;
+      });
+
+      if (!filtered.length) {
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--ink-muted);padding:60px 0;">No talent matching current criteria.</div>';
+        return;
+      }
+
+      grid.innerHTML = filtered.map(t => {
+        const safeName = escapeHtml(t.name);
+        const safeArch = escapeHtml(t.archetype || 'Commercial Lead');
+        const safeNote = escapeHtml(t.coachingNote ? t.coachingNote.slice(0, 115) + '...' : (t.advisoryRating || 'Director Approved'));
+        const delta = t.deltaPercent || 11;
+        const take2 = t.take2VideoUrl || '';
+        const take1 = t.take1VideoUrl || '';
+        const hasTake2 = Boolean(t.hasTake2 && take2);
+
+        // Poster Image Extraction
+        const posterImg = getThumbnailUrl(take2 || take1);
+        const facadeBgStyle = posterImg 
+          ? `background: linear-gradient(180deg, rgba(7,11,14,0.3) 0%, rgba(7,11,14,0.85) 100%), url('${posterImg}') center/cover no-repeat;`
+          : `background: linear-gradient(145deg, #121922, #070B0E);`;
+
+        return `
+          <div class="card" data-name="${safeName}">
+            <div class="video-viewport" data-take1="${escapeHtml(take1)}" data-take2="${escapeHtml(take2)}">
+              ${hasTake2 ? `
+                <div class="take-nav">
+                  ${take1 ? `<button type="button" class="take-tab" data-take="1">Take 1</button>` : ''}
+                  <button type="button" class="take-tab active" data-take="2">Take 2 (Retake)</button>
+                </div>
+              ` : ''}
+              
+              <!-- 🎬 Poster Facade: High-Res Backdrop, Auto-Mounts on Click -->
+              <div class="video-facade" style="${facadeBgStyle}" data-target-take="${hasTake2 ? 2 : 1}">
+                <div class="play-btn">▶</div>
+                <div class="facade-label">Preview Audition Take</div>
+              </div>
+              <div class="video-player-frame"></div>
+            </div>
+
+            <div class="card-body">
+              <div class="card-header">
+                <h2 class="talent-title">${safeName}</h2>
+                <span class="delta-pill">+${delta}% Lift</span>
+              </div>
+              <div class="archetype-tag">🎭 ${safeArch}</div>
+              <div class="note-box">"${safeNote}"</div>
+              
+              <div class="card-actions">
+                <button type="button" class="btn-hold" data-action="hold" data-name="${safeName}">
+                  Check Availability
+                </button>
+                <a href="screener.html?name=${encodeURIComponent(t.name)}" class="btn-secondary" target="_blank" rel="noopener">
+                  Full Dossier ↗
+                </a>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 3. Facade Click Handler: Single-Active-Player Enforcement
+    document.addEventListener('click', function(e) {
+      // Handle Facade Play Click
+      const facade = e.target.closest('.video-facade');
+      if (facade) {
+        const viewport = facade.closest('.video-viewport');
+        const takeNum = parseInt(facade.getAttribute('data-target-take'), 10);
+        mountPlayer(viewport, takeNum);
+        facade.style.display = 'none';
+        return;
+      }
+
+      // Handle Take Switcher Tabs inside Card
+      const tab = e.target.closest('.take-tab');
+      if (tab) {
+        const viewport = tab.closest('.video-viewport');
+        const takeNum = parseInt(tab.getAttribute('data-take'), 10);
+        viewport.querySelectorAll('.take-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        // Hide facade and mount selected take
+        const cardFacade = viewport.querySelector('.video-facade');
+        if (cardFacade) cardFacade.style.display = 'none';
+        mountPlayer(viewport, takeNum);
+        return;
+      }
+
+      // Handle Soft Hold Modal Trigger (Safe Data Attributes)
+      const holdBtn = e.target.closest('.btn-hold');
+      if (holdBtn) {
+        const name = holdBtn.getAttribute('data-name');
+        openSoftHoldModal(name);
+        return;
+      }
+    });
+
+    // 4. Media Resolver with Single-Active-Player Policy (Stops Competing Audio)
+    function mountPlayer(viewport, takeNum) {
+      // 🛡️ Edit 2: Stop any other video playing across the catalog to prevent audio overlap
+      document.querySelectorAll('.video-viewport').forEach(vp => {
+        if (vp !== viewport) {
+          const activeFrame = vp.querySelector('.video-player-frame');
+          if (activeFrame && activeFrame.innerHTML) {
+            activeFrame.innerHTML = ''; // Unmounts iframe/video immediately, killing audio
+            const oldFacade = vp.querySelector('.video-facade');
+            if (oldFacade) oldFacade.style.display = 'flex'; // Restores thumbnail facade
+          }
+        }
+      });
+
+      const frameContainer = viewport.querySelector('.video-player-frame');
+      const rawUrl = takeNum === 2 ? viewport.getAttribute('data-take2') : viewport.getAttribute('data-take1');
+
+      if (!rawUrl) {
+        frameContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748B;font-size:12px;">🔒 Master Take Restricted</div>';
+        return;
+      }
+
+      // Automatically detects direct MP4 or future Cloudflare Stream / Mux HLS
+      const isNativeStream = /\.(mp4|webm|mov)(\?.*)?$/i.test(rawUrl) || rawUrl.includes('cloudflarestream.com');
+      if (isNativeStream) {
+        frameContainer.innerHTML = `<video src="${rawUrl}" controls autoplay playsinline style="width:100%;height:100%;object-fit:cover;background:#000;"></video>`;
+        return;
+      }
+
+      // Normalize embed and inject autoplay=1
+      const normalizedEmbedUrl = resolvePlayerUrl(rawUrl);
+      frameContainer.innerHTML = `<iframe src="${normalizedEmbedUrl}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen style="width:100%;height:100%;border:none;"></iframe>`;
+    }
+
+    // 5. Filter Pill Handlers
+    document.querySelectorAll('.filter-pill').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        _activeFilter = this.getAttribute('data-filter');
+        renderCatalog();
+      });
+    });
+
+    document.getElementById('searchInput').addEventListener('input', renderCatalog);
+
+    // 6. Modal Controls & Phase 2C Soft-Hold Booking Engine (Body Scroll-Lock Protected)
+    const modalBackdrop = document.getElementById('bookingModalBackdrop');
+    
+    // 🛡️ Edit 3: Lock body scroll when modal opens
+    function openSoftHoldModal(talentName) {
+      document.getElementById('inquiryTalentName').value = talentName;
+      document.getElementById('modalTitle').innerText = "Check Availability: " + talentName;
+      document.getElementById('bookingStatusAlert').style.display = 'none';
+      modalBackdrop.style.display = 'flex';
+      document.body.style.overflow = 'hidden'; // Prevents background mobile scroll bleed
+    }
+
+    // Centralized modal close routine restores scrolling
+    function closeModal() {
+      modalBackdrop.style.display = 'none';
+      document.body.style.overflow = ''; // Restores background scroll
+    }
+
+    document.getElementById('modalCloseBtn').onclick = closeModal;
+    modalBackdrop.onclick = (e) => { if (e.target === modalBackdrop) closeModal(); };
+
+    // Standard ESC key listener for desktop accessibility
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modalBackdrop.style.display === 'flex') {
+        closeModal();
+      }
+    });
+
+    // Form Submit Dispatches to verified Phase 2C b2bBookingInquiry route
+    document.getElementById('bookingInquiryForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const btn = document.getElementById('inquirySubmitBtn');
+      const alertBox = document.getElementById('bookingStatusAlert');
+      const userMessage = document.getElementById('inquiryMessage').value.trim();
+      
+      const payload = {
+        action: "b2bBookingInquiry",
+        talentName: document.getElementById('inquiryTalentName').value,
+        company: document.getElementById('inquiryCompany').value.trim(),
+        contactName: document.getElementById('inquiryContactName').value.trim(),
+        email: document.getElementById('inquiryEmail').value.trim(),
+        projectType: document.getElementById('inquiryFormat').value,
+        budget: document.getElementById('inquiryBudget').value,
+        dates: document.getElementById('inquiryDates').value.trim(),
+        message: userMessage || "Soft-Hold inquiry registered via B2B Commercial Catalog."
+      };
+
+      btn.disabled = true;
+      btn.innerText = "⏳ Dispatching to Studio Desk...";
+
+      try {
+        const res = await fetch(BACKEND_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (data && data.ok) {
+          alertBox.style.background = "#DCFCE7";
+          alertBox.style.color = "#166534";
+          alertBox.innerText = `✓ Hold registered. Deal ID: ${data.dealId || 'ACTIVE'}`;
+          alertBox.style.display = 'block';
+          btn.innerText = "✓ Dispatched to Desk";
+          setTimeout(() => { 
+            closeModal(); 
+            btn.disabled = false; 
+            btn.innerText = "🚀 Dispatch Availability Inquiry ↗"; 
+          }, 2400);
+        } else {
+          throw new Error(data.error || "Unable to process inquiry.");
+        }
+      } catch (err) {
+        alertBox.style.background = "#FEE2E2";
+        alertBox.style.color = "#991B1B";
+        alertBox.innerText = "⚠️ Submission error: " + err.message;
+        alertBox.style.display = 'block';
+        btn.disabled = false;
+        btn.innerText = "🚀 Dispatch Availability Inquiry ↗";
+      }
+    });
+
+    window.onload = initRoster;
+  </script>
+</body>
+</html>
