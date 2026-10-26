@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Studio Prompter & Scene Partner · Women of Venice</title>
+  
+  <!-- 🎬 High-Status Studio Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
+  <link rel="alternate icon" href="/favicon.ico">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,700;1,400&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-void: #06090F;
+      --bg-card: rgba(11, 17, 30, 0.88);
+      --red: #A8492E;
+      --gold: #F6E4B8;
+      --green: #4ADE80;
+      --yellow: #FACC15;
+      --danger: #EF4444;
+      --ink: #FAF8F5;
+      --muted: #94A3B8;
+      --border: rgba(255, 255, 255, 0.14);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0; padding: 0; width: 100%; height: 100dvh;
+      background: var(--bg-void); color: var(--ink);
+      font-family: 'Inter', -apple-system, sans-serif;
+      overflow: hidden;
+    }
+
+    /* Full-Bleed Camera Viewport */
+    #cameraContainer {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: #000; overflow: hidden; z-index: 1;
+      cursor: pointer;
+    }
+    #cameraVideo {
+      width: 100%; height: 100%; object-fit: cover;
+      transform: scaleX(-1); /* Default selfie mirror */
+      pointer-events: none;
+    }
+
+    /* Eyeline Prompter Floating HUD */
+    #prompterRibbon {
+      position: absolute; top: 24px; z-index: 10;
+      width: 320px; max-width: 90vw;
+      background: rgba(11, 17, 30, 0.84);
+      backdrop-filter: blur(12px);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      box-shadow: 0 16px 36px rgba(0,0,0,0.6);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: none;
+      pointer-events: auto;
+    }
+    /* 3 Eyeline Axis Positions */
+    #prompterRibbon.axis-center { left: 50%; transform: translateX(-50%); text-align: center; }
+    #prompterRibbon.axis-left   { left: 24px; transform: none; text-align: left; }
+    #prompterRibbon.axis-right  { right: 24px; left: auto; transform: none; text-align: left; }
+
+    .speaker-tag {
+      font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800;
+      letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px;
+    }
+    .speaker-tag.is-partner { color: #38BDF8; }
+    .speaker-tag.is-actor   { color: var(--gold); }
+
+    .line-text {
+      font-size: 19px; line-height: 1.45; font-weight: 600;
+      color: #CBD5E1; transition: color 0.2s;
+    }
+    .line-text.active-actor {
+      color: var(--ink);
+      text-shadow: 0 0 12px rgba(246, 228, 184, 0.4);
+    }
+    .line-text.active-partner {
+      color: #93C5FD;
+    }
+
+    /* Pacing Metronome Pulse Line */
+    .pace-meter-bar {
+      height: 3px; width: 100%; background: rgba(255,255,255,0.1);
+      border-radius: 99px; margin-top: 12px; overflow: hidden;
+    }
+    .pace-meter-fill {
+      height: 100%; width: 0%; background: var(--gold);
+    }
+
+    /* Top Studio Header Bar */
+    .studio-header {
+      position: absolute; top: 0; left: 0; width: 100%; height: 50px;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0 16px; background: linear-gradient(180deg, rgba(6,9,15,0.9), transparent);
+      z-index: 20; pointer-events: none;
+    }
+    .studio-header * { pointer-events: auto; }
+    .studio-brand {
+      font-size: 11.5px; font-weight: 800; letter-spacing: 1.5px;
+      color: var(--gold); text-transform: uppercase;
+    }
+
+    /* Decibel Audio Peak HUD */
+    .audio-meter-wrap {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(11, 17, 30, 0.7); backdrop-filter: blur(8px);
+      padding: 5px 12px; border-radius: 99px; border: 1px solid var(--border);
+    }
+    .audio-bar-track {
+      width: 60px; height: 6px; background: rgba(255,255,255,0.15);
+      border-radius: 99px; overflow: hidden; position: relative;
+    }
+    .audio-bar-level {
+      height: 100%; width: 0%; background: var(--green);
+      transition: width 0.05s ease;
+    }
+    .audio-db-label {
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      font-weight: 700; min-width: 48px; text-align: right;
+    }
+    .clip-alert {
+      font-size: 10px; font-weight: 800; background: var(--danger);
+      color: #FFF; padding: 2px 6px; border-radius: 4px; display: none;
+    }
+
+    /* Bottom Floating Control Bar */
+    .studio-controls {
+      position: absolute; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 10px; z-index: 20;
+      background: rgba(11, 17, 30, 0.88); backdrop-filter: blur(14px);
+      padding: 8px 14px; border-radius: 99px; border: 1.5px solid var(--border);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6); max-width: 95vw; overflow-x: auto;
+    }
+    .studio-btn {
+      background: #162235; color: var(--ink); border: 1px solid var(--border);
+      padding: 8px 16px; border-radius: 99px; font-size: 12.5px; font-weight: 700;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+      white-space: nowrap; transition: all 0.2s;
+    }
+    .studio-btn:hover { background: #22344D; }
+    .studio-btn.primary { background: var(--red); border-color: transparent; }
+    .studio-btn.primary:hover { background: #BF5336; }
+    .studio-btn.active { border-color: #38BDF8; background: #1E293B; color: #FFF; }
+
+    /* Script Editor & Settings Drawer */
+    #scriptModal {
+      display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(6, 9, 15, 0.85); backdrop-filter: blur(12px);
+      z-index: 100; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-sheet {
+      background: #0B111E; border: 1.5px solid var(--border);
+      border-radius: 18px; max-width: 580px; width: 100%; padding: 26px;
+      max-height: 90vh; overflow-y: auto; color: var(--ink);
+    }
+    textarea.script-area {
+      width: 100%; height: 200px; background: #162235; border: 1px solid #334155;
+      color: #FFF; padding: 14px; border-radius: 8px; font-family: 'JetBrains Mono', monospace;
+      font-size: 13px; line-height: 1.6; resize: vertical; margin: 12px 0;
+    }
+    select.studio-select {
+      background: #162235; border: 1px solid #334155; color: #FFF;
+      padding: 9px 12px; border-radius: 6px; font-size: 13px; width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. Full-Bleed Live Camera Container (Tappable background advances dialogue) -->
+  <div id="cameraContainer">
+    <video id="cameraVideo" autoplay playsinline muted></video>
+  </div>
+
+  <!-- 2. Top Header HUD -->
+  <div class="studio-header">
+    <div class="studio-brand">WOMEN OF VENICE • DIRECTORIAL PROMPTER</div>
+    
+    <!-- Real-Time Decibel Meter HUD -->
+    <div class="audio-meter-wrap">
+      <span class="clip-alert" id="clipBadge">⚠️ CLIP</span>
+      <div class="audio-bar-track">
+        <div class="audio-bar-level" id="audioBarLevel"></div>
+      </div>
+      <span class="audio-db-label" id="audioDbText">-∞ dB</span>
+    </div>
+  </div>
+
+  <!-- 3. Floating Eyeline Prompter Ribbon -->
+  <div id="prompterRibbon" class="axis-center">
+    <div id="speakerTag" class="speaker-tag is-partner">SCENE PARTNER</div>
+    <div id="lineText" class="line-text">Press "Start Camera" to initialize the lens engine.</div>
+    <div class="pace-meter-bar">
+      <div class="pace-meter-fill" id="paceBar"></div>
+    </div>
+  </div>
+
+  <!-- 4. Floating Control Deck -->
+  <div class="studio-controls">
+    <button type="button" id="startCamBtn" class="studio-btn primary" onclick="window.wovInitStudioSession()">
+      🎥 Start Camera & Mic
+    </button>
+    <button type="button" id="startPrompterBtn" class="studio-btn" onclick="window.wovToggleRehearsal()" style="display:none;">
+      ▶ Start Rehearsal
+    </button>
+    <button type="button" id="nextCueBtn" class="studio-btn" onclick="window.wovAdvanceCue()" style="display:none;">
+      Next Cue ➔
+    </button>
+    
+    <!-- Eyeline Position Toggle -->
+    <button type="button" class="studio-btn" onclick="window.wovCycleEyeline()">
+      👁️ Eyeline: <span id="eyelineLabel">Center</span>
+    </button>
+    
+    <!-- Pacing Cadence Toggle -->
+    <button type="button" class="studio-btn" onclick="window.wovCyclePacing()">
+      ⏱️ <span id="pacingLabel">Cinema (105 WPM)</span>
+    </button>
+
+    <button type="button" class="studio-btn" onclick="window.wovToggleMirror()">
+      🪞 Mirror
+    </button>
+    <button type="button" class="studio-btn" onclick="window.wovOpenScriptDrawer()">
+      📝 Script
+    </button>
+    <button type="button" class="studio-btn" onclick="window.wovExitToScreener()">
+      🎬 Return to Screener
+    </button>
+  </div>
+
+  <!-- 5. Script & Character Configuration Drawer -->
+  <div id="scriptModal">
+    <div class="modal-sheet">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 style="font-family:'Playfair Display',Georgia,serif;font-size:20px;margin:0;">Audition Script & Character Setup</h3>
+        <button type="button" onclick="window.wovCloseScriptDrawer()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;">✕</button>
+      </div>
+
+      <p style="font-size:12.5px;color:var(--muted);margin:0 0 10px;">
+        Paste your screenplay dialogue. The engine supports colon format (<code>CHARACTER: Line</code>) and Hollywood sides format (<code>CHARACTER</code> on line 1, dialogue on line 2).
+      </p>
+
+      <textarea id="scriptTextarea" class="script-area">
+DETECTIVE: State your name and current address for the official studio record.
+CANDIDATE: I was in Venice. Watching the tide at the Dorsoduro dock.
+DETECTIVE: Alone?
+CANDIDATE: In Venice, you are never truly alone.
+DETECTIVE: What time did the water break past the marble threshold?
+CANDIDATE: Right before the third siren began.
+      </textarea>
+
+      <div style="margin-bottom:16px;">
+        <label style="font-size:12px;font-weight:700;color:var(--gold);display:block;margin-bottom:6px;">Select "My Character" (Lines You Will Deliver):</label>
+        <select id="characterSelect" class="studio-select"></select>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;">
+        <button type="button" class="studio-btn primary" onclick="window.wovSaveScriptAndClose()">
+          ✓ Load Script into Prompter
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 🎬 STUDIO CORE ENGINE: WebCam + Web Audio + Web Speech Synthesis
+    // =========================================================================
+    const state = {
+      stream: null,
+      audioCtx: null,
+      analyser: null,
+      timeData: null,
+      rafAudio: null,
+      
+      parsedLines: [],
+      currentIdx: 0,
+      myCharacter: "CANDIDATE",
+      
+      eyelineMode: "center", // center | left | right
+      pacingMode: "theatrical", // theatrical (105 WPM) | commercial (150 WPM)
+      wpm: 105,
+      
+      isRunning: false,
+      isMirrored: true,
+      activeUtterance: null, // Anchors utterance in memory against GC sweeps
+      wakeLock: null          // Holds W3C Screen Wake Lock
+    };
+
+    // Web Speech Voice Cache for iOS Safari
+    let _cachedVoices = [];
+    function wovLoadVoices() {
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        _cachedVoices = window.speechSynthesis.getVoices() || [];
+      }
+    }
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      wovLoadVoices();
+      window.speechSynthesis.onvoiceschanged = wovLoadVoices;
+    }
+
+    // 🛡️ Dual-Format Script Parser (All-Caps character heading check prevents short line drops)
+    function parseScreenplayScript(raw) {
+      const lines = String(raw || "").split(/\r?\n/);
+      const parsed = [];
+      const colonRegex = /^([a-zA-Z0-9\s\.\-\']+?)(?:\s*\([^)]*\))?\s*:\s*(.*)$/;
+      const headerRegex = /^([A-Z0-9\s\.\-\']{2,30})(?:\s*\([^)]*\))?$/;
+      let currentChar = null;
+
+      lines.forEach(l => {
+        const trimmed = l.trim();
+        if (!trimmed) return;
+
+        // 1. Colon Format (CHARACTER: Line)
+        const match = trimmed.match(colonRegex);
+        if (match) {
+          currentChar = match[1].trim().toUpperCase();
+          parsed.push({
+            char: currentChar,
+            text: match[2].trim()
+          });
+          return;
+        }
+
+        // 2. Standalone Character Heading (Must be strictly uppercase to avoid misidentifying short dialogue)
+        const isSceneHeader = trimmed.startsWith("INT.") || trimmed.startsWith("EXT.") || trimmed.startsWith("SCENE");
+        const headerMatch = trimmed.match(headerRegex);
+        if (headerMatch && !isSceneHeader && !trimmed.includes(".") && !trimmed.includes(",") && trimmed === trimmed.toUpperCase()) {
+          currentChar = headerMatch[1].trim().toUpperCase();
+          return;
+        }
+
+        // 3. Dialogue continuation
+        if (currentChar) {
+          if (parsed.length > 0 && parsed[parsed.length - 1].char === currentChar) {
+            parsed[parsed.length - 1].text += " " + trimmed;
+          } else {
+            parsed.push({
+              char: currentChar,
+              text: trimmed
+            });
+          }
+        } else {
+          parsed.push({
+            char: "DIRECTION",
+            text: trimmed
+          });
+        }
+      });
+      return parsed;
+    }
+
+    // 1. Initialize Camera Preview, Unlock AudioContext & Acquire Wake Lock
+    window.wovInitStudioSession = async function() {
+      const startCamBtn = document.getElementById("startCamBtn");
+      const startPrompterBtn = document.getElementById("startPrompterBtn");
+      const nextCueBtn = document.getElementById("nextCueBtn");
+
+      try {
+        // Unlock Web Speech API safely on physical user tap
+        window.speechSynthesis.cancel();
+        const dummyUtter = new SpeechSynthesisUtterance(" ");
+        dummyUtter.volume = 0.01;
+        window.speechSynthesis.speak(dummyUtter);
+
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        state.audioCtx = new AudioContextClass();
+        if (state.audioCtx.state === "suspended") {
+          await state.audioCtx.resume();
+        }
+
+        // Resilient Media Request: Audio + Video with Video-Only Fallback
+        try {
+          state.stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "user", width: { ideal: 1920 }, height: { ideal: 1080 } },
+            audio: true
+          });
+        } catch (eMic) {
+          console.warn("Audio capture denied/unavailable, falling back to video-only:", eMic);
+          state.stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "user", width: { ideal: 1920 }, height: { ideal: 1080 } },
+            audio: false
+          });
+        }
+
+        const videoEl = document.getElementById("cameraVideo");
+        videoEl.srcObject = state.stream;
+
+        // Web Audio Analyser for Decibel Peak Meter (If mic stream active)
+        if (state.stream.getAudioTracks().length > 0) {
+          state.analyser = state.audioCtx.createAnalyser();
+          state.analyser.fftSize = 256;
+          const source = state.audioCtx.createMediaStreamSource(state.stream);
+          source.connect(state.analyser);
+          state.timeData = new Uint8Array(state.analyser.frequencyBinCount);
+          window.wovStartAudioMonitor();
+        } else {
+          document.getElementById("audioDbText").innerText = "NO MIC";
+        }
+
+        // Acquire W3C Screen Wake Lock (Prevents mobile display sleep on tripods)
+        if ('wakeLock' in navigator) {
+          try {
+            state.wakeLock = await navigator.wakeLock.request('screen');
+          } catch (eWake) {
+            console.warn("Wake Lock request bypassed:", eWake);
+          }
+        }
+
+        startCamBtn.style.display = "none";
+        startPrompterBtn.style.display = "inline-flex";
+        nextCueBtn.style.display = "inline-flex";
+
+        window.wovParseAndPopulateScript();
+        document.getElementById("lineText").innerText = "Script loaded. Tap 'Start Rehearsal' or tap the screen to begin.";
+
+      } catch (err) {
+        console.error("Camera/Mic Init Error:", err);
+        alert("Camera access was blocked. Please permit camera access in your browser settings to use the prompter.");
+      }
+    };
+
+    // 2. Real-Time Audio Decibel Peak Meter (-1 dBFS Digital Distortion Warning)
+    window.wovStartAudioMonitor = function() {
+      const bar = document.getElementById("audioBarLevel");
+      const dbText = document.getElementById("audioDbText");
+      const clipBadge = document.getElementById("clipBadge");
+
+      const updateMeter = () => {
+        if (!state.analyser) return;
+        state.analyser.getByteTimeDomainData(state.timeData);
+
+        let peak = 0;
+        for (let i = 0; i < state.timeData.length; i++) {
+          const norm = Math.abs(state.timeData[i] - 128) / 128;
+          if (norm > peak) peak = norm;
+        }
+
+        let dbfs = -100;
+        if (peak > 0) {
+          dbfs = 20 * Math.log10(peak);
+          dbfs = Math.max(-100, Math.min(0, Math.round(dbfs * 10) / 10));
+        }
+
+        const pct = Math.max(0, Math.min(100, (dbfs + 60) * (100 / 60)));
+        bar.style.width = pct + "%";
+
+        // Color-coded headroom indicators
+        if (dbfs >= -1.0) {
+          bar.style.background = "var(--danger)";
+          clipBadge.style.display = "inline-block";
+          dbText.style.color = "var(--danger)";
+        } else if (dbfs >= -6.0) {
+          bar.style.background = "var(--yellow)";
+          clipBadge.style.display = "none";
+          dbText.style.color = "var(--yellow)";
+        } else {
+          bar.style.background = "var(--green)";
+          clipBadge.style.display = "none";
+          dbText.style.color = "var(--muted)";
+        }
+
+        dbText.innerText = (dbfs <= -90 ? "-∞" : dbfs.toFixed(1)) + " dB";
+        state.rafAudio = requestAnimationFrame(updateMeter);
+      };
+      updateMeter();
+    };
+
+    // 3. Eyeline Axis Toggle (Center vs Theatrical Left/Right 8° Off-Axis)
+    window.wovCycleEyeline = function() {
+      const ribbon = document.getElementById("prompterRibbon");
+      const label = document.getElementById("eyelineLabel");
+
+      if (state.eyelineMode === "center") {
+        state.eyelineMode = "left";
+        ribbon.className = "axis-left";
+        label.innerText = "Cinema Left 8°";
+      } else if (state.eyelineMode === "left") {
+        state.eyelineMode = "right";
+        ribbon.className = "axis-right";
+        label.innerText = "Cinema Right 8°";
+      } else {
+        state.eyelineMode = "center";
+        ribbon.className = "axis-center";
+        label.innerText = "Center (Commercial)";
+      }
+    };
+
+    // 4. Pacing Mode Toggle
+    window.wovCyclePacing = function() {
+      const label = document.getElementById("pacingLabel");
+      if (state.pacingMode === "theatrical") {
+        state.pacingMode = "commercial";
+        state.wpm = 150;
+        label.innerText = "Commercial (150 WPM)";
+      } else {
+        state.pacingMode = "theatrical";
+        state.wpm = 105;
+        label.innerText = "Cinema (105 WPM)";
+      }
+    };
+
+    // 5. Video Mirroring
+    window.wovToggleMirror = function() {
+      const video = document.getElementById("cameraVideo");
+      state.isMirrored = !state.isMirrored;
+      video.style.transform = state.isMirrored ? "scaleX(-1)" : "none";
+    };
+
+    // 6. Script Drawer & Parsing
+    window.wovOpenScriptDrawer = function() {
+      document.getElementById("scriptModal").style.display = "flex";
+      window.wovParseAndPopulateScript();
+    };
+    window.wovCloseScriptDrawer = function() {
+      document.getElementById("scriptModal").style.display = "none";
+    };
+
+    window.wovParseAndPopulateScript = function() {
+      const text = document.getElementById("scriptTextarea").value;
+      state.parsedLines = parseScreenplayScript(text);
+
+      const charSelect = document.getElementById("characterSelect");
+      const characters = [...new Set(state.parsedLines.map(p => p.char).filter(c => c !== "DIRECTION"))];
+      
+      charSelect.innerHTML = "";
+      characters.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c;
+        opt.innerText = c;
+        if (c === state.myCharacter) opt.selected = true;
+        charSelect.appendChild(opt);
+      });
+      if (charSelect.value) state.myCharacter = charSelect.value;
+    };
+
+    window.wovSaveScriptAndClose = function() {
+      const charSelect = document.getElementById("characterSelect");
+      if (charSelect.value) state.myCharacter = charSelect.value;
+      state.currentIdx = 0;
+      window.wovCloseScriptDrawer();
+      window.wovDisplayCurrentCue();
+    };
+
+    // 7. Rehearsal Execution Loop
+    window.wovToggleRehearsal = function() {
+      const btn = document.getElementById("startPrompterBtn");
+      state.isRunning = !state.isRunning;
+
+      if (state.isRunning) {
+        btn.innerText = "⏸ Pause Rehearsal";
+        btn.classList.add("active");
+        window.wovExecuteStep();
+      } else {
+        btn.innerText = "▶ Resume Rehearsal";
+        btn.classList.remove("active");
+        window.speechSynthesis.cancel();
+      }
+    };
+
+    // 🛡️ Self-Healing Cue Advance & Seamless Scene Restart
+    window.wovAdvanceCue = function() {
+      window.speechSynthesis.cancel();
+      const btn = document.getElementById("startPrompterBtn");
+
+      if (!state.isRunning) {
+        state.isRunning = true;
+        btn.innerText = "⏸ Pause Rehearsal";
+        btn.classList.add("active");
+      }
+
+      if (state.currentIdx < state.parsedLines.length - 1) {
+        state.currentIdx++;
+        window.wovExecuteStep();
+      } else {
+        state.currentIdx = 0;
+        state.isRunning = false;
+        btn.innerText = "▶ Restart Scene";
+        btn.classList.remove("active");
+        document.getElementById("lineText").innerText = "🎬 Scene complete. Tap screen or 'Restart' to run again.";
+        window.wovDisplayCurrentCue();
+      }
+    };
+
+    // Smooth Metronome Transition via Forced Reflow
+    window.wovDisplayCurrentCue = function() {
+      if (!state.parsedLines || state.parsedLines.length === 0) return;
+      const cue = state.parsedLines[state.currentIdx];
+      const speakerEl = document.getElementById("speakerTag");
+      const lineEl = document.getElementById("lineText");
+      const paceBar = document.getElementById("paceBar");
+
+      const isMyLine = (cue.char === state.myCharacter);
+
+      speakerEl.innerText = cue.char;
+      lineEl.innerText = cue.text;
+
+      // Reset metronome transition cleanly
+      paceBar.style.transition = "none";
+      paceBar.style.width = "0%";
+      void paceBar.offsetHeight; // Forces DOM reflow so transition restarts smoothly
+
+      if (isMyLine) {
+        speakerEl.className = "speaker-tag is-actor";
+        lineEl.className = "line-text active-actor";
+        const wordCount = cue.text.split(/\s+/).length;
+        const estSeconds = Math.max(1.8, (wordCount / state.wpm) * 60);
+        paceBar.style.transition = `width ${estSeconds}s linear`;
+        paceBar.style.width = "100%";
+      } else {
+        speakerEl.className = "speaker-tag is-partner";
+        lineEl.className = "line-text active-partner";
+      }
+    };
+
+    // Persistent Utterance Anchor & Explicit English Voice Assignment
+    window.wovExecuteStep = function() {
+      if (!state.isRunning) return;
+      window.wovDisplayCurrentCue();
+
+      const cue = state.parsedLines[state.currentIdx];
+      const isMyLine = (cue.char === state.myCharacter);
+
+      if (!isMyLine && cue.char !== "DIRECTION") {
+        window.speechSynthesis.cancel();
+        
+        const utter = new SpeechSynthesisUtterance(cue.text);
+        utter.lang = "en-US";
+
+        // Match English voice to prevent non-English iOS system voice degradation
+        if (_cachedVoices.length === 0) wovLoadVoices();
+        const enVoice = _cachedVoices.find(v => v.lang.startsWith("en") && !v.localService) || 
+                        _cachedVoices.find(v => v.lang.startsWith("en"));
+        if (enVoice) utter.voice = enVoice;
+
+        utter.rate = state.pacingMode === "theatrical" ? 0.95 : 1.15;
+        utter.pitch = 0.9;
+        state.activeUtterance = utter; // Anchors in memory to prevent GC sweep
+
+        utter.onend = () => {
+          state.activeUtterance = null;
+          if (!state.isRunning) return;
+          setTimeout(() => {
+            if (state.isRunning && state.currentIdx < state.parsedLines.length - 1) {
+              state.currentIdx++;
+              window.wovExecuteStep();
+            }
+          }, 350);
+        };
+
+        utter.onerror = (e) => {
+          state.activeUtterance = null;
+          if (e && (e.error === 'canceled' || e.error === 'interrupted')) return;
+          setTimeout(window.wovAdvanceCue, 2500);
+        };
+
+        window.speechSynthesis.speak(utter);
+      } else {
+        window.speechSynthesis.cancel();
+        state.activeUtterance = null;
+      }
+    };
+
+    // 🛡️ Clean Hardware Teardown, URL Parameter Preservation & AudioContext Safety
+    window.wovExitToScreener = function() {
+      if (state.wakeLock) {
+        try { state.wakeLock.release(); state.wakeLock = null; } catch(eW) {}
+      }
+      if (state.rafAudio) cancelAnimationFrame(state.rafAudio);
+      if (state.stream) state.stream.getTracks().forEach(t => t.stop());
+      if (state.audioCtx) {
+        try { state.audioCtx.close(); } catch(eA) {}
+      }
+      window.speechSynthesis.cancel();
+      window.location.href = "screener.html" + (window.location.search || "");
+    };
+
+    // 8. Hands-Free Controls: Screen Tap & Spacebar
+    const camContainer = document.getElementById("cameraContainer");
+    if (camContainer) {
+      camContainer.addEventListener("click", (e) => {
+        // Prevent accidental cue trigger if modal drawer is active
+        const scriptModal = document.getElementById("scriptModal");
+        if (scriptModal && scriptModal.style.display === "flex") return;
+        window.wovAdvanceCue();
+      });
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space" && e.target.tagName !== "TEXTAREA" && e.target.tagName !== "INPUT") {
+        e.preventDefault();
+        window.wovAdvanceCue();
+      }
+    });
+
+    // Re-acquire Wake Lock when returning to tab from background
+    document.addEventListener("visibilitychange", async () => {
+      if (document.visibilityState === "visible" && state.stream && 'wakeLock' in navigator) {
+        try { state.wakeLock = await navigator.wakeLock.request('screen'); } catch(eWake) {}
+      }
+    });
+
+    window.addEventListener("beforeunload", () => {
+      if (state.stream) state.stream.getTracks().forEach(t => t.stop());
+    });
+  </script>
+</body>
+</html>
