@@ -652,16 +652,35 @@
       }
     }
 
-    // 2. Render Cards with the Poster Facade Pattern
+    // 2. Render Cards with Multi-Field Search & Live Counter
     function renderCatalog() {
       const q = document.getElementById('searchInput').value.toLowerCase().trim();
       const grid = document.getElementById('rosterGrid');
+      const countBadge = document.getElementById('searchResultCount');
 
-      // 🛡️ Edit 1: Broadened Archetype Keyword Matching
+      // 🛡️ Auto-reset conflicting filter pills to "All Talents" when typing a search
+      if (q && _activeFilter !== 'all') {
+        _activeFilter = 'all';
+        document.querySelectorAll('.filter-pill').forEach(b => {
+          b.classList.toggle('active', b.getAttribute('data-filter') === 'all');
+        });
+      }
+
       const filtered = _rosterData.filter(t => {
         const name = (t.name || '').toLowerCase();
         const arch = (t.archetype || '').toLowerCase();
-        const matchesQuery = !q || name.includes(q) || arch.includes(q);
+        const handle = (t.handle || '').toLowerCase();
+        const note = (t.coachingNote || '').toLowerCase();
+        const rating = (t.advisoryRating || '').toLowerCase();
+
+        // 🛡️ Comprehensive Search: Matches Name, Archetype, Handle, Rating, and Coaching Notes
+        const matchesQuery = !q || 
+          name.includes(q) || 
+          arch.includes(q) || 
+          handle.includes(q) || 
+          note.includes(q) || 
+          rating.includes(q);
+
         if (!matchesQuery) return false;
 
         if (_activeFilter === 'high_delta') return (t.deltaPercent || 0) >= 10;
@@ -670,8 +689,13 @@
         return true;
       });
 
+      // 🛡️ Live Result Counter Feedback
+      if (countBadge) {
+        countBadge.innerText = q ? `${filtered.length} of ${_rosterData.length} talent` : '';
+      }
+
       if (!filtered.length) {
-        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--ink-muted);padding:60px 0;">No talent matching current criteria.</div>';
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--ink-muted);padding:60px 0;">No talent matching "' + escapeHtml(q) + '". <button onclick="document.getElementById(\'searchInput\').value=\'\';renderCatalog();" style="background:none;border:none;color:var(--red);font-weight:700;cursor:pointer;text-decoration:underline;">Clear search</button></div>';
         return;
       }
 
