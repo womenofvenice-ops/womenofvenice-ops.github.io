@@ -496,7 +496,10 @@
       <button class="filter-pill" data-filter="cinema">Feature Cinema</button>
       <button class="filter-pill" data-filter="creator">Commercial Creators</button>
     </div>
-    <input type="text" id="searchInput" class="search-box" placeholder="Search talent or archetype...">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span id="searchResultCount" style="font-size: 12px; color: var(--ink-muted); font-weight: 600;"></span>
+      <input type="text" id="searchInput" class="search-box" placeholder="Search name, notes, or archetype...">
+    </div>
   </section>
 
   <!-- 🎬 Performer Cards Grid -->
