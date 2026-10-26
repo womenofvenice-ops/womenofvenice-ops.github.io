@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Directorial Talent Roster · Women of Venice Casting Desk</title>
+  <!-- 🎬 High-Status Studio Favicon (SVG + Standard ICO) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
+  <link rel="alternate icon" href="/favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
@@ -667,19 +670,20 @@
       }
 
       const filtered = _rosterData.filter(t => {
-        const name = (t.name || '').toLowerCase();
-        const arch = (t.archetype || '').toLowerCase();
-        const handle = (t.handle || '').toLowerCase();
-        const note = (t.coachingNote || '').toLowerCase();
-        const rating = (t.advisoryRating || '').toLowerCase();
+        // 🛡️ Unified Search Index: Searches all data fields + visible card fallback text
+        const cardSearchText = [
+          t.name,
+          t.archetype,
+          t.handle,
+          t.coachingNote,
+          t.advisoryRating,
+          'director approved',
+          'highly directable',
+          'stillness',
+          'adaptation'
+        ].join(' ').toLowerCase();
 
-        // 🛡️ Comprehensive Search: Matches Name, Archetype, Handle, Rating, and Coaching Notes
-        const matchesQuery = !q || 
-          name.includes(q) || 
-          arch.includes(q) || 
-          handle.includes(q) || 
-          note.includes(q) || 
-          rating.includes(q);
+        const matchesQuery = !q || cardSearchText.includes(q);
 
         if (!matchesQuery) return false;
 
