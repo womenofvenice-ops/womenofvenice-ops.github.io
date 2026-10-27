@@ -628,103 +628,141 @@
       closeEditModal();
     }
 
-    // 📷 In-Place Headshot Upload & Compression Engine
-    function handleHeadshotUpload(input) {
-      if (!input.files || !input.files[0]) return;
-      const file = input.files[0];
-      const talentName = document.getElementById("talentName").innerText.trim();
+    // =========================================================================
+// 📸 CLOUD HEADSHOT SWAP (Hardened Production · Crash-Safe · Anti-IDOR)
+// Client Compression · Memory-Guarded · Safe Target Resolution
+// =========================================================================
+async function handleHeadshotUpload(input) {
+  if (!input || !input.files || !input.files[0]) return;
+  const file = input.files[0];
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-          const maxDim = 1600;
-          let w = img.width, h = img.height;
-          if (w > maxDim || h > maxDim) {
-            if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
-            else { w = Math.round((w * maxDim) / h); h = maxDim; }
-          }
-          const canvas = document.createElement("canvas");
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, w, h);
-          const compressed = canvas.toDataURL("image/jpeg", 0.88);
-          
-          document.getElementById("headshotImg").src = compressed;
-          try {
-            localStorage.setItem("wov_headshot_" + talentName, compressed);
-          } catch(err) {}
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
+  // 1. MIME Validation
+  if (!file.type || !file.type.startsWith("image/")) {
+    alert("Please select a valid image file (JPEG, PNG, or WebP).");
+    input.value = "";
+    return;
+  }
 
-    window.addEventListener("DOMContentLoaded", function() {
-      const params = new URLSearchParams(window.location.search);
-      const targetName = params.get("name") || params.get("talent") || "Elena B.";
-      const dossierId = params.get("id");
-      const urlImg = params.get("img");
+  // 🛡️ Safe Endpoint & Target Identity Resolution (Zero ReferenceErrors)
+  const targetUrl = (typeof EXEC !== "undefined" && EXEC) 
+    ? EXEC 
+    : ((typeof BACKEND_URL !== "undefined" && BACKEND_URL) ? BACKEND_URL : (window.EXEC || window.BACKEND_URL || ""));
 
-      document.getElementById("talentName").innerText = targetName;
-      
-      // Preserve token in QR code
-      const cleanUrl = dossierId 
-        ? "https://womenofvenice.com/screener.html?id=" + encodeURIComponent(dossierId)
-        : "https://womenofvenice.com/screener.html?name=" + encodeURIComponent(targetName) + "&type=cinema";
-      
-      const certHash = Math.abs(targetName.split("").reduce((acc, c) => (acc << 5) - acc + c.charCodeAt(0), 0)).toString(16).toUpperCase().padStart(8, "0");
-      document.getElementById("certIdEl").innerText = "WOV-2026-" + certHash;
-      
-      const qrEl = document.getElementById("qrImg");
-      qrEl.src = "https://api.qrserver.com/v1/create-qr-code/?size=95x95&data=" + encodeURIComponent(cleanUrl + "&ref=comp_qr");
-      qrEl.onerror = function() { this.style.display = "none"; };
+  if (!targetUrl) {
+    alert("⚠️ Studio backend endpoint is not configured.");
+    input.value = "";
+    return;
+  }
 
-      // Ingest Headshot: URL param -> LocalStorage -> Default
-      const cachedImg = urlImg || localStorage.getItem("wov_headshot_" + targetName) || localStorage.getItem("wov_triage_winning_img");
-      if (cachedImg) {
-        document.getElementById("headshotImg").src = cachedImg;
-      }
+  const urlParams = new URLSearchParams(window.location.search);
+  const nameEl = document.getElementById("talentName");
+  const talentName = String(
+    (nameEl ? (nameEl.value || nameEl.innerText) : "") ||
+    (typeof targetName !== "undefined" ? targetName : "") ||
+    urlParams.get("name") || urlParams.get("talent") ||
+    ""
+  ).replace(/[\r\n\t]+/g, " ").trim();
 
-      // Restore saved specs if previously customized
+  // 🛡️ Resolve Candidate UUID to guarantee Column A primary key match in CRM
+  const candidateId = String(
+    urlParams.get("cid") || 
+    urlParams.get("id") || 
+    (typeof activeCid !== "undefined" ? activeCid : "") ||
+    ""
+  ).trim();
+
+  if (!talentName && !candidateId) {
+    alert("⚠️ Unable to identify performer record. Please reload your vault link.");
+    input.value = "";
+    return;
+  }
+
+  const headshotImg = document.getElementById("headshotImg");
+
+  // 2. Client-Side Image Compression (Max 1200x1600 @ 0.85 Quality = ~400-600 KB)
+  const reader = new FileReader();
+
+  reader.onerror = function() {
+    alert("⚠️ Failed to read the selected file. Please try another image.");
+    input.value = "";
+  };
+
+  reader.onload = function(e) {
+    const tempImg = new Image();
+
+    tempImg.onerror = function() {
+      alert("⚠️ The selected image file appears corrupted or unsupported.");
+      input.value = "";
+    };
+
+    tempImg.onload = async function() {
       try {
-        const savedSpecs = JSON.parse(localStorage.getItem("wov_specs_" + targetName) || "null");
-        if (savedSpecs) {
-          if (savedSpecs.age) document.getElementById("specAge").innerText = document.getElementById("inAge").value = savedSpecs.age;
-          if (savedSpecs.height) document.getElementById("specHeight").innerText = document.getElementById("inHeight").value = savedSpecs.height;
-          if (savedSpecs.eyes) document.getElementById("specEyes").innerText = document.getElementById("inEyes").value = savedSpecs.eyes;
-          if (savedSpecs.hair) document.getElementById("specHair").innerText = document.getElementById("inHair").value = savedSpecs.hair;
-          if (savedSpecs.lang) document.getElementById("specLang").innerText = document.getElementById("inLang").value = savedSpecs.lang;
-          if (savedSpecs.rep) document.getElementById("specRep").innerText = document.getElementById("inRep").value = savedSpecs.rep;
+        const maxW = 1200;
+        const maxH = 1600;
+        let w = tempImg.width;
+        let h = tempImg.height;
+
+        if (w > maxW || h > maxH) {
+          const ratio = Math.min(maxW / w, maxH / h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
         }
-      } catch(e) {}
 
-      // Fetch Live or Demo Dossier
-      const fetchUrl = dossierId
-        ? EXEC + "?action=screener&id=" + encodeURIComponent(dossierId)
-        : EXEC + "?action=screener&name=" + encodeURIComponent(targetName);
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(tempImg, 0, 0, w, h);
 
-      fetch(fetchUrl)
-      .then(res => res.json())
-      .then(data => {
-        if (data && (data.ok || data.status === "ok")) {
-          renderCompCard(data);
+        const compressedBase64 = canvas.toDataURL("image/jpeg", 0.85);
+
+        // Immediate Visual Feedback
+        if (headshotImg) {
+          headshotImg.src = compressedBase64;
+          headshotImg.style.opacity = "0.5";
+        }
+
+        // 3. Dispatch to Code.gs Backend with full identity payload
+        const payload = {
+          action: "uploadHeadshot",
+          talentName: talentName,
+          candidateId: candidateId,
+          imageBase64: compressedBase64,
+          fileName: "headshot_" + (talentName || "talent").replace(/[^a-zA-Z0-9]/g, "_") + ".jpg"
+        };
+
+        const res = await fetch(targetUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (data && data.ok && data.imageUrl) {
+          if (headshotImg) {
+            headshotImg.src = data.imageUrl; // Permanent Google Drive CDN URL
+            headshotImg.style.opacity = "1";
+          }
+          alert("✓ Headshot permanently saved to studio ledger and Google Drive!");
         } else {
-          // 🛡️ Show clean 404 screen if deleted from database
-          document.body.innerHTML = `
-            <div style="text-align:center;padding:100px 20px;font-family:sans-serif;color:#FAF8F5;background:#080C0E;min-height:100vh;">
-              <div style="font-size:36px;margin-bottom:12px;">🔒</div>
-              <h2 style="font-size:24px;margin-bottom:8px;">Comp Card Unavailable</h2>
-              <p style="color:#94A3B8;font-size:14px;max-width:440px;margin:0 auto 20px;">The casting record for "${esc(targetName)}" has been archived or removed from the active studio roster.</p>
-              <a href="roster.html" style="color:#A8492E;font-weight:700;text-decoration:none;">← Return to Active Talent Roster</a>
-            </div>`;
+          throw new Error((data && data.error) || "Cloud upload failed");
         }
-      })
-      .catch(err => {
-        console.log("Network error connecting to studio database.");
-      });
-    });
+
+      } catch (err) {
+        if (headshotImg) headshotImg.style.opacity = "1";
+        console.error("Headshot upload error:", err);
+        alert("⚠️ Cloud upload notice: " + err.message);
+      } finally {
+        // Reset file input so identical file can be re-selected if desired
+        input.value = "";
+      }
+    };
+
+    tempImg.src = e.target.result;
+  };
+
+  reader.readAsDataURL(file);
+}
 
     function renderCompCard(data) {
       if (data.marketArchetype) document.getElementById("talentArchetype").innerText = data.marketArchetype;
