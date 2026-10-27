@@ -742,6 +742,7 @@ async function handleHeadshotUpload(input) {
             headshotImg.src = data.imageUrl; // Permanent Google Drive CDN URL
             headshotImg.style.opacity = "1";
           }
+          try { localStorage.setItem("wov_cached_headshot_" + talentName, data.imageUrl); } catch(e) {}
           alert("✓ Headshot permanently saved to studio ledger and Google Drive!");
         } else {
           throw new Error((data && data.error) || "Cloud upload failed");
@@ -895,6 +896,7 @@ async function handleHeadshotUpload(input) {
             const headshotEl = document.getElementById("headshotImg");
             if (cloudPhoto && cloudPhoto.indexOf("http") === 0 && headshotEl) {
               headshotEl.src = cloudPhoto;
+              try { localStorage.setItem("wov_cached_headshot_" + targetName, cloudPhoto); } catch(e) {}
             }
           } else {
             // 🛡️ Step 3: Clean 404 Guard replaces mock fallbacks
