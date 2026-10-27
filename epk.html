@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Electronic Press Kit (EPK) · Women of Venice Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #070A0D;
+      --card-bg: #0E141B;
+      --card-inner: #090D12;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(168, 73, 46, 0.5);
+      --ink: #FAF8F5;
+      --ink-muted: #94A3B8;
+      --red: #A8492E;
+      --red-hover: #833722;
+      --sand: #F6E4B8;
+      --emerald: #4ADE80;
+      --font-serif: 'Playfair Display', Georgia, serif;
+      --font-sans: 'Inter', -apple-system, sans-serif;
+      --font-mono: 'Space Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      padding: 0 0 100px 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* 🏛️ Header Bar */
+    .epk-nav {
+      border-bottom: 1px solid var(--border);
+      padding: 18px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(7, 10, 13, 0.88);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 99;
+    }
+    .brand-mark {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: var(--red);
+      text-transform: uppercase;
+      text-decoration: none;
+    }
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--emerald);
+      background: rgba(74, 222, 128, 0.08);
+      border: 1px solid rgba(74, 222, 128, 0.2);
+      padding: 4px 12px;
+      border-radius: 99px;
+    }
+    .pulse-dot {
+      width: 6px; height: 6px; background: var(--emerald);
+      border-radius: 50%; box-shadow: 0 0 8px var(--emerald);
+    }
+
+    /* 📄 One-Sheet Layout Container */
+    .epk-container {
+      max-width: 1040px;
+      margin: 40px auto 0;
+      padding: 0 24px;
+    }
+
+    /* Hero Header */
+    .hero-header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 28px;
+      margin-bottom: 32px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 20px;
+    }
+    .talent-headline h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(34px, 5vw, 52px);
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+    .talent-archetype {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--sand);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+    .hero-ctas {
+      display: flex;
+      gap: 12px;
+    }
+    .btn-action {
+      background: var(--red);
+      color: #FFF;
+      border: none;
+      padding: 12px 22px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+    .btn-action:hover { background: var(--red-hover); }
+    .btn-secondary {
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid var(--border);
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.06); }
+
+    /* 🎬 Video Section (Dual-Player) */
+    .video-showcase {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 32px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+    }
+    .video-viewport-wrap {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      position: relative;
+    }
+    .video-toolbar {
+      padding: 14px 20px;
+      background: var(--card-inner);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .take-toggle-group {
+      display: inline-flex;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 4px;
+    }
+    .take-btn {
+      background: transparent;
+      border: none;
+      color: var(--ink-muted);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .take-btn.active {
+      background: var(--red);
+      color: #FFF;
+    }
+    .delta-callout {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+      color: var(--emerald);
+      font-family: var(--font-mono);
+      font-weight: 700;
+    }
+
+    /* 📊 3-Column Specifications Grid */
+    .epk-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    .spec-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+    }
+    .spec-header {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: var(--sand);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      border-bottom: 1px dashed var(--border);
+      padding-bottom: 8px;
+    }
+    .spec-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+    .spec-label { color: var(--ink-muted); }
+    .spec-val { font-weight: 600; text-align: right; }
+
+    /* Directorial Assessment Banner */
+    .director-verdict {
+      background: rgba(168, 73, 46, 0.08);
+      border: 1px solid rgba(168, 73, 46, 0.35);
+      border-left: 4px solid var(--red);
+      border-radius: 12px;
+      padding: 22px 26px;
+      margin-bottom: 32px;
+    }
+    .verdict-title {
+      font-size: 11.5px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: var(--red);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .verdict-quote {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      font-style: italic;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+    .verdict-note {
+      font-size: 13.5px;
+      color: var(--ink-muted);
+    }
+
+    /* 💼 Modal Window Styles */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 10, 12, 0.88);
+      z-index: 99999;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+    }
+    .modal-window {
+      background: #FFF;
+      color: #1C2B2C;
+      border-radius: 16px;
+      max-width: 480px;
+      width: 100%;
+      padding: 28px 24px;
+      position: relative;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+    }
+    .modal-close {
+      position: absolute;
+      top: 14px; right: 16px; background: none; border: none;
+      font-size: 24px; color: #94A3B8; cursor: pointer;
+    }
+    .form-field { margin-bottom: 12px; }
+    .form-label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      color: #475569; display: block; margin-bottom: 4px;
+    }
+    .form-input {
+      width: 100%; padding: 9px 12px; border: 1.5px solid #CBD5E1;
+      border-radius: 6px; font-size: 13px; outline: none; font-family: inherit;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 🏛️ Navigation -->
+  <nav class="epk-nav">
+    <a href="roster.html" class="brand-mark">Women of Venice · Casting Desk</a>
+    <div class="badge-status">
+      <span class="pulse-dot"></span>
+      <span id="navStatusText">Verified Studio EPK</span>
+    </div>
+  </nav>
+
+  <main class="epk-container">
+    <div id="epkLoading" style="text-align: center; padding: 60px 0; color: var(--ink-muted);">
+      ⏳ Synchronizing performer dossier...
+    </div>
+
+    <div id="epkContent" style="display: none;">
+      <!-- Hero Details -->
+      <section class="hero-header">
+        <div class="talent-headline">
+          <h1 id="talentName">Elena Cone</h1>
+          <div class="talent-archetype" id="talentArchetype">Feature Cinema / Arthouse Lead</div>
+        </div>
+        <div class="hero-ctas">
+          <button type="button" class="btn-action" id="openHoldModalBtn">
+            🎬 Check Availability / Soft Hold
+          </button>
+          <a href="#" id="compCardLink" class="btn-secondary" target="_blank" rel="noopener">
+            📄 A4 Comp Card ↗
+          </a>
+        </div>
+      </section>
+
+      <!-- Video Comparison Viewport -->
+      <section class="video-showcase">
+        <div class="video-viewport-wrap" id="videoContainer"></div>
+        <div class="video-toolbar">
+          <div class="take-toggle-group" id="takeToggleGroup">
+            <button type="button" class="take-btn" id="btnTake1">Take 1 (Cold)</button>
+            <button type="button" class="take-btn active" id="btnTake2">Take 2 (Directed Retake)</button>
+          </div>
+          <div class="delta-callout" id="deltaCallout">
+            <span>📈 Multi-Take Lift:</span>
+            <span id="deltaValue">+11%</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Directorial Verdict Quote -->
+      <section class="director-verdict">
+        <div class="verdict-title">Director Claudio Verified Advisory Verdict</div>
+        <div class="verdict-quote" id="advisoryRating">"Director Approved / Highly Directable"</div>
+        <p class="verdict-note" id="coachingNote">Remarkable physical stillness adaptation. Subtext emotional velocity demonstrated on second beat.</p>
+      </section>
+
+      <!-- Theatrical Specifications Matrix -->
+      <section class="epk-grid">
+        <!-- Theatrical Specs -->
+        <div class="spec-card">
+          <div class="spec-header">Theatrical &amp; Union Accreditation</div>
+          <div class="spec-row"><span class="spec-label">Union Affiliation</span><span class="spec-val" id="specUnion">Spotlight · Equity UK</span></div>
+          <div class="spec-row"><span class="spec-label">Passport / Base</span><span class="spec-val" id="specLocation">Venice / Rome (EU)</span></div>
+          <div class="spec-row"><span class="spec-label">Native Languages</span><span class="spec-val" id="specLanguages">Italian (Native), English</span></div>
+          <div class="spec-row"><span class="spec-label">Playing Age</span><span class="spec-val" id="specPlayingAge">22 – 30</span></div>
+        </div>
+
+        <!-- Directability Telemetry Breakdown -->
+        <div class="spec-card">
+          <div class="spec-header">Craft Telemetry Breakdown</div>
+          <div class="spec-row"><span class="spec-label">Physical Stillness</span><span class="spec-val" id="scoreStillness">+16%</span></div>
+          <div class="spec-row"><span class="spec-label">Subtext Velocity</span><span class="spec-val" id="scoreSubtext">+12%</span></div>
+          <div class="spec-row"><span class="spec-label">Camera Axis Control</span><span class="spec-val" id="scoreFraming">+14%</span></div>
+          <div class="spec-row"><span class="spec-label">Overall Delta</span><span class="spec-val" id="scoreOverall" style="color:var(--emerald);">+11%</span></div>
+        </div>
+
+        <!-- Commercial Rate Rider -->
+        <div class="spec-card">
+          <div class="spec-header">Commercial &amp; Brand Rider</div>
+          <div class="spec-row"><span class="spec-label">Half-Day Shoot</span><span class="spec-val">€500</span></div>
+          <div class="spec-row"><span class="spec-label">Full-Day Rate</span><span class="spec-val">€1,000</span></div>
+          <div class="spec-row"><span class="spec-label">30-Day Buyout</span><span class="spec-val">+40% (Quoted on scope)</span></div>
+          <div class="spec-row"><span class="spec-label">Booking Fee</span><span class="spec-val" style="color:var(--sand);">10% Agency Escrow</span></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- 💼 Phase 2C B2B Soft-Hold Inquiry Modal -->
+  <div id="bookingModal" class="modal-backdrop">
+    <div class="modal-window">
+      <button type="button" class="modal-close" id="modalCloseBtn">&times;</button>
+      <div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;color:var(--red);text-transform:uppercase;margin-bottom:6px;">Women of Venice · Casting Studio Desk</div>
+      <h3 style="font-family:var(--font-serif);font-size:21px;font-weight:700;margin-bottom:6px;" id="modalTitle">Check Availability</h3>
+      <p style="font-size:12.5px;color:#64748B;margin-bottom:16px;">Place a non-binding hold directly through the Venice Studio Desk:</p>
+
+      <div id="bookingStatusAlert" style="display:none;padding:10px;border-radius:6px;font-size:12px;font-weight:700;margin-bottom:12px;text-align:center;"></div>
+
+      <form id="bookingForm">
+        <div class="form-field">
+          <label class="form-label">Production / Entity *</label>
+          <input type="text" id="inqCompany" class="form-input" placeholder="e.g. A24 / Netflix / Brand" required>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Contact Producer / Lead *</label>
+          <input type="text" id="inqLead" class="form-input" placeholder="Your Name" required>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Official Email *</label>
+          <input type="email" id="inqEmail" class="form-input" placeholder="producer@production.com" required>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Project Scope / Brief</label>
+          <textarea id="inqMessage" class="form-input" rows="2" placeholder="Shooting dates, role parameters, or creative brief..." style="resize:none;"></textarea>
+        </div>
+        <button type="submit" id="inqSubmitBtn" style="width:100%;background:var(--red);color:#FFF;border:none;padding:12px;border-radius:99px;font-weight:700;font-size:13.5px;cursor:pointer;margin-top:4px;">
+          🚀 Dispatch Availability Inquiry ↗
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // ⚙️ BACKEND WEB APP URL
+    const BACKEND_URL = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
+
+    let _epkData = null;
+    let _activeTake = 2;
+
+    function escapeHtml(s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // Resolves embed players safely (YouTube, Drive, Vimeo, or direct streams)
+    function resolveVideoHtml(url) {
+      if (!url) return '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748B;font-size:13px;">🔒 Video Restricted to Private Casting Sessions</div>';
+      
+      const isNative = /\.(mp4|webm|mov)(\?.*)?$/i.test(url) || url.includes('cloudflarestream.com');
+      if (isNative) {
+        return `<video src="${url}" controls playsinline style="width:100%;height:100%;object-fit:cover;background:#000;"></video>`;
+      }
+      return `<iframe src="${url}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen style="width:100%;height:100%;border:none;"></iframe>`;
+    }
+
+    async function loadEpk() {
+      const p = new URLSearchParams(window.location.search);
+      const talentParam = p.get('talent') || p.get('name') || p.get('id') || 'Elena Cone';
+
+      try {
+        const res = await fetch(`${BACKEND_URL}?action=getEpkData&name=${encodeURIComponent(talentParam)}`);
+        const json = await res.json();
+
+        if (json && json.ok && json.talent) {
+          _epkData = json.talent;
+          renderEpkUI();
+        } else {
+          document.getElementById('epkLoading').innerHTML = `<div style="color:#F87171;">⚠️ ${json.error || 'Performer dossier unavailable.'}</div>`;
+        }
+      } catch (err) {
+        document.getElementById('epkLoading').innerHTML = '<div style="color:#F87171;">📡 Network error connecting to studio desk.</div>';
+      }
+    }
+
+    function renderEpkUI() {
+      const t = _epkData;
+      document.getElementById('talentName').innerText = t.name;
+      document.getElementById('talentArchetype').innerText = t.archetype;
+      document.getElementById('compCardLink').href = t.links.compCardUrl;
+
+      // Directability Telemetry
+      const vd = t.verifiedDirectability || {};
+      document.getElementById('deltaValue').innerText = vd.deltaDisplay || `+${vd.overallDeltaPct}%`;
+      document.getElementById('advisoryRating').innerText = `"${vd.advisoryRating}"`;
+      document.getElementById('coachingNote').innerText = vd.coachingNote;
+
+      const m = vd.metrics || {};
+      document.getElementById('scoreStillness').innerText = `+${m.stillness_lift || 16}%`;
+      document.getElementById('scoreSubtext').innerText = `+${m.subtext_lift || 12}%`;
+      document.getElementById('scoreFraming').innerText = `+${m.framing_compliance || 14}%`;
+      document.getElementById('scoreOverall').innerText = `+${vd.overallDeltaPct || 11}%`;
+
+      // Videos Setup
+      const hasTake2 = Boolean(t.videos && t.videos.hasTake2 && t.videos.take2Url);
+      _activeTake = hasTake2 ? 2 : 1;
+      
+      const btnT1 = document.getElementById('btnTake1');
+      const btnT2 = document.getElementById('btnTake2');
+
+      if (!hasTake2) {
+        btnT2.style.display = 'none';
+        btnT1.classList.add('active');
+      }
+
+      mountActiveVideo();
+
+      btnT1.onclick = () => { _activeTake = 1; btnT1.classList.add('active'); btnT2.classList.remove('active'); mountActiveVideo(); };
+      btnT2.onclick = () => { _activeTake = 2; btnT2.classList.add('active'); btnT1.classList.remove('active'); mountActiveVideo(); };
+
+      document.getElementById('epkLoading').style.display = 'none';
+      document.getElementById('epkContent').style.display = 'block';
+    }
+
+    function mountActiveVideo() {
+      const url = _activeTake === 2 ? _epkData.videos.take2Url : _epkData.videos.take1Url;
+      document.getElementById('videoContainer').innerHTML = resolveVideoHtml(url);
+    }
+
+    // Modal Operations
+    const modal = document.getElementById('bookingModal');
+    document.getElementById('openHoldModalBtn').onclick = () => {
+      document.getElementById('modalTitle').innerText = `Check Availability: ${_epkData.name}`;
+      modal.style.display = 'flex';
+    };
+    document.getElementById('modalCloseBtn').onclick = () => { modal.style.display = 'none'; };
+    modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+
+    // Form submission dispatches directly to Phase 2C B2B pipeline
+    document.getElementById('bookingForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('inqSubmitBtn');
+      const alertBox = document.getElementById('bookingStatusAlert');
+
+      btn.disabled = true;
+      btn.innerText = "⏳ Dispatching to Studio Desk...";
+
+      const payload = {
+        action: "b2bBookingInquiry",
+        talentName: _epkData.name,
+        company: document.getElementById('inqCompany').value.trim(),
+        contactName: document.getElementById('inqLead').value.trim(),
+        email: document.getElementById('inqEmail').value.trim(),
+        message: document.getElementById('inqMessage').value.trim() || "Availability requested via Hosted Agency EPK."
+      };
+
+      try {
+        const res = await fetch(BACKEND_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (data.ok) {
+          alertBox.style.background = "#DCFCE7";
+          alertBox.style.color = "#166534";
+          alertBox.innerText = `✓ Inquiry Logged. Reference: ${data.dealId || 'ACTIVE'}`;
+          alertBox.style.display = 'block';
+          btn.innerText = "✓ Dispatched";
+          setTimeout(() => { modal.style.display = 'none'; btn.disabled = false; btn.innerText = "🚀 Dispatch Availability Inquiry ↗"; }, 2400);
+        } else {
+          throw new Error(data.error || "Submission failed.");
+        }
+      } catch (err) {
+        alertBox.style.background = "#FEE2E2";
+        alertBox.style.color = "#991B1B";
+        alertBox.innerText = `⚠️ Error: ${err.message}`;
+        alertBox.style.display = 'block';
+        btn.disabled = false;
+        btn.innerText = "🚀 Dispatch Availability Inquiry ↗";
+      }
+    };
+
+    window.onload = loadEpk;
+  </script>
+</body>
+</html>
