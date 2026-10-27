@@ -855,13 +855,13 @@ async function handleHeadshotUpload(input) {
         }
       } catch(e) {}
 
-      // Dynamic QR Code generation for self-tape link (tokenized host)
       const qrEl = document.getElementById("qrImg");
       if (qrEl) {
         const screenerHost = ["womenofvenice", "com"].join(".");
         const screenerUrl = "https://" + screenerHost + "/screener.html?name=" + encodeURIComponent(targetName);
-        const qrHost = ["api", "qrserver", "com"].join(".");
-        qrEl.src = "https://" + qrHost + "/v1/create-qr-code/?size=150x150&data=" + encodeURIComponent(screenerUrl);
+        // Uses Google's fast-edge chart service with immediate error fallback
+        qrEl.src = "https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=" + encodeURIComponent(screenerUrl) + "&choe=UTF-8";
+        qrEl.onerror = function() { this.style.display = 'none'; };
       }
 
       // 🛡️ Defect 3 Fix: Zero-ReferenceError Endpoint Resolution
