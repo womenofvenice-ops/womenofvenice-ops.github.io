@@ -801,6 +801,111 @@ async function handleHeadshotUpload(input) {
       document.getElementById("lblS").textContent = `Subtext (${s})`;
       document.getElementById("lblF").textContent = `Fit (${f})`;
     }
+
+    // =========================================================================
+    // 🚀 INITIALIZATION: Resolve Performer, Fetch Ledger & Render Cloud Assets
+    // Step 3 (404 Guard) & Step 4 (Cloud Headshot Display) Fully Hardened
+    // =========================================================================
+    window.addEventListener("DOMContentLoaded", function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const targetName = String(
+        urlParams.get("name") || 
+        urlParams.get("talent") || 
+        urlParams.get("id") || 
+        urlParams.get("cid") || 
+        ""
+      ).replace(/[\r\n\t]+/g, " ").trim();
+
+      // 🛡️ Defect 1 Fix: Self-contained HTML escaping (Zero ReferenceErrors)
+      const safeEscape = (typeof esc === "function") 
+        ? esc 
+        : s => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const safeDisplayName = safeEscape(targetName || "Performer");
+
+      // Guard: Require explicit performer parameter
+      if (!targetName) {
+        document.body.innerHTML = `
+          <div style="text-align:center;padding:100px 20px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#FAF8F5;background:#080C0E;min-height:100vh;">
+            <div style="font-size:36px;margin-bottom:12px;">⚠️</div>
+            <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:24px;margin-bottom:8px;">Performer Name Required</h2>
+            <p style="color:#94A3B8;font-size:14px;max-width:440px;margin:0 auto 24px;line-height:1.6;">
+              Please provide a valid talent parameter in the URL: <code>comp-card.html?name=CandidateName</code>
+            </p>
+            <a href="roster.html" style="background:#A8492E;color:#FFF;padding:12px 24px;border-radius:99px;font-weight:700;font-size:13px;text-decoration:none;display:inline-block;">← Return to Active Talent Roster</a>
+          </div>`;
+        return;
+      }
+
+      // 🛡️ Defect 2 Fix: Null-safe screen title update
+      const nameHeader = document.getElementById("talentName");
+      if (nameHeader) nameHeader.innerText = targetName;
+      document.title = targetName + " · Casting Comp Card (Z-Card)";
+
+      // Restore custom saved specs if performer edited them locally
+      try {
+        const saved = localStorage.getItem("wov_specs_" + targetName);
+        if (saved) {
+          const s = JSON.parse(saved);
+          if (s.age && document.getElementById("specAge")) document.getElementById("specAge").innerText = s.age;
+          if (s.height && document.getElementById("specHeight")) document.getElementById("specHeight").innerText = s.height;
+          if (s.eyes && document.getElementById("specEyes")) document.getElementById("specEyes").innerText = s.eyes;
+          if (s.hair && document.getElementById("specHair")) document.getElementById("specHair").innerText = s.hair;
+          if (s.lang && document.getElementById("specLang")) document.getElementById("specLang").innerText = s.lang;
+          if (s.rep && document.getElementById("specRep")) document.getElementById("specRep").innerText = s.rep;
+        }
+      } catch(e) {}
+
+      // Dynamic QR Code generation for self-tape link (tokenized host)
+      const qrEl = document.getElementById("qrImg");
+      if (qrEl) {
+        const screenerHost = ["womenofvenice", "com"].join(".");
+        const screenerUrl = "https://" + screenerHost + "/screener.html?name=" + encodeURIComponent(targetName);
+        const qrHost = ["api", "qrserver", "com"].join(".");
+        qrEl.src = "https://" + qrHost + "/v1/create-qr-code/?size=150x150&data=" + encodeURIComponent(screenerUrl);
+      }
+
+      // 🛡️ Defect 3 Fix: Zero-ReferenceError Endpoint Resolution
+      const targetExec = (typeof EXEC !== "undefined" && EXEC) 
+        ? EXEC 
+        : ((typeof BACKEND_URL !== "undefined" && BACKEND_URL) ? BACKEND_URL : (window.EXEC || window.BACKEND_URL || ""));
+
+      if (!targetExec) {
+        console.warn("Studio backend endpoint is not configured.");
+        return;
+      }
+
+      const fetchUrl = targetExec + "?action=screener&name=" + encodeURIComponent(targetName);
+
+      fetch(fetchUrl)
+        .then(res => res.json())
+        .then(data => {
+          if (data && (data.ok || data.status === "ok" || (data.talent && data.talent.name))) {
+            renderCompCard(data);
+
+            // 🛡️ Step 4: Display Permanent Cloud Headshot from Google Drive CDN
+            const cloudPhoto = data.headshot_image_url || data.photoUrl || data.photo || (data.talent && data.talent.photo);
+            const headshotEl = document.getElementById("headshotImg");
+            if (cloudPhoto && cloudPhoto.indexOf("http") === 0 && headshotEl) {
+              headshotEl.src = cloudPhoto;
+            }
+          } else {
+            // 🛡️ Step 3: Clean 404 Guard replaces mock fallbacks
+            document.body.innerHTML = `
+              <div style="text-align:center;padding:100px 20px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#FAF8F5;background:#080C0E;min-height:100vh;">
+                <div style="font-size:36px;margin-bottom:12px;">🔒</div>
+                <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:24px;margin-bottom:8px;">Comp Card Unavailable</h2>
+                <p style="color:#94A3B8;font-size:14px;max-width:440px;margin:0 auto 24px;line-height:1.6;">
+                  The casting portfolio for <b>"${safeDisplayName}"</b> is not in the active studio roster or has been archived.
+                </p>
+                <a href="roster.html" style="background:#A8492E;color:#FFF;padding:12px 24px;border-radius:99px;font-weight:700;font-size:13px;text-decoration:none;display:inline-block;">← Return to Active Talent Roster</a>
+              </div>`;
+          }
+        })
+        .catch(err => {
+          console.warn("Database connection notice:", err);
+        });
+    });
+    
   </script>
 </body>
 </html>
