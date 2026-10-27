@@ -706,15 +706,24 @@
         : EXEC + "?action=screener&name=" + encodeURIComponent(targetName);
 
       fetch(fetchUrl)
-        .then(res => res.json())
-        .then(data => {
-          if (data && (data.ok || data.status === "ok" || data.talent || data.marketArchetype)) {
-            renderCompCard(data);
-          }
-        })
-        .catch(err => {
-          console.log("Using offline comp card defaults.");
-        });
+      .then(res => res.json())
+      .then(data => {
+        if (data && (data.ok || data.status === "ok")) {
+          renderCompCard(data);
+        } else {
+          // 🛡️ Show clean 404 screen if deleted from database
+          document.body.innerHTML = `
+            <div style="text-align:center;padding:100px 20px;font-family:sans-serif;color:#FAF8F5;background:#080C0E;min-height:100vh;">
+              <div style="font-size:36px;margin-bottom:12px;">🔒</div>
+              <h2 style="font-size:24px;margin-bottom:8px;">Comp Card Unavailable</h2>
+              <p style="color:#94A3B8;font-size:14px;max-width:440px;margin:0 auto 20px;">The casting record for "${esc(targetName)}" has been archived or removed from the active studio roster.</p>
+              <a href="roster.html" style="color:#A8492E;font-weight:700;text-decoration:none;">← Return to Active Talent Roster</a>
+            </div>`;
+        }
+      })
+      .catch(err => {
+        console.log("Network error connecting to studio database.");
+      });
     });
 
     function renderCompCard(data) {
