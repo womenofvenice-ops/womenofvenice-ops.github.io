@@ -864,13 +864,24 @@ async function handleHeadshotUpload(input) {
         }
       } catch(e) {}
 
+      // 🛡️ High-Availability QR Generator (Tokenized Hosts · Zero-Drop Failover)
       const qrEl = document.getElementById("qrImg");
       if (qrEl) {
         const screenerHost = ["womenofvenice", "com"].join(".");
         const screenerUrl = "https://" + screenerHost + "/screener.html?name=" + encodeURIComponent(targetName);
-        // Uses Google's fast-edge chart service with immediate error fallback
-        qrEl.src = "https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=" + encodeURIComponent(screenerUrl) + "&choe=UTF-8";
-        qrEl.onerror = function() { this.style.display = 'none'; };
+        const encodedUrl = encodeURIComponent(screenerUrl);
+
+        // Provider 1: QRServer CDN
+        const qrHost = ["api", "qrserver", "com"].join(".");
+        qrEl.src = "https://" + qrHost + "/v1/create-qr-code/?size=150x150&data=" + encodedUrl;
+        qrEl.style.display = "block"; // 🛡️ Ensures element is visible
+
+        // Provider 2: Automatic Failover to QuickChart if Provider 1 is blocked by client adblockers
+        qrEl.onerror = function() {
+          const fallbackHost = ["quickchart", "io"].join(".");
+          this.onerror = null; // Prevents recursive loop
+          this.src = "https://" + fallbackHost + "/qr?size=150&text=" + encodedUrl;
+        };
       }
 
       // 🛡️ Defect 3 Fix: Zero-ReferenceError Endpoint Resolution
