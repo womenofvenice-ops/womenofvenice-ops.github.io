@@ -458,8 +458,7 @@
       <div class="comp-left-col">
         <!-- Clickable Photo Box (In-Place Upload) -->
         <div class="comp-photo-box" onclick="document.getElementById('hiddenPhotoInput').click()" title="Click to upload or swap headshot">
-          <img id="headshotImg" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80" alt="Primary Headshot">
-          <div class="comp-photo-hover-hint no-print">
+<img id="headshotImg" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 500' fill='%23E2E8F0'><rect width='400' height='500' fill='%23EDE8DF'/><circle cx='200' cy='180' r='80' fill='%23D1C7B7'/><path d='M80,450 C80,300 320,300 320,450 Z' fill='%23D1C7B7'/></svg>" alt="Primary Headshot" style="transition: opacity 0.2s ease;">          <div class="comp-photo-hover-hint no-print">
             <span style="font-size:24px;margin-bottom:4px;">📷</span>
             <span>Click to Upload / Swap Headshot</span>
             <span style="font-size:9.5px;opacity:0.8;margin-top:2px;">(Auto-saved to profile)</span>
@@ -840,6 +839,15 @@ async function handleHeadshotUpload(input) {
       const nameHeader = document.getElementById("talentName");
       if (nameHeader) nameHeader.innerText = targetName;
       document.title = targetName + " · Casting Comp Card (Z-Card)";
+      
+      // 🛡️ Instant 0ms Photo Restore (Eliminates network wait flicker on F5)
+      try {
+        const cachedPhoto = localStorage.getItem("wov_cached_headshot_" + targetName);
+        const headshotEl = document.getElementById("headshotImg");
+        if (cachedPhoto && cachedPhoto.indexOf("http") === 0 && headshotEl) {
+          headshotEl.src = cachedPhoto;
+        }
+      } catch(e) {}
 
       // Restore custom saved specs if performer edited them locally
       try {
