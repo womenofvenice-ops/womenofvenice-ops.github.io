@@ -796,16 +796,19 @@ window.applyProDomState = function(talentData) {
   const vipIndicator = document.getElementById("vipIndicator");
   if (vipIndicator) vipIndicator.style.display = "inline-block";
 
-  // 3. Synchronize Header Actions (Check Availability, EPK One-Sheet, Comp Card A4, VIP badge)
+  // 3. Synchronize Header Actions (Check Availability, EPK One-Sheet, Studio Prompter, Comp Card A4, VIP badge)
   const headerActions = document.querySelector(".header-actions");
   if (headerActions) {
     const compCardHref = cachedCompCard || (t && t.compCardUrl) || `comp-card.html?name=${encodeURIComponent(safeName)}${candidateCid ? `&candidate=${encodeURIComponent(candidateCid)}` : ""}`;
     // 🛡️ Dynamically construct the Agency EPK One-Sheet URL
     const epkHref = `epk.html?talent=${encodeURIComponent(safeName)}`;
+    // 🛡️ Studio Prompter Highway: Inherits active credentials (?name=...&cid=...)
+    const studioHref = `studio.html${window.location.search || `?name=${encodeURIComponent(safeName)}${candidateCid ? `&cid=${encodeURIComponent(candidateCid)}` : ""}`}`;
 
     headerActions.innerHTML = 
       `<button type="button" onclick="wovOpenB2BModal()" class="no-print" style="background:#1C2B2C;color:#FAF8F5;border:1px solid rgba(255,255,255,0.2);padding:6px 14px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">🎬 Check Availability ↗</button>` +
       `<a href="${epkHref}" target="_blank" rel="noopener noreferrer" class="no-print" style="background:transparent;color:var(--ink,#1C2B2C);border:1.5px solid var(--border,#CBD5E1);padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">📄 Agency EPK ↗</a>` +
+      `<a href="${studioHref}" target="_blank" rel="noopener noreferrer" class="no-print" style="background:rgba(168,73,46,0.1);color:#A8492E;border:1.5px solid rgba(168,73,46,0.4);padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">🎙️ Studio Prompter ↗</a>` +
       `<a href="${compCardHref}" target="_blank" rel="noopener noreferrer" class="no-print" style="background:transparent;color:var(--ink,#1C2B2C);border:1.5px solid var(--border,#CBD5E1);padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">📇 Comp Card (A4) ↗</a>` +
       `<button onclick="window.print();" class="pdf-btn" style="padding:6px 14px;font-size:11.5px;font-weight:700;">📄 Export PDF Deck</button>` +
       `<div class="verified-pill" style="font-size:10px;padding:4px 10px;background:rgba(34,197,94,0.1);color:#166534;border-radius:99px;font-weight:700;">👑 VIP CALIBRATION ACTIVE</div>`;
