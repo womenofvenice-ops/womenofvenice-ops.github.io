@@ -871,13 +871,10 @@
     <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
     <div class="nav-right">
       <div class="nav-links" id="navLinks">
-        <a href="about.html" class="primary">📖 The Project</a>
-        <a href="#gallery-section">🖼️ Gallery</a>
-        <a href="#casting-studio" class="secondary">🎬 Casting Lab</a>
-        <a href="headshot-triage.html">📷 Headshot Triage</a>
-        <a href="booking.html">📸 Book a Session</a>
-        <a href="posa.html">✨ Become a Portrait</a>
-        <a href="#contact" class="contact-btn">✉️ Contact</a>
+        <a href="#atelier" style="text-decoration:none;">The Atelier</a>
+        <a href="roster.html" class="primary" style="font-weight:700;">Talent Roster ↗</a>
+        <a href="studio.html" class="secondary" style="font-weight:700;">Screen Test Studio ↗</a>
+        <a href="#contact" class="contact-btn">Directorial Desk</a>
         <button class="dark-toggle" id="darkToggle" aria-label="Toggle dark mode"><i class="fas fa-moon"></i></button>
       </div>
     </div>
@@ -886,28 +883,54 @@
   <div class="hero" id="hero">
     <img id="heroImage" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="Women of Venice Studio">
     <div class="hero-content">
-      <h1>Women of Venice</h1>
-      <div class="sub">Portraits, Stories &amp; Performance Telemetry · Venezia</div>
-      <div class="unveil-headline" style="font-size: clamp(28px, 4.5vw, 48px); margin-top: 10px; font-weight: 700; line-height: 1.2;">
-        Cinematic Presence &amp; Performance Intelligence.
+      <div class="sub" style="color: var(--peach, #E09A73); font-weight: 700; letter-spacing: 0.25em; text-transform: uppercase; font-size: 11px;">
+        INDEPENDENT DIRECTORIAL ATELIER · VENEZIA
       </div>
-      <div class="motto" style="margin-bottom: 24px;">✦ I’ll steal you from Chronos — and give you Kairos.</div>
+      <h1 style="font-size: clamp(34px, 5.5vw, 62px); margin: 10px 0 8px; line-height: 1.1; font-family: 'Playfair Display', Georgia, serif;">
+        Women of Venice
+      </h1>
+      <div class="unveil-headline" style="font-size: clamp(22px, 3.2vw, 36px); font-weight: 700; color: #F6E4B8; line-height: 1.25; margin-bottom: 12px;">
+        Calibrating On-Camera Performance in Venetian Light.
+      </div>
+      <div class="motto" style="font-size: 14.5px; color: rgba(250,248,245,0.85); max-width: 640px; margin: 0 auto 26px; line-height: 1.6; font-style: normal;">
+        Bridging 35mm chiaroscuro portraiture with autonomous directability telemetry for European cinema leads and luxury commercial campaigns.
+      </div>
       
-      <!-- Reconciled Dual CTA -->
-      <div class="hero-cta-group">
-        <a href="#casting-studio" class="hero-btn hero-btn-lab">
-          🎬 Enter Telemetry Lab
+      <!-- Directorial Action Hub -->
+      <div class="hero-cta-group" style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;">
+        <a href="roster.html" class="hero-btn hero-btn-lab" style="font-size: 14px; padding: 12px 28px; text-decoration: none; border-radius: 99px;">
+          <span>🎬 Explore Talent Roster</span> <span>↗</span>
         </a>
-        <a href="#gallery-section" class="hero-btn hero-btn-gallery">
-          🖼️ View Portrait Archive
+        <a href="studio.html" class="hero-btn hero-btn-gallery" style="font-size: 14px; padding: 12px 28px; text-decoration: none; border-radius: 99px;">
+          <span>🎙️ Launch Screen Test Studio</span> <span>↗</span>
         </a>
       </div>
     </div>
   </div>
 
-  <section class="featured-stories" id="featured">
-    <h2>Featured Stories</h2>
-    <div class="featured-grid" id="featuredGrid"></div>
+  <!-- ========================================== -->
+  <!-- 🏛️ THE ATELIER MANIFESTO & CINEMATIC BACKLOT -->
+  <!-- ========================================== -->
+  <section class="atelier-manifesto-section" id="atelier" style="margin: 50px auto 40px; max-width: 1100px; padding: 48px 32px; background: var(--card-bg, #0B111E); border-radius: 16px; border: 1px solid var(--border, rgba(255,255,255,0.12)); box-shadow: 0 4px 20px var(--shadow, rgba(0,0,0,0.3));">
+    <div style="max-width: 860px; margin: 0 auto; text-align: center;">
+      <div style="font-family: 'Inter', monospace; font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--red, #A8492E); margin-bottom: 8px;">
+        The Directorial Atelier · Venice Backlot
+      </div>
+      <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: clamp(26px, 3.8vw, 36px); font-weight: 700; color: var(--text, #FAF8F5); margin-bottom: 16px; line-height: 1.25;">
+        Where Architectural Stillness Meets Screen Directability.
+      </h2>
+      <p style="font-family: 'Inter', sans-serif; font-size: 14.5px; color: var(--text-light, #94A3B8); line-height: 1.75; margin-bottom: 20px;">
+        Born as an analog study of human faces in natural lagoon chiaroscuro, Women of Venice operates as an open-air daylight film set and calibration lab. We test an actor’s camera economy—measuring micro-expressions, silence discipline, and auditory subtext against the historic limestone and water reflections of La Serenissima.
+      </p>
+      <div style="display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; color: var(--text, #FAF8F5); text-transform: uppercase; letter-spacing: 1px;">
+        <span>✦ 35mm Natural Chiaroscuro</span>
+        <span>✦ Direct-to-Lens Eyeline Tracking</span>
+        <span>✦ Art. 85 GDPR Certified</span>
+      </div>
+    </div>
+    <!-- 🛡️ Preserves JS DOM hooks to prevent null-pointer crashes in existing scripts -->
+    <div id="featured" style="display: none;"></div>
+    <div id="featuredGrid" style="display: none;"></div>
   </section>
 
   <!-- ========================================== -->
@@ -1088,15 +1111,23 @@
     </div>
   </div>
 
-  <div class="footer">
-    <div class="tagline">✦ one encounter at a time · Venezia</div>
-    <div>
-      <a href="about.html">The Project</a> ·
-      <a href="booking.html">Book a Session</a> ·
-      <a href="#contact">Contact</a>
+  <footer class="footer" style="margin-top: 60px; padding: 40px 20px 24px; border-top: 1px solid var(--border, rgba(255,255,255,0.1)); text-align: center; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-light, #94A3B8); line-height: 1.8;">
+    <div class="tagline" style="font-family: 'Playfair Display', Georgia, serif; font-size: 20px; font-weight: 700; color: var(--text, #FAF8F5); margin-bottom: 8px;">
+      Women of Venice · Directorial Atelier &amp; Casting Desk
     </div>
-    <div style="margin-top:6px;font-size:12px;"><a href="https://linktr.ee/womenofvenice" target="_blank">🔗 Linktree</a></div>
-  </div>
+    <p style="font-size: 12.5px; max-width: 600px; margin: 0 auto 16px; color: var(--text-light, #94A3B8);">
+      Calibrating on-camera directability and performance telemetry for European cinema leads and luxury commercial campaigns.
+    </p>
+    <div style="font-weight: 600; margin-bottom: 12px; display: flex; justify-content: center; gap: 18px; flex-wrap: wrap;">
+      <a href="#atelier" style="color: var(--text, #FAF8F5); text-decoration: none;">The Atelier</a> ·
+      <a href="roster.html" style="color: var(--red, #A8492E); font-weight: 700; text-decoration: none;">Talent Roster ↗</a> ·
+      <a href="studio.html" style="color: var(--text, #FAF8F5); text-decoration: none;">Screen Test Studio ↗</a> ·
+      <a href="#contact" style="color: var(--text, #FAF8F5); text-decoration: none;">Directorial Desk</a>
+    </div>
+    <div style="font-size: 11px; color: var(--text-light, #94A3B8); opacity: 0.8; margin-top: 14px;">
+      Director Claudio · Venice &amp; Veneto, Italy · Processing for Artistic Expression under Art. 85 GDPR · All Rights Reserved
+    </div>
+  </footer>
 </div>
 
 <script>
