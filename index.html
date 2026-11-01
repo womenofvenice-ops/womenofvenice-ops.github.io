@@ -34,19 +34,58 @@
     .nav-links { 
       display: flex; 
       align-items: center; 
-      gap: 8px; 
-      font-family: 'Inter', Arial, sans-serif; 
+      gap: 10px; 
+      font-family: 'Inter', -apple-system, Arial, sans-serif; 
       font-size: 13px; 
       font-weight: 600; 
     }
+    .nav-links a {
+      color: var(--text);
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      transition: color 0.2s, background 0.2s;
+    }
     .nav-links a:hover { 
-      background: rgba(168,73,46,0.15); 
+      background: rgba(168,73,46,0.12); 
       color: var(--red); 
     }
-    .nav-links a.primary { background: var(--red); color: #fff; padding: 6px 18px; border-radius: 30px; }
-    .nav-links a.primary:hover { background: #8a3d28; color: #fff; }
-    .nav-links a.secondary, .nav-links a.contact-btn { background: var(--text); color: var(--bg); padding: 6px 18px; border-radius: 30px; }
-    .nav-links a.secondary:hover, .nav-links a.contact-btn:hover { background: var(--red); color: #fff; }
+    .nav-links a.primary { 
+      background: var(--red); 
+      color: #fff !important; 
+      padding: 6px 16px; 
+      border-radius: 99px; 
+    }
+    .nav-links a.primary:hover { 
+      background: #8a3d28; 
+      color: #fff !important; 
+    }
+    .nav-links a.secondary { 
+      background: rgba(28,43,44,0.06); 
+      color: var(--text); 
+      padding: 6px 16px; 
+      border-radius: 99px;
+      border: 1px solid var(--border);
+    }
+    .nav-links a.secondary:hover { 
+      background: var(--text); 
+      color: var(--bg) !important; 
+    }
+    .nav-links a.contact-btn { 
+      background: transparent; 
+      color: var(--text); 
+      padding: 6px 12px; 
+    }
+    .nav-links a.contact-btn:hover { 
+      color: var(--red);
+      background: transparent;
+    }
+    .nav-links a.nav-link-subtle {
+      color: var(--text-light);
+    }
+    .nav-links a.nav-link-subtle:hover {
+      color: var(--red);
+    }
     .dark-toggle { background: var(--card-bg); border: 1px solid var(--border); border-radius: 30px; padding: 4px 12px;
       cursor: pointer; font-size: 14px; color: var(--text); transition: 0.2s; font-family: 'Inter', Arial, sans-serif; }
     .dark-toggle:hover { background: var(--text); color: var(--bg); }
@@ -871,10 +910,11 @@
     <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
     <div class="nav-right">
       <div class="nav-links" id="navLinks">
-        <a href="#atelier" style="text-decoration:none;">The Atelier</a>
-        <a href="roster.html" class="primary" style="font-weight:700;">Talent Roster ↗</a>
-        <a href="studio.html" class="secondary" style="font-weight:700;">Screen Test Studio ↗</a>
-        <a href="#contact" class="contact-btn">Directorial Desk</a>
+        <a href="#atelier" class="nav-item">The Studio</a>
+        <a href="about.html" class="nav-item nav-link-subtle">About</a>
+        <a href="roster.html" class="nav-item primary">Talent</a>
+        <a href="studio.html" class="nav-item secondary">Screen Test Studio</a>
+        <a href="#contact" class="nav-item contact-btn">Contact</a>
         <button class="dark-toggle" id="darkToggle" aria-label="Toggle dark mode"><i class="fas fa-moon"></i></button>
       </div>
     </div>
