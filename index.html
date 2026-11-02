@@ -951,8 +951,8 @@
 
 <div class="hero" id="hero" style="position: relative; overflow: hidden;">
   <!-- 🛡️ Background 35mm Photo Rotator (Untouched for JS compatibility) -->
-    <img id="heroImage" class="hero-bg" src="3C2A0527%20(WoV%20web).JPG" alt="Women of Venice Studio" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;">
-    
+<!-- UPDATE THIS LINE: -->
+<img id="heroImage" class="hero-bg" src="3C2A0527%20(WoV%20web).JPG" referrerpolicy="no-referrer" alt="Women of Venice Studio" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;">    
     <div class="hero-content" style="position: relative; z-index: 2;">
       <div class="sub" style="color: var(--peach, #E09A73); font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; font-size: 11px; margin-bottom: 8px;">
         BOUTIQUE TALENT &amp; CREATIVE STUDIO · VENICE
@@ -1284,8 +1284,8 @@
     for (var i = arr.length - 1; i > 0; i--) { var j = Math.floor(Math.random()*(i+1)); var t=arr[i]; arr[i]=arr[j]; arr[j]=t; }
     return arr;
   }
-  function getThumbUrl(fileId, size){ return 'https://lh3.googleusercontent.com/d/' + fileId + '=w' + size; }
-  function getFullUrl(fileId){ return 'https://lh3.googleusercontent.com/d/' + fileId + '=w1000'; }
+  function getThumbUrl(fileId, size){ return 'https://lh3.googleusercontent.com/d/' + fileId + '=w' + (size || 600); }
+  function getFullUrl(fileId){ return 'https://lh3.googleusercontent.com/d/' + fileId + '=w1920'; }
   function formatName(raw){ return (raw || '').replace(/\b\w/g, function(l){ return l.toUpperCase(); }); }
   function truncate(str, n){ return (str && str.length > n) ? str.substring(0, n) + '\u2026' : str; }
 
@@ -1420,18 +1420,50 @@
     heroTimer = setInterval(rotateHero, 8000);
   }
 
+  function setHeroImage(files) {
+    if (!files || !files.length) return;
+    heroPool = files;
+    rotateHero();
+    clearInterval(heroTimer);
+    heroTimer = setInterval(rotateHero, 8000);
+  }
+
   function rotateHero() {
     if (!heroPool.length) return;
+    var targetImg = (typeof heroImg !== "undefined" && heroImg) 
+      ? heroImg 
+      : document.getElementById("heroImage");
+    if (!targetImg) return;
+
     var pick = heroPool[Math.floor(Math.random() * heroPool.length)];
+    var rawUrl = (typeof getFullUrl === "function") ? getFullUrl(pick.id) : (pick.url || "");
+    if (!rawUrl) return;
+
+    // 🛡️ 1. Force High-Speed Google CDN URL (Bypasses old Drive export 403s)
+    if (pick.id && (!rawUrl || rawUrl.indexOf("drive.google.com") !== -1)) {
+      rawUrl = "https://lh3.googleusercontent.com/d/" + pick.id;
+    }
+
+    // 🛡️ 2. Arm Preloader with no-referrer (Stops app headers from triggering Google 403 blocks)
     var preloader = new Image();
-    preloader.src = getFullUrl(pick.id);
+    preloader.referrerPolicy = "no-referrer";
+    
     preloader.onload = function() {
-      heroImg.style.opacity = '0';
+      targetImg.referrerPolicy = "no-referrer";
+      targetImg.style.opacity = '0';
       setTimeout(function () {
-        heroImg.src = preloader.src;
-        heroImg.style.opacity = '1';
+        targetImg.src = preloader.src;
+        targetImg.style.opacity = '1';
       }, 300);
     };
+
+    // 🛡️ 3. Error Guard: If an image fails to load in app mode, never flash black
+    preloader.onerror = function() {
+      console.warn("Hero rotator notice: Image blocked by app container, keeping current photo.");
+      targetImg.style.opacity = '1';
+    };
+
+    preloader.src = rawUrl;
   }
 
   // 🏛️ LIGHTBOX MODAL (Supports Dynamic Pools & Production Lookbook Metadata)
