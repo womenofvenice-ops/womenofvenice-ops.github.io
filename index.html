@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
   <title>Women of Venice — Portraits & Stories</title>
   <link rel="preconnect" href="https://lh3.googleusercontent.com">
@@ -930,6 +930,12 @@
     .footer a:hover { text-decoration: underline; }
     @media (max-width: 800px) { .grid-sizer, .gallery-item { width: 50%; } }
     @media (max-width: 500px) { .grid-sizer, .gallery-item { width: 100%; } .hero { height: 50vh; } .hero-content h1 { font-size: 32px; } }
+    /* 🛡️ Prevents Chrome/Edge from collapsing dynamic cards to 0px height before images load */
+    .gallery-item {
+      min-height: 220px;
+      background: rgba(255, 255, 255, 0.03);
+      position: relative;
+    }
   </style>
 </head>
 <body>
