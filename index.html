@@ -959,9 +959,12 @@
   </div>
 
 <div class="hero" id="hero" style="position: relative; overflow: hidden;">
- <!-- 🛡️ Background 35mm Photo Rotator (Direct High-Speed CDN Asset) -->
-  <img id="heroImage" class="hero-bg" src="https://lh3.googleusercontent.com/d/1WNSE5fCdmDwR-ijDCSS6gasdEU9jZm-T=w1200" referrerpolicy="no-referrer" alt="Women of Venice Studio" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;">    
-    <div class="hero-content" style="position: relative; z-index: 2;">
+    <!-- 🛡️ Background 35mm Photo Rotator: Points to Verified Serenissima Still -->
+    <img id="heroImage" class="hero-bg" 
+         src="https://lh3.googleusercontent.com/d/1ZYZS-I40xE8j1uqJLr1LDETRV7DQuMux=w1400" 
+         referrerpolicy="no-referrer" 
+         alt="Women of Venice Studio" 
+         style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;">    <div class="hero-content" style="position: relative; z-index: 2;">
       <div class="sub" style="color: var(--peach, #E09A73); font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; font-size: 11px; margin-bottom: 8px;">
         BOUTIQUE TALENT &amp; CREATIVE STUDIO · VENICE
       </div>
@@ -1465,15 +1468,15 @@
     });
   }
 
-  // 🛡️ HERO CAROUSEL (Preloads Image in Memory to Prevent Black Flashing)
-  var heroTimer = null, heroPool = [];
-  function setHeroImage(files) {
-    if (!files || !files.length) return;
-    heroPool = files;
-    // 🛡️ Preloaded hero stays visible for the full 8 seconds before first rotation
-    clearInterval(heroTimer);
-    heroTimer = setInterval(rotateHero, 8000);
-  }
+  // 🛡️ HERO CAROUSEL (Smooth 8-Second Transitions)
+var heroTimer = null, heroPool = [];
+function setHeroImage(files) {
+  if (!files || !files.length) return;
+  heroPool = files;
+  // 🛡️ The static hero stays visible for a full 8 seconds before the first rotation
+  clearInterval(heroTimer);
+  heroTimer = setInterval(rotateHero, 8000);
+}
 
   function rotateHero() {
     if (!heroPool.length) return;
