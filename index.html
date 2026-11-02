@@ -4,6 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
   <title>Women of Venice — Portraits & Stories</title>
   <link rel="preconnect" href="https://lh3.googleusercontent.com">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1279,6 +1280,7 @@
   var lb = document.getElementById('lb'), lbImg = document.getElementById('lbImg'), lbCap = document.getElementById('lbCap'),
       lbCount = document.getElementById('lbCount'), lbPrev = document.getElementById('lbPrev'), lbNext = document.getElementById('lbNext'),
       lbClose = document.getElementById('lbClose'), lbControls = document.getElementById('lbControls');
+  if (lbImg) lbImg.referrerPolicy = 'no-referrer'; // 🛡️ Ensures full-size Lightbox photos load in App mode
 
   function shuffleArray(arr) {
     for (var i = arr.length - 1; i > 0; i--) { var j = Math.floor(Math.random()*(i+1)); var t=arr[i]; arr[i]=arr[j]; arr[j]=t; }
@@ -1312,12 +1314,18 @@
       var thumbUrl = getThumbUrl(f.id, 600);
       var img = document.createElement('img');
       img.className = 'placeholder-blur'; 
+      img.referrerPolicy = 'no-referrer'; // 🛡️ Bypasses In-App WebView 403 blocks
       img.src = thumbUrl; 
       img.alt = f.location || f.name || "Venetian Scenography"; 
       img.loading = 'lazy';
       
       img.onload = function() {
         img.classList.add('loaded'); 
+        if (masonryInstance) masonryInstance.layout(); 
+      };
+      // 🛡️ Error Guard: If network is slow or image fails, unblur so layout doesn't collapse
+      img.onerror = function() {
+        img.classList.add('loaded');
         if (masonryInstance) masonryInstance.layout(); 
       };
       item.appendChild(img);
