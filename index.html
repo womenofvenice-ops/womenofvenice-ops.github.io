@@ -156,24 +156,21 @@
       background: rgba(28,43,44,0.85);
       border-color: rgba(250,248,245,0.7);
     }
-    //* 🏛️ Editorial Corner Link: Desktop Pinned / Mobile Stack */
-    .hero-mission-link {
-      position: absolute;
-      bottom: 24px;
-      right: 36px;
-      z-index: 5;
-      font-family: 'Inter', -apple-system, sans-serif;
-      font-size: 12.5px;
-      font-weight: 600;
-      color: rgba(250, 248, 245, 0.75);
+    /* 🏛️ Editorial Centered Mission Link (Always on top of image, never purple) */
+    .hero-mission-link,
+    .hero-mission-link:visited {
+      color: rgba(250, 248, 245, 0.8) !important;
       text-decoration: none;
-      letter-spacing: 0.3px;
-      text-transform: none;
-      white-space: nowrap;
+      font-family: 'Inter', -apple-system, sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      display: inline-block;
+      margin-top: 22px;
       transition: color 0.2s ease;
     }
     .hero-mission-link:hover {
-      color: var(--sand, #F6E4B8);
+      color: var(--sand, #F6E4B8) !important;
     }
     @media (max-width: 600px) {
       .hero {
@@ -981,12 +978,14 @@
           <span>Screen Test Studio</span> <span>↗</span>
         </a>
       </div>
-    </div>
 
-    <!-- 🏛️ The Single Editorial Hallmark: Intentionally offset from buttons -->
-    <a href="about.html" class="hero-mission-link">
-      Our Mission&nbsp;&rarr;
-    </a>
+      <!-- 🏛️ Perfectly Centered Inside hero-content: Immune to Image Coverage & Never Purple -->
+      <div>
+        <a href="about.html" class="hero-mission-link">
+          Our Mission&nbsp;&rarr;
+        </a>
+      </div>
+    </div>
   </div>
 
   <!-- ========================================== -->
