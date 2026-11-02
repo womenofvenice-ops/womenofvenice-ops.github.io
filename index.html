@@ -1225,6 +1225,18 @@
     };
 
 (function(){
+  // 🔍 60-Second On-Screen Error Logger for Mobile Chrome/Edge
+  window.onerror = function(msg, url, line) {
+    var errBox = document.getElementById("mobileErrBox");
+    if (!errBox) {
+      errBox = document.createElement("div");
+      errBox.id = "mobileErrBox";
+      errBox.style.cssText = "position:fixed;top:0;left:0;width:100%;background:#EF4444;color:#FFF;padding:12px;font-size:12px;z-index:999999;font-family:monospace;word-break:break-all;";
+      document.body.appendChild(errBox);
+    }
+    errBox.innerText = "🚨 APP ERROR (Line " + line + "): " + msg;
+  };
+  
   var EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
 
   var hamburger = document.getElementById('hamburger');
@@ -1269,18 +1281,29 @@
   if (formOverlay) formOverlay.addEventListener('click', function(e){ if (e.target === this) this.classList.remove('show'); });
 
   var darkToggle = document.getElementById('darkToggle');
-  var currentTheme = localStorage.getItem('theme') || 'dark';
+  var currentTheme = 'dark';
+  // 🛡️ Guard against Chrome/Edge mobile SecurityError on localStorage
+  try { currentTheme = localStorage.getItem('theme') || 'dark'; } catch(eTheme) {}
+
   function applyTheme(t) {
-    if (t === 'dark') { document.documentElement.setAttribute('data-theme', 'dark'); darkToggle.innerHTML = '<i class="fas fa-sun"></i>'; }
-    else { document.documentElement.removeAttribute('data-theme'); darkToggle.innerHTML = '<i class="fas fa-moon"></i>'; }
+    if (t === 'dark') { 
+      document.documentElement.setAttribute('data-theme', 'dark'); 
+      if (darkToggle) darkToggle.innerHTML = '<i class="fas fa-sun"></i>'; // 🛡️ Null-check prevents fatal crash
+    } else { 
+      document.documentElement.removeAttribute('data-theme'); 
+      if (darkToggle) darkToggle.innerHTML = '<i class="fas fa-moon"></i>'; 
+    }
   }
   applyTheme(currentTheme);
-  darkToggle.addEventListener('click', function() {
-    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    var next = isDark ? 'light' : 'dark';
-    localStorage.setItem('theme', next);
-    applyTheme(next);
-  });
+
+  if (darkToggle) {
+    darkToggle.addEventListener('click', function() {
+      var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      var next = isDark ? 'light' : 'dark';
+      try { localStorage.setItem('theme', next); } catch(eSet) {}
+      applyTheme(next);
+    });
+  }
 
   var INITIAL_COUNT = 6, BATCH_SIZE = 12;
   var allFiles = [], currentIndex = 0, displayedFiles = [], masonryInstance = null;
@@ -1322,20 +1345,25 @@
       var item = document.createElement('div'); 
       item.className = 'gallery-item';
       
-      // 🚀 Performance: Single crisp 600px fetch for grid (reserves 1000px for Lightbox)
       var thumbUrl = getThumbUrl(f.id, 600);
       var img = document.createElement('img');
       img.className = 'placeholder-blur'; 
-      img.referrerPolicy = 'no-referrer'; // 🛡️ Bypasses In-App WebView 403 blocks
+      img.referrerPolicy = 'no-referrer'; // 🛡️ Bypasses Chrome/Edge in-app 403 blocks
       img.src = thumbUrl; 
       img.alt = f.location || f.name || "Venetian Scenography"; 
-      img.loading = 'lazy';
+      
+      // 🛡️ Break Chromium lazy deadlock: load the initial batch eagerly
+      if (idx < 6) {
+        img.loading = 'eager';
+      } else {
+        img.loading = 'lazy';
+      }
       
       img.onload = function() {
         img.classList.add('loaded'); 
         if (masonryInstance) masonryInstance.layout(); 
       };
-      // 🛡️ Error Guard: If network is slow or image fails, unblur so layout doesn't collapse
+      // 🛡️ Error fallback: if an image fails or is slow, reveal placeholder so layout doesn't freeze
       img.onerror = function() {
         img.classList.add('loaded');
         if (masonryInstance) masonryInstance.layout(); 
