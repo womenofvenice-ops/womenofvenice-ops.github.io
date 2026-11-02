@@ -1489,9 +1489,9 @@ function setHeroImage(files) {
     var rawUrl = (typeof getFullUrl === "function") ? getFullUrl(pick.id) : (pick.url || "");
     if (!rawUrl) return;
 
-    // 🛡️ 1. Force High-Speed Google CDN URL (Bypasses old Drive export 403s)
+    // 🛡️ 1. Force High-Speed Google CDN URL (Bypasses old Drive export 403s & forces 1400px width)
     if (pick.id && (!rawUrl || rawUrl.indexOf("drive.google.com") !== -1)) {
-      rawUrl = "https://lh3.googleusercontent.com/d/" + pick.id;
+      rawUrl = "https://lh3.googleusercontent.com/d/" + pick.id + "=w1400";
     }
 
     // 🛡️ 2. Arm Preloader with no-referrer (Stops app headers from triggering Google 403 blocks)
