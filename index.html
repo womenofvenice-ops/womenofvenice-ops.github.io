@@ -5,6 +5,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
+  <!-- ⚡ High-Priority LCP Hero Preload (Loads in parallel with HTML) -->
+  <link rel="preload" as="image" href="https://lh3.googleusercontent.com/d/1WNSE5fCdmDwR-ijDCSS6gasdEU9jZm-T=w1200" fetchpriority="high">
   <title>Women of Venice — Portraits & Stories</title>
   <link rel="preconnect" href="https://lh3.googleusercontent.com">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -957,9 +959,8 @@
   </div>
 
 <div class="hero" id="hero" style="position: relative; overflow: hidden;">
-  <!-- 🛡️ Background 35mm Photo Rotator (Untouched for JS compatibility) -->
-<!-- UPDATE THIS LINE: -->
-<img id="heroImage" class="hero-bg" src="3C2A0527%20(WoV%20web).JPG" referrerpolicy="no-referrer" alt="Women of Venice Studio" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;">    
+ <!-- 🛡️ Background 35mm Photo Rotator (Direct High-Speed CDN Asset) -->
+  <img id="heroImage" class="hero-bg" src="https://lh3.googleusercontent.com/d/1WNSE5fCdmDwR-ijDCSS6gasdEU9jZm-T=w1200" referrerpolicy="no-referrer" alt="Women of Venice Studio" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;">    
     <div class="hero-content" style="position: relative; z-index: 2;">
       <div class="sub" style="color: var(--peach, #E09A73); font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; font-size: 11px; margin-bottom: 8px;">
         BOUTIQUE TALENT &amp; CREATIVE STUDIO · VENICE
@@ -1466,14 +1467,6 @@
 
   // 🛡️ HERO CAROUSEL (Preloads Image in Memory to Prevent Black Flashing)
   var heroTimer = null, heroPool = [];
-  function setHeroImage(files) {
-    if (!files || !files.length) return;
-    heroPool = files;
-    rotateHero();
-    clearInterval(heroTimer);
-    heroTimer = setInterval(rotateHero, 8000);
-  }
-
   function setHeroImage(files) {
     if (!files || !files.length) return;
     heroPool = files;
