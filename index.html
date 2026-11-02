@@ -949,11 +949,11 @@
     </div>
   </div>
 
-  <div class="hero" id="hero">
-    <!-- 🛡️ Background 35mm Photo Rotator (Untouched for JS compatibility) -->
-    <img id="heroImage" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="Women of Venice Studio">
+<div class="hero" id="hero" style="position: relative; overflow: hidden;">
+  <!-- 🛡️ Background 35mm Photo Rotator (Untouched for JS compatibility) -->
+    <img id="heroImage" class="hero-bg" src="3C2A0527%20(WoV%20web).JPG" alt="Women of Venice Studio" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;">
     
-    <div class="hero-content">
+    <div class="hero-content" style="position: relative; z-index: 2;">
       <div class="sub" style="color: var(--peach, #E09A73); font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; font-size: 11px; margin-bottom: 8px;">
         BOUTIQUE TALENT &amp; CREATIVE STUDIO · VENICE
       </div>
