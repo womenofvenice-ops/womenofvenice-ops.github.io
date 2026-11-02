@@ -156,7 +156,7 @@
       background: rgba(28,43,44,0.85);
       border-color: rgba(250,248,245,0.7);
     }
-    /* 🏛️ Editorial Corner Link: Desktop Pinned / Mobile Flow */
+    //* 🏛️ Editorial Corner Link: Desktop Pinned / Mobile Stack */
     .hero-mission-link {
       position: absolute;
       bottom: 24px;
@@ -168,7 +168,7 @@
       color: rgba(250, 248, 245, 0.75);
       text-decoration: none;
       letter-spacing: 0.3px;
-      text-transform: none; /* 🛡️ Guarantees Title Case */
+      text-transform: none;
       white-space: nowrap;
       transition: color 0.2s ease;
     }
@@ -176,10 +176,16 @@
       color: var(--sand, #F6E4B8);
     }
     @media (max-width: 600px) {
+      .hero {
+        flex-direction: column !important; /* 🛡️ Forces vertical stacking so text stays 100% centered */
+        height: auto !important;          /* 🛡️ Prevents mobile screen squashing */
+        min-height: 520px;
+        padding: 44px 16px 28px !important;
+      }
       .hero-mission-link {
         position: static;
         display: inline-block;
-        margin-top: 22px;
+        margin-top: 24px;
         text-align: center;
       }
     }
