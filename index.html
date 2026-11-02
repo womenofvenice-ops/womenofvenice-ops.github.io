@@ -1212,6 +1212,18 @@
 </div>
 
 <script>
+  // 🔍 TEMPORARY MOBILE APP DIAGNOSTIC LOGGER
+    window.onerror = function(msg, url, line) {
+      var errBox = document.getElementById("mobileErrBox");
+      if (!errBox) {
+        errBox = document.createElement("div");
+        errBox.id = "mobileErrBox";
+        errBox.style.cssText = "position:fixed;top:0;left:0;width:100%;background:#EF4444;color:#FFF;padding:12px;font-size:12px;z-index:999999;font-family:monospace;word-break:break-all;";
+        document.body.appendChild(errBox);
+      }
+      errBox.innerText = "🚨 APP ERROR (Line " + line + "): " + msg;
+    };
+
 (function(){
   var EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
 
