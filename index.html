@@ -1470,7 +1470,7 @@
   function setHeroImage(files) {
     if (!files || !files.length) return;
     heroPool = files;
-    rotateHero();
+    // 🛡️ Preloaded hero stays visible for the full 8 seconds before first rotation
     clearInterval(heroTimer);
     heroTimer = setInterval(rotateHero, 8000);
   }
