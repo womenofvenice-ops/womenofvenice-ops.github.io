@@ -390,8 +390,10 @@
               '<div style="font-size:12px;color:var(--inkS);">' + new Date(takeItem.date).toLocaleDateString() + '</div>' +
             '</div>' +
             
-            // Dedicated Take Audio Player
-            (fId ? '<div style="margin:10px 0;"><button class="small" id="playbtn_'+fId+'" onclick="wovPlayTakeAudio(\''+fId+'\')">🔊 Play recording</button><div id="audiobox_'+fId+'" style="margin-top:8px;"></div></div>' : '') +
+            (fId ? '<div style="margin:10px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
+         '<button type="button" class="small" style="background:#1C2B2C;color:#FFF;font-weight:700;" onclick="wovStreamTake(\''+fId+'\')">⚡ Stream Video (1s Instant) ↗</button>' +
+         '<button type="button" class="small" id="playbtn_'+fId+'" onclick="wovPlayTakeAudio(\''+fId+'\')">▶ Play Local</button>' +
+       '</div><div id="audiobox_'+fId+'"></div>' : '') +
      
 // 📊 THE 3 EXPANDED CONTAINERS (Telemetry, Ambition, Comps)
             radarHtml +
