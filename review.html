@@ -510,23 +510,58 @@
     }
   }
 
-  // Audio Player
+  // ⚡ 1-Second Instant Drive Stream (Bypasses 60s Base64 lag completely)
+  window.wovStreamTake = function(fileId) {
+    var box = document.getElementById("audiobox_" + fileId);
+    if (!box) return;
+    box.innerHTML = 
+      '<div style="position:relative;width:100%;padding-top:56.25%;background:#000;border-radius:10px;overflow:hidden;margin-top:8px;">' +
+        '<iframe src="https://drive.google.com/file/d/' + encodeURIComponent(fileId) + '/preview" ' +
+                'style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" ' +
+                'allow="autoplay; fullscreen" allowfullscreen></iframe>' +
+      '</div>';
+  };
+
+  // 🎬 Local Media Player (Blob fallback for local/offline playback)
   window.wovPlayTakeAudio = async function(fileId){
     var btn = document.getElementById("playbtn_" + fileId);
     var box = document.getElementById("audiobox_" + fileId);
-    if(btn) { btn.disabled = true; btn.textContent = "Loading audio…"; }
+    if(btn) { btn.disabled = true; btn.textContent = "⏳ Loading media…"; }
+    
     try{
       var r = await fetch(EXEC + "?action=audioFile&id=" + encodeURIComponent(fileId) + "&key=" + encodeURIComponent(KEY));
       var data = await r.json();
-      if(data.error){ if(box) box.textContent = "⚠️ " + data.error; if(btn){ btn.disabled=false; btn.textContent="🔊 Play recording"; } return; }
+      if(data.error){ 
+        if(box) box.textContent = "⚠️ " + data.error; 
+        if(btn){ btn.disabled = false; btn.textContent = "▶ Play Local"; } 
+        return; 
+      }
+      
       var byteChars = atob(data.audio);
       var byteArr = new Uint8Array(byteChars.length);
-      for(var i=0;i<byteChars.length;i++) byteArr[i] = byteChars.charCodeAt(i);
-      var blob = new Blob([byteArr], { type: data.mime || "audio/mp4" });
+      for(var i=0; i<byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
+      
+      var mimeType = data.mime || "video/mp4";
+      var blob = new Blob([byteArr], { type: mimeType });
       var url = URL.createObjectURL(blob);
-      if(box) box.innerHTML = '<audio controls autoplay src="'+url+'" style="width:100%"></audio>';
+      
+      var isVideo = (mimeType.indexOf("video/") === 0) || (mimeType === "application/octet-stream");
+      
+      if(box) {
+        if (isVideo) {
+          box.innerHTML = 
+            '<div style="position:relative;width:100%;padding-top:56.25%;background:#000;border-radius:10px;overflow:hidden;margin-top:8px;">' +
+              '<video controls autoplay playsinline src="' + url + '" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;"></video>' +
+            '</div>';
+        } else {
+          box.innerHTML = '<audio controls autoplay src="' + url + '" style="width:100%;margin-top:8px;"></audio>';
+        }
+      }
       if(btn) btn.style.display = "none";
-    }catch(err){ if(box) box.textContent = "⚠️ " + err; if(btn){ btn.disabled=false; btn.textContent="🔊 Play recording"; } }
+    }catch(err){ 
+      if(box) box.textContent = "⚠️ " + err; 
+      if(btn){ btn.disabled = false; btn.textContent = "▶ Play Local"; } 
+    }
   };
 
   // Narrative Story Controls
