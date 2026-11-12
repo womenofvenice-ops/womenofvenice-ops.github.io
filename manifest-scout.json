@@ -1,0 +1,20 @@
+{
+  "name": "WOV Scout Desk",
+  "short_name": "WOV Scout",
+  "id": "./scout-desk.html",
+  "start_url": "./scout-desk.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0b0d",
+  "theme_color": "#c5a059",
+  "description": "Women of Venice Directorial Scout & Due Diligence Desk",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
