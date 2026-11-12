@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>WOV // Directorial Scout & Intelligence Desk</title>
+  <style>
+    :root {
+      --bg-base: #0a0b0d;
+      --bg-surface: #141619;
+      --bg-surface-elevated: #1b1e22;
+      --border: #262a30;
+      --border-focus: #c5a059;
+      --text-main: #f0f2f5;
+      --text-muted: #8b929a;
+      --gold: #c5a059;
+      --gold-hover: #d8b26e;
+      --green: #2ecc71;
+      --green-bg: #12281b;
+      --amber: #f39c12;
+      --amber-bg: #2d2010;
+      --red: #e74c3c;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-base);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 20px 16px 80px 16px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .brand-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin: 0;
+    }
+    .brand-subtitle {
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .btn-settings {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .card-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-top: 0;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Inputs */
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    textarea, input[type="text"] {
+      width: 100%;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-main);
+      padding: 12px;
+      font-size: 0.95rem;
+      margin-bottom: 16px;
+      outline: none;
+      transition: border 0.2s;
+    }
+    textarea:focus, input[type="text"]:focus {
+      border-color: var(--border-focus);
+    }
+
+    /* Media Ingestion Row */
+    .media-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 580px) {
+      .media-grid { grid-template-columns: 1fr; }
+    }
+    .media-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--bg-surface-elevated);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      color: var(--text-main);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+    }
+    .media-btn.active {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: rgba(197, 160, 89, 0.08);
+    }
+    .media-btn.recording {
+      border-color: var(--red);
+      color: var(--red);
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { background: rgba(231, 76, 60, 0.1); }
+      50% { background: rgba(231, 76, 60, 0.3); }
+      100% { background: rgba(231, 76, 60, 0.1); }
+    }
+
+    /* Master Action Button */
+    .btn-primary {
+      width: 100%;
+      background: var(--gold);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn-primary:hover { background: var(--gold-hover); }
+    .btn-primary:active { transform: scale(0.99); }
+    .btn-primary:disabled {
+      background: #333;
+      color: #666;
+      cursor: not-allowed;
+    }
+
+    /* Results Dashboard */
+    #resultsView { display: none; }
+    .profile-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .performer-name {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin: 0;
+    }
+    .performer-handles {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 2px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .badge-priority { background: var(--green-bg); color: var(--green); border: 1px solid var(--green); }
+    .badge-promising { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber); }
+
+    .dossier-box {
+      background: var(--bg-surface-elevated);
+      border-left: 3px solid var(--gold);
+      border-radius: 0 8px 8px 0;
+      padding: 14px 16px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      margin-bottom: 24px;
+      white-space: pre-wrap;
+    }
+
+    /* Human-in-the-Loop Copywriting Workbench */
+    .channel-nav {
+      display: flex;
+      gap: 6px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+    }
+    .channel-tab {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .channel-tab.active {
+      background: var(--bg-surface-elevated);
+      color: var(--gold);
+    }
+
+    .edit-hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .draft-textarea {
+      min-height: 120px;
+      font-family: inherit;
+      line-height: 1.5;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .btn-action {
+      flex: 1;
+      min-width: 140px;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+    }
+    .btn-action.highlight {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+    .btn-action.whatsapp {
+      background: #25D366;
+      border: none;
+      color: #000;
+      font-weight: 700;
+    }
+
+    /* Settings Modal */
+    #settingsModal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 520px;
+      width: 100%;
+    }
+
+    /* Notification Toast */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--gold);
+      color: #000;
+      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 2000;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div>
+      <h1 class="brand-title">Women of Venice</h1>
+      <div class="brand-subtitle">Autonomous Directorial Scout Desk</div>
+    </div>
+    <button class="btn-settings" onclick="openSettings()">⚙️ Settings</button>
+  </header>
+
+  <!-- STEP 1: FIELD INTAKE -->
+  <div class="card">
+    <div class="card-title">
+      <span>1. Field Capture & Encounter</span>
+      <span id="captureStatus" style="font-weight: normal; color: var(--text-muted); font-size: 0.75rem;">Ready</span>
+    </div>
+
+    <div class="media-grid">
+      <!-- Card / Badge Photo Ingestion (Decoupled DOM Nodes) -->
+      <label class="media-btn" id="photoBtn" for="fileInput">
+        📷 Snap Card / Badge
+      </label>
+      <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none;" onchange="handleFileSelected(event)">
+
+      <!-- 15s Voice Memo Recorder -->
+      <button type="button" class="media-btn" id="micBtn" onclick="toggleAudioRecording()">
+        🎙️ Record Voice Note
+      </button>
+    </div>
+    <audio id="audioPreview" controls style="display:none; width: 100%; margin-bottom: 14px;"></audio>
+
+    <label for="fieldNotes">Directorial Notes / Social Profiles</label>
+    <textarea id="fieldNotes" rows="3" placeholder="e.g. Met Laura at Venice Orizzonti screening. Starred in an Italian indie short film. Mentioned looking for self-tape directing tools. IG: @laura.cinema"></textarea>
+
+    <button class="btn-primary" id="btnAnalyze" onclick="executeIntake()">
+      ⚡ Initiate Directorial Due Diligence
+    </button>
+  </div>
+
+  <!-- STEP 2: AUDIT & INTELLIGENCE DASHBOARD -->
+  <div class="card" id="resultsView">
+    <div class="card-title">2. Candidate Intelligence Dossier</div>
+
+    <div class="profile-header">
+      <div>
+        <h2 class="performer-name" id="resName">Performer Name</h2>
+        <div class="performer-handles" id="resMeta">@handle · direct@cinema.it</div>
+      </div>
+      <div>
+        <span class="badge" id="resBadge">85% Match</span>
+      </div>
+    </div>
+
+    <label>Artistic Due Diligence Dossier</label>
+    <div class="dossier-box" id="resDossier">Loading verified research...</div>
+
+    <!-- STEP 3: HUMAN-IN-THE-LOOP CORRESPONDENCE -->
+    <div class="card-title" style="margin-top: 10px;">
+      <span>3. Contextual Directorial Outreach</span>
+      <span style="font-weight: normal; color: var(--gold); font-size: 0.75rem;">Human-in-the-Loop Approved</span>
+    </div>
+
+    <div class="channel-nav">
+      <button class="channel-tab active" id="tabWa" onclick="switchChannel('whatsapp')">💬 WhatsApp</button>
+      <button class="channel-tab" id="tabIg" onclick="switchChannel('instagram_dm')">📸 Instagram DM</button>
+      <button class="channel-tab" id="tabEmail" onclick="switchChannel('email')">✉️ Formal Email</button>
+    </div>
+
+    <div class="edit-hint">
+      <span>✏️ Personalize / edit message before sending:</span>
+      <span id="wordCount">0 words</span>
+    </div>
+    <textarea class="draft-textarea" id="draftContent" oninput="updateWordCount()"></textarea>
+
+    <div class="action-row">
+      <button class="btn-action highlight" onclick="copyCurrentDraft()">📋 Copy Draft</button>
+      <a class="btn-action whatsapp" id="btnLaunchApp" href="#" target="_blank">📲 Send WhatsApp</a>
+      <button class="btn-action" onclick="markCandidateContacted()">✅ Mark Contacted</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div id="settingsModal">
+  <div class="modal-card">
+    <div class="card-title">Scout Satellite Configuration</div>
+    <label for="webAppUrl">Deployed Web App URL</label>
+    <input type="text" id="webAppUrl" placeholder="https://script.google.com/macros/s/.../exec">
+    <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">
+      Saved in your local browser cache. Pointing directly to your <code>WOV_SCOUT_SATELLITE</code> deployment.
+    </div>
+    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+      <button class="btn-action" onclick="closeSettings()">Cancel</button>
+      <button class="btn-action highlight" onclick="saveSettings()">Save Configuration</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast">Message copied to clipboard!</div>
+
+<script>
+  let activeDrafts = { whatsapp: "", instagram_dm: "", email: "" };
+  let currentScoutId = "";
+  let currentGatewayUrl = "";
+  let currentPhone = "";
+  let currentActiveChannel = "whatsapp";
+
+  let mediaAssetBase64 = null;
+  let mediaMimeType = "image/jpeg";
+  let mediaRecorder = null;
+  let audioChunks = [];
+
+  // Initialize
+  window.addEventListener("DOMContentLoaded", () => {
+    const savedUrl = localStorage.getItem("wov_scout_url") || "";
+    document.getElementById("webAppUrl").value = savedUrl;
+    if (!savedUrl) openSettings();
+  });
+
+  function openSettings() { document.getElementById("settingsModal").style.display = "flex"; }
+  function closeSettings() { document.getElementById("settingsModal").style.display = "none"; }
+  function saveSettings() {
+    const url = document.getElementById("webAppUrl").value.trim();
+    localStorage.setItem("wov_scout_url", url);
+    closeSettings();
+    showToast("Endpoint configured successfully.");
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById("toast");
+    toast.innerText = msg;
+    toast.style.opacity = "1";
+    setTimeout(() => { toast.style.opacity = "0"; }, 2500);
+  }
+
+  // File Upload Ingestion with Automatic Mobile Downsampling (Prevents 10MB GAS Overflows)
+  function handleFileSelected(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        // Downscale to max 1280px maintaining aspect ratio
+        const maxDim = 1280;
+        let w = img.width, h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+          else { w = Math.round((w * maxDim) / h); h = maxDim; }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+
+        // Compress to efficient JPEG (~150-250KB)
+        mediaMimeType = "image/jpeg";
+        mediaAssetBase64 = canvas.toDataURL("image/jpeg", 0.75);
+        document.getElementById("photoBtn").classList.add("active");
+        document.getElementById("photoBtn").innerText = "✅ " + file.name.substring(0, 14) + "...";
+        document.getElementById("captureStatus").innerText = "Card photo compressed & ready";
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Voice Note Recorder (MediaRecorder API with Track Cleanup)
+  let activeMediaStream = null;
+
+  async function toggleAudioRecording() {
+    const micBtn = document.getElementById("micBtn");
+
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      mediaRecorder.stop();
+      micBtn.classList.remove("recording");
+      micBtn.innerText = "🎙️ Record Voice Note";
+      return;
+    }
+
+    try {
+      activeMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunks = [];
+      
+      const options = MediaRecorder.isTypeSupported('audio/webm') ? { mimeType: 'audio/webm' } : {};
+      mediaRecorder = new MediaRecorder(activeMediaStream, options);
+
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        // 🛡️ Release hardware microphone tracks immediately
+        if (activeMediaStream) {
+          activeMediaStream.getTracks().forEach(track => track.stop());
+          activeMediaStream = null;
+        }
+
+        const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+        mediaMimeType = audioBlob.type || 'audio/webm';
+        
+        const preview = document.getElementById("audioPreview");
+        preview.src = URL.createObjectURL(audioBlob);
+        preview.style.display = "block";
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          mediaAssetBase64 = e.target.result;
+          micBtn.classList.add("active");
+          document.getElementById("captureStatus").innerText = "Voice memo ready";
+        };
+        reader.readAsDataURL(audioBlob);
+      };
+
+      mediaRecorder.start();
+      micBtn.classList.add("recording");
+      micBtn.innerText = "⏹️ Stop Recording...";
+      document.getElementById("captureStatus").innerText = "Recording...";
+    } catch (err) {
+      alert("Microphone permission denied or unsupported on this device: " + err.message);
+    }
+  }
+
+  // Execute Real-Time Intake
+  async function executeIntake() {
+    const webAppUrl = localStorage.getItem("wov_scout_url");
+    if (!webAppUrl) {
+      alert("Please configure your deployed Apps Script URL in Settings first.");
+      openSettings();
+      return;
+    }
+
+    const btn = document.getElementById("btnAnalyze");
+    const notes = document.getElementById("fieldNotes").value.trim();
+
+    if (!notes && !mediaAssetBase64) {
+      alert("Please provide an encounter note, business card photo, or voice memo.");
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = "🧠 Analyzing Craft & Synthesizing Dossier...";
+
+    const payload = {
+      action: "intakeCandidate",
+      notes: notes,
+      base64Asset: mediaAssetBase64,
+      mimeType: mediaMimeType
+    };
+
+    try {
+      // CORS SAFELISTED DISPATCH: text/plain prevents OPTIONS preflight drops in GAS
+      const response = await fetch(webAppUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+
+      const res = await response.json();
+      if (!res.ok) throw new Error(res.error || "Failed to process candidate.");
+
+      renderCandidateProfile(res);
+    } catch (err) {
+      alert("Submission notice: " + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerText = "⚡ Initiate Directorial Due Diligence";
+    }
+  }
+
+  let currentEmail = ""; // State variable for email pre-population
+
+  function renderCandidateProfile(data) {
+    currentScoutId = data.scoutId;
+    currentGatewayUrl = data.gatewayUrl;
+    currentEmail = data.email || ""; // 🛡️ Capture email for mailto
+    activeDrafts = data.drafts || {};
+
+    document.getElementById("resName").innerText = data.name || "Identified Performer";
+    
+    const metaParts = [];
+    if (data.handle) metaParts.push(data.handle);
+    if (data.email) metaParts.push(data.email);
+    document.getElementById("resMeta").innerText = metaParts.join(" · ") || "Direct Contact Tracked";
+
+    const badge = document.getElementById("resBadge");
+    const score = data.affinityScore || 50;
+    const tier = data.tier || "PROMISING_CREATOR";
+    badge.innerText = `${score}% Match · ${tier.replace("_", " ")}`;
+    badge.className = "badge " + (score >= 80 ? "badge-priority" : "badge-promising");
+
+    document.getElementById("resDossier").innerText = data.dossier || "Verified research complete.";
+
+    // 🛡️ Reset media input state to prevent contaminating the next candidate
+    mediaAssetBase64 = null;
+    mediaMimeType = "image/jpeg";
+    document.getElementById("fileInput").value = "";
+    document.getElementById("photoBtn").classList.remove("active");
+    document.getElementById("photoBtn").innerText = "📷 Snap Card / Badge";
+    document.getElementById("micBtn").classList.remove("active");
+    document.getElementById("audioPreview").style.display = "none";
+    document.getElementById("captureStatus").innerText = "Ready for next capture";
+
+    document.getElementById("resultsView").style.display = "block";
+    switchChannel("whatsapp");
+    document.getElementById("resultsView").scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // Human-in-the-Loop Message Editing
+  function switchChannel(channel) {
+    currentActiveChannel = channel;
+    document.querySelectorAll(".channel-tab").forEach(tab => tab.classList.remove("active"));
+    
+    if (channel === "whatsapp") document.getElementById("tabWa").classList.add("active");
+    if (channel === "instagram_dm") document.getElementById("tabIg").classList.add("active");
+    if (channel === "email") document.getElementById("tabEmail").classList.add("active");
+
+    const draftTextarea = document.getElementById("draftContent");
+    draftTextarea.value = activeDrafts[channel] || "";
+    updateWordCount();
+    updateLaunchButton();
+  }
+
+  function updateWordCount() {
+    const text = document.getElementById("draftContent").value.trim();
+    const count = text ? text.split(/\s+/).length : 0;
+    document.getElementById("wordCount").innerText = `${count} words`;
+    // Update in-memory copy so edits persist across tab switches
+    activeDrafts[currentActiveChannel] = document.getElementById("draftContent").value;
+    updateLaunchButton();
+  }
+
+  function updateLaunchButton() {
+    const btn = document.getElementById("btnLaunchApp");
+    const text = encodeURIComponent(document.getElementById("draftContent").value);
+
+    if (currentActiveChannel === "whatsapp") {
+      btn.className = "btn-action whatsapp";
+      btn.innerText = "📲 Open in WhatsApp";
+      btn.href = `https://api.whatsapp.com/send?text=${text}`;
+      btn.style.display = "block";
+    } else if (currentActiveChannel === "email") {
+      btn.className = "btn-action highlight";
+      btn.innerText = "✉️ Open in Mail Client";
+      // 🛡️ Pre-populate recipient email discovered by Gemini
+      btn.href = `mailto:${encodeURIComponent(currentEmail)}?subject=${encodeURIComponent("Women of Venice // Directorial Invitation")}&body=${text}`;
+      btn.style.display = "block";
+    } else {
+      btn.style.display = "none";
+    }
+  }
+
+  function copyCurrentDraft() {
+    const text = document.getElementById("draftContent").value;
+    navigator.clipboard.writeText(text);
+    showToast("Copied draft to clipboard!");
+  }
+
+  // Update CRM Lifecycle
+  async function markCandidateContacted() {
+    const webAppUrl = localStorage.getItem("wov_scout_url");
+    if (!webAppUrl || !currentScoutId) return;
+
+    try {
+      const resp = await fetch(webAppUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "updateNurtureStatus",
+          scoutId: currentScoutId,
+          newStatus: "CONTACTED"
+        })
+      });
+      const res = await resp.json();
+      if (res.ok) showToast("Updated database status to CONTACTED.");
+    } catch(e) {
+      showToast("Error updating status: " + e.message);
+    }
+  }
+</script>
+
+</body>
+</html>
