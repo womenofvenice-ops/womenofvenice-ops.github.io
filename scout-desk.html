@@ -339,6 +339,96 @@
       pointer-events: none;
       z-index: 2000;
     }
+    /* Top Mode Switcher */
+    .mode-switcher {
+      display: flex;
+      gap: 6px;
+      background: var(--bg-surface);
+      padding: 6px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .mode-btn {
+      flex: 1;
+      padding: 12px 10px;
+      background: none;
+      border: none;
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+    .mode-btn.active {
+      background: var(--bg-surface-elevated);
+      color: var(--gold);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    /* Pipeline Feed Cards */
+    .pipeline-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 14px;
+      transition: border-color 0.2s;
+    }
+    .pipeline-card:hover { border-color: rgba(197, 160, 89, 0.4); }
+    .pipeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .pipeline-name {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin: 0;
+      color: var(--text-main);
+    }
+    .pipeline-meta {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .pipeline-dossier {
+      background: var(--bg-surface-elevated);
+      border-left: 2.5px solid var(--gold);
+      border-radius: 0 6px 6px 0;
+      padding: 10px 12px;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      margin: 10px 0;
+      white-space: pre-wrap;
+    }
+    .pipeline-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .btn-pill {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 7px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .btn-pill:hover { border-color: var(--gold); color: var(--gold); }
+    .btn-pill.wa { color: #2ecc71; border-color: rgba(46, 204, 113, 0.3); }
+    .btn-pill.push { color: var(--gold); border-color: rgba(197, 160, 89, 0.4); }
   </style>
 </head>
 <body>
@@ -352,8 +442,16 @@
     <button class="btn-settings" onclick="openSettings()">⚙️ Settings</button>
   </header>
 
-  <!-- STEP 1: FIELD INTAKE -->
-  <div class="card">
+  <!-- TOP MODE SWITCHER -->
+  <div class="mode-switcher">
+    <button class="mode-btn active" id="btnTabIntake" onclick="switchView('intake')">📸 Field Intake</button>
+    <button class="mode-btn" id="btnTabPipeline" onclick="switchView('pipeline')">📋 Scouted Pipeline (<span id="pipelineCount">0</span>)</button>
+  </div>
+
+  <!-- VIEW A: INTAKE & SINGLE DOSSIER -->
+  <div id="intakeView">
+    <!-- STEP 1: FIELD INTAKE -->
+    <div class="card">
     <div class="card-title">
       <span>1. Field Capture & Encounter</span>
       <span id="captureStatus" style="font-weight: normal; color: var(--text-muted); font-size: 0.75rem;">Ready</span>
@@ -421,8 +519,21 @@
       <a class="btn-action whatsapp" id="btnLaunchApp" href="#" target="_blank">📲 Send WhatsApp</a>
       <button class="btn-action" onclick="markCandidateContacted()">✅ Mark Contacted</button>
     </div>
+  </div> <!-- Closes #resultsView -->
+</div> <!-- Closes #intakeView -->
+
+<!-- VIEW B: PIPELINE FEED -->
+<div id="pipelineView" style="display: none;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+    <span style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Latest Scouted Candidates</span>
+    <button class="btn-pill" onclick="fetchPipeline(true)">🔄 Refresh</button>
+  </div>
+  <div id="pipelineFeedContainer">
+    <div style="text-align: center; padding: 40px 0; color: var(--text-muted);">Loading pipeline...</div>
   </div>
 </div>
+
+</div> <!-- Closes .container -->
 
 <!-- SETTINGS MODAL -->
 <div id="settingsModal">
