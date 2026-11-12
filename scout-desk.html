@@ -730,6 +730,9 @@
     currentEmail = data.email || ""; // 🛡️ Capture email for mailto
     activeDrafts = data.drafts || {};
 
+    // 🛡️ Cache Invalidation: Ensures newly scouted candidates appear in the pipeline immediately
+    cachedCandidates = [];
+
     document.getElementById("resName").innerText = data.name || "Identified Performer";
     
     const metaParts = [];
@@ -831,7 +834,138 @@
       showToast("Error updating status: " + e.message);
     }
   }
-</script>
 
+ // ==========================================
+  // PIPELINE VIEW & ROSTER CONTROLLER (Hardened)
+  // ==========================================
+
+  let cachedCandidates = [];
+
+  function switchView(mode) {
+    const intakeView = document.getElementById("intakeView");
+    const pipelineView = document.getElementById("pipelineView");
+    const tabIntake = document.getElementById("btnTabIntake");
+    const tabPipeline = document.getElementById("btnTabPipeline");
+
+    if (mode === "intake") {
+      intakeView.style.display = "block";
+      pipelineView.style.display = "none";
+      tabIntake.classList.add("active");
+      tabPipeline.classList.remove("active");
+    } else {
+      intakeView.style.display = "none";
+      pipelineView.style.display = "block";
+      tabIntake.classList.remove("active");
+      tabPipeline.classList.add("active");
+      fetchPipeline();
+    }
+  }
+
+  async function fetchPipeline(forceRefresh = false) {
+    const webAppUrl = localStorage.getItem("wov_scout_url");
+    if (!webAppUrl) return;
+
+    if (!forceRefresh && cachedCandidates.length > 0) {
+      renderPipelineFeed(cachedCandidates);
+      return;
+    }
+
+    const container = document.getElementById("pipelineFeedContainer");
+    container.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--text-muted);">Fetching from cloud...</div>`;
+
+    try {
+      const resp = await fetch(webAppUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "listRecentScouts", limit: 20 })
+      });
+
+      const res = await resp.json();
+      if (!res.ok) throw new Error(res.error || "Failed to load pipeline.");
+
+      cachedCandidates = res.candidates || [];
+      document.getElementById("pipelineCount").innerText = cachedCandidates.length;
+      renderPipelineFeed(cachedCandidates);
+    } catch (err) {
+      container.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--red);">Error loading feed: ${err.message}</div>`;
+    }
+  }
+
+  function renderPipelineFeed(candidates) {
+    const container = document.getElementById("pipelineFeedContainer");
+    if (!candidates || candidates.length === 0) {
+      container.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-muted);">No candidates scouted yet. Use Field Intake to log your first contact.</div>`;
+      return;
+    }
+
+    let html = "";
+    candidates.forEach((c, idx) => {
+      const score = c.affinityScore || 50;
+      const badgeClass = score >= 80 ? "badge-priority" : "badge-promising";
+      const waText = encodeURIComponent(c.draftWhatsapp || "");
+
+      html += `
+        <div class="pipeline-card">
+          <div class="pipeline-header">
+            <div>
+              <h3 class="pipeline-name">${escapeHtml(c.fullName)}</h3>
+              <div class="pipeline-meta">
+                ${c.primaryHandle ? escapeHtml(c.primaryHandle) + ' · ' : ''}
+                ${c.contactEmail ? escapeHtml(c.contactEmail) : 'No email recorded'}
+              </div>
+            </div>
+            <span class="badge ${badgeClass}">${score}% Match</span>
+          </div>
+
+          <div class="pipeline-dossier">${escapeHtml(c.reconDossier || c.encounterContext || "No dossier recorded.")}</div>
+
+          <div class="pipeline-actions">
+            ${c.draftWhatsapp ? `<a class="btn-pill wa" href="https://api.whatsapp.com/send?text=${waText}" target="_blank">💬 WhatsApp</a>` : ''}
+            <!-- 🛡️ IMMUNIZED: Uses index lookup to eliminate apostrophe syntax crashes -->
+            <button class="btn-pill" onclick="copyCandidateLink(${idx})">🔗 Copy Link</button>
+            <button class="btn-pill push" onclick="promoteCandidateByIndex(${idx})">⚡ Push to Audition Desk</button>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  // Index-safe handlers
+  function copyCandidateLink(idx) {
+    const c = cachedCandidates[idx];
+    if (c && c.gatewayUrl) {
+      navigator.clipboard.writeText(c.gatewayUrl);
+      showToast("Link copied to clipboard!");
+    }
+  }
+
+  function promoteCandidateByIndex(idx) {
+    const c = cachedCandidates[idx];
+    if (!c) return;
+
+    if (!c.contactEmail) {
+      alert(`Cannot promote ${c.fullName} yet: No contact email address on file.`);
+      return;
+    }
+
+    const confirmed = confirm(`Promote ${c.fullName} (${c.contactEmail}) to the Core Audition Desk? This will provision her record in PROSPECTS_CRM.`);
+    if (!confirmed) return;
+
+    showToast(`Promotion staged for ${c.fullName}.`);
+    // Hook ready for Core EXEC promotion endpoint
+  }
+
+  function escapeHtml(str) {
+    return String(str || "").replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+  }
+
+  // Pre-fetch count on initial load
+  window.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => { fetchPipeline(true); }, 800);
+  });
+  
+</script>
 </body>
 </html>
