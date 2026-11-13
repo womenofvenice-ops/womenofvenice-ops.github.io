@@ -959,6 +959,79 @@
     // Hook ready for Core EXEC promotion endpoint
   }
 
+  // ==========================================
+  // DOUBLE-SAFETY PERMANENT WIPE CONTROLLER
+  // ==========================================
+  let deleteArmTimers = {};
+
+  async function handleDoubleTapDelete(idx) {
+    const btn = document.getElementById(`delBtn_${idx}`);
+    const candidate = cachedCandidates[idx];
+    if (!candidate || !btn) return;
+
+    // STEP 1: First Tap -> ARM the button for 4 seconds
+    if (!deleteArmTimers[idx]) {
+      btn.classList.add("armed");
+      btn.innerText = "⚠️ Confirm Wipe (4s)";
+
+      deleteArmTimers[idx] = setTimeout(() => {
+        btn.classList.remove("armed");
+        btn.innerText = "🗑️ Wipe";
+        delete deleteArmTimers[idx];
+      }, 4000);
+      return;
+    }
+
+    // STEP 2: Second Tap within 4 seconds -> EXECUTE PERMANENT WIPE
+    clearTimeout(deleteArmTimers[idx]);
+    delete deleteArmTimers[idx];
+
+    btn.disabled = true;
+    btn.innerText = "Wiping...";
+
+    const webAppUrl = localStorage.getItem("wov_scout_url");
+    if (!webAppUrl) {
+      alert("Scout Web App URL is missing. Please check Settings.");
+      btn.disabled = false;
+      btn.classList.remove("armed");
+      btn.innerText = "🗑️ Wipe";
+      return;
+    }
+
+    try {
+      const resp = await fetch(webAppUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "deleteScoutRecord",
+          scoutId: candidate.scoutId
+        })
+      });
+
+      const data = await resp.json();
+
+      // 🛡️ GAS Contract Check: Explicitly verify data.ok (prevents HTTP 200 false positives)
+      if (data && data.ok === true) {
+        // 🛡️ Flush all active arm timers to prevent re-indexing collisions
+        Object.values(deleteArmTimers).forEach(clearTimeout);
+        deleteArmTimers = {};
+
+        // Remove candidate from local state & update UI
+        cachedCandidates.splice(idx, 1);
+        document.getElementById("pipelineCount").innerText = cachedCandidates.length;
+        renderPipelineFeed(cachedCandidates);
+        showToast(`Permanently wiped ${candidate.fullName} and vault media.`);
+      } else {
+        throw new Error(data.error || "Server rejected deletion request.");
+      }
+    } catch (err) {
+      alert("⚠️ Wipe failed: " + err.message);
+      btn.disabled = false;
+      btn.classList.remove("armed");
+      btn.innerText = "🗑️ Wipe";
+    }
+  }
+  
   function escapeHtml(str) {
     return String(str || "").replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
   }
