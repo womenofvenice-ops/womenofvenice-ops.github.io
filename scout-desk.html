@@ -429,6 +429,8 @@
     .btn-pill:hover { border-color: var(--gold); color: var(--gold); }
     .btn-pill.wa { color: #2ecc71; border-color: rgba(46, 204, 113, 0.3); }
     .btn-pill.push { color: var(--gold); border-color: rgba(197, 160, 89, 0.4); }
+    .btn-pill.danger { color: #e74c3c; border-color: rgba(231, 76, 60, 0.4); }
+    .btn-pill.danger.armed { background: #e74c3c; color: #fff; border-color: #c0392b; animation: pulse 1s infinite; }
   </style>
 </head>
 <body>
@@ -921,9 +923,9 @@
 
           <div class="pipeline-actions">
             ${c.draftWhatsapp ? `<a class="btn-pill wa" href="https://api.whatsapp.com/send?text=${waText}" target="_blank">💬 WhatsApp</a>` : ''}
-            <!-- 🛡️ IMMUNIZED: Uses index lookup to eliminate apostrophe syntax crashes -->
             <button class="btn-pill" onclick="copyCandidateLink(${idx})">🔗 Copy Link</button>
             <button class="btn-pill push" onclick="promoteCandidateByIndex(${idx})">⚡ Push to Audition Desk</button>
+            <button class="btn-pill danger" id="delBtn_${idx}" onclick="handleDoubleTapDelete(${idx})">🗑️ Wipe</button>
           </div>
         </div>
       `;
