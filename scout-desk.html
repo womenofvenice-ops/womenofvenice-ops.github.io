@@ -1355,6 +1355,78 @@
     setTimeout(() => { fetchPipeline(true); }, 800);
   });
 
+  // ==========================================
+// LIVING CALIBRATION DISPATCHER (Hardened)
+// ==========================================
+async function submitCalibration() {
+  const inputEl = document.getElementById("calibrationInput");
+  const btn = document.getElementById("btnCalibrate");
+  if (!inputEl || !btn) return;
+  if (btn.disabled) return; // 🛡️ Prevent concurrent mobile double-tap upserts
+
+  const reflectionText = inputEl.value.trim();
+  if (!reflectionText) {
+    alert("Please enter a field observation, call note, or answer to the AI probes first.");
+    return;
+  }
+
+  // 🛡️ Resolves from localStorage with safe fallback to global script constants
+  const webAppUrl = (localStorage.getItem("wov_scout_url") || "").trim() 
+    || (typeof EXEC !== "undefined" ? EXEC : (typeof BACKEND_URL !== "undefined" ? BACKEND_URL : ""));
+  
+  const activeScoutId = (typeof currentScoutId !== "undefined" && currentScoutId)
+    ? currentScoutId
+    : (window.currentScoutId || "");
+
+  if (!webAppUrl || !activeScoutId) {
+    alert("Missing active scout profile or Web App URL in Settings.");
+    return;
+  }
+
+  btn.disabled = true;
+  const originalText = btn.innerText;
+  btn.innerText = "⏳ Recalibrating Entity Chronicle...";
+
+  const targetSector = document.getElementById("targetSector")?.value
+    || (typeof selectedSector !== "undefined" ? selectedSector : "GENERAL");
+
+  // 🛡️ Uses intakeCandidate with scoutId to trigger Living Entity Upsert
+  const payload = {
+    action: "intakeCandidate",
+    scoutId: activeScoutId,
+    eventType: "DIRECTORIAL_REFLECTION",
+    notes: reflectionText,
+    directedSector: targetSector
+  };
+
+  try {
+    const resp = await fetch(webAppUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" }, // 🛡️ CORS-simple POST bypasses OPTIONS preflight
+      body: JSON.stringify(payload)
+    });
+
+    if (!resp.ok) throw new Error(`Server returned HTTP ${resp.status}.`);
+    const res = await resp.json();
+    if (!res || !res.ok) throw new Error(res?.error || "Failed to recalibrate profile.");
+
+    inputEl.value = "";
+    
+    // 🛡️ Defensively handles both flat and wrapped response structures
+    if (typeof renderCandidateProfile === "function") {
+      renderCandidateProfile(res.candidate || res);
+    }
+    
+    if (typeof showToast === "function") {
+      showToast("Living profile recalibrated & chronicle updated!");
+    }
+  } catch (err) {
+    alert("⚠️ Calibration notice: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerText = originalText;
+  }
+}
 </script>
 </body>
 </html>
