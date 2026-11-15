@@ -926,9 +926,12 @@
     btn.disabled = true;
     btn.innerText = "🧠 Analyzing Craft & Synthesizing Dossier...";
 
+    const targetSector = document.getElementById("targetSector")?.value || selectedSector;
+
     const payload = {
       action: "intakeCandidate",
       notes: notes,
+      directedSector: targetSector, // 🛡️ Steers Serper & Gemini to sector
       base64Asset: mediaAssetBase64,
       mimeType: mediaMimeType
     };
@@ -955,45 +958,127 @@
 
   let currentEmail = ""; // State variable for email pre-population
 
+  // =========================================================================
+  // 🎯 CANDIDATE PROFILE RENDERER (Hardened Production · Crash-Safe)
+  // Scope-Synchronized · Null-Shielded · Audio Teardown · Safe Array Mutate
+  // =========================================================================
   function renderCandidateProfile(data) {
-    currentScoutId = data.scoutId;
-    currentGatewayUrl = data.gatewayUrl;
-    currentEmail = data.email || ""; // 🛡️ Capture email for mailto
-    activeDrafts = data.drafts || {};
+    if (!data || typeof data !== "object") return;
 
-    // 🛡️ Cache Invalidation: Ensures newly scouted candidates appear in the pipeline immediately
-    cachedCandidates = [];
+    // 🛡️ Synchronize Global & Lexical Scopes
+    window.currentScoutId = data.scoutId || "";
+    if (typeof currentScoutId !== "undefined") currentScoutId = window.currentScoutId;
+    if (typeof currentGatewayUrl !== "undefined") currentGatewayUrl = data.gatewayUrl || "";
+    if (typeof currentEmail !== "undefined") currentEmail = (data.email && data.email !== "unknown") ? data.email : "";
+    if (typeof activeDrafts !== "undefined") activeDrafts = data.drafts || {};
 
-    document.getElementById("resName").innerText = data.name || "Identified Performer";
-    
-    const metaParts = [];
-    if (data.handle) metaParts.push(data.handle);
-    if (data.email) metaParts.push(data.email);
-    document.getElementById("resMeta").innerText = metaParts.join(" · ") || "Direct Contact Tracked";
+    // 🛡️ Invalidate pipeline cache in-place
+    if (typeof cachedCandidates !== "undefined" && Array.isArray(cachedCandidates)) {
+      cachedCandidates.length = 0;
+    }
 
+    // 🛡️ Safe inline fallback for HTML escaping
+    const safeEscape = (typeof escapeHtml === "function")
+      ? escapeHtml
+      : s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+    // 🛡️ Null-Safe Header Elements
+    const nameEl = document.getElementById("resName");
+    if (nameEl) nameEl.innerText = data.name || "Identified Contact";
+
+    const metaEl = document.getElementById("resMeta");
+    if (metaEl) {
+      const metaParts = [];
+      if (data.handle) metaParts.push(data.handle);
+      if (data.email && data.email !== "unknown") metaParts.push(data.email);
+      metaEl.innerText = metaParts.join(" · ") || "Direct Contact Tracked";
+    }
+
+    // Null-Safe Score Badge
     const badge = document.getElementById("resBadge");
-    const score = data.affinityScore || 50;
-    const tier = data.tier || "PROMISING_CREATOR";
-    badge.innerText = `${score}% Match · ${tier.replace("_", " ")}`;
-    badge.className = "badge " + (score >= 80 ? "badge-priority" : "badge-promising");
+    if (badge) {
+      const score = data.potentialScore ?? data.affinityScore ?? 50;
+      const tier = data.tier || "PROMISING_OPPORTUNITY";
+      badge.innerText = `${score}% Match · ${String(tier).replace(/_/g, " ")}`;
+      badge.className = "badge " + (score >= 80 ? "badge-priority" : "badge-promising");
+    }
 
-    document.getElementById("resDossier").innerText = data.dossier || "Verified research complete.";
+    // 1. Render Discovered Headshots Gallery
+    if (typeof renderHeadshotGallery === "function") {
+      renderHeadshotGallery(data.imageUrls || [], "resGallery");
+    }
 
-    // 🛡️ Reset media input state to prevent contaminating the next candidate
-    mediaAssetBase64 = null;
-    mediaMimeType = "image/jpeg";
-    document.getElementById("fileInput").value = "";
-    document.getElementById("photoBtn").classList.remove("active");
-    document.getElementById("photoBtn").innerText = "📷 Snap Card / Badge";
-    document.getElementById("micBtn").classList.remove("active");
-    document.getElementById("audioPreview").style.display = "none";
-    document.getElementById("captureStatus").innerText = "Ready for next capture";
+    // 2. Render Dynamic Competency Vectors
+    const vectorsEl = document.getElementById("resVectors");
+    if (vectorsEl) {
+      if (Array.isArray(data.vectors) && data.vectors.length > 0) {
+        vectorsEl.innerHTML = data.vectors
+          .map(v => `<span class="vector-tag">${safeEscape(String(v ?? "").replace(/_/g, " "))}</span>`)
+          .join("");
+        vectorsEl.style.display = "flex";
+      } else {
+        vectorsEl.style.display = "none";
+      }
+    }
 
-    document.getElementById("resultsView").style.display = "block";
-    switchChannel("whatsapp");
-    document.getElementById("resultsView").scrollIntoView({ behavior: 'smooth' });
+    // 3. Render Living Dossier Text
+    const dossierEl = document.getElementById("resDossier");
+    if (dossierEl) {
+      dossierEl.innerText = data.dossier || "Living entity chronicle updated.";
+    }
+
+    // 4. Render Active Directorial Probes (AI Questions for Claudio)
+    const probesBox = document.getElementById("resProbesBox");
+    const probesList = document.getElementById("resProbesList");
+    if (probesBox && probesList) {
+      if (Array.isArray(data.probes) && data.probes.length > 0) {
+        probesList.innerHTML = data.probes.map(p => {
+          const probeText = (typeof p === "string") ? p : (p?.suggested_human_experiment || p?.uncertainty || JSON.stringify(p));
+          return `<div class="probe-item">${safeEscape(probeText)}</div>`;
+        }).join("");
+        probesBox.style.display = "block";
+      } else {
+        probesBox.style.display = "none";
+      }
+    }
+
+    // 🛡️ Teardown Audio Stream & Reset Media State
+    if (typeof mediaAssetBase64 !== "undefined") mediaAssetBase64 = null;
+    if (typeof mediaMimeType !== "undefined") mediaMimeType = "image/jpeg";
+
+    const fileIn = document.getElementById("fileInput");
+    if (fileIn) fileIn.value = "";
+
+    const photoBtn = document.getElementById("photoBtn");
+    if (photoBtn) {
+      photoBtn.classList.remove("active");
+      photoBtn.innerText = "📷 Snap Card / Badge";
+    }
+
+    const micBtn = document.getElementById("micBtn");
+    if (micBtn) micBtn.classList.remove("active");
+
+    const audioEl = document.getElementById("audioPreview");
+    if (audioEl) {
+      audioEl.pause();
+      if (audioEl.readyState > 0) audioEl.currentTime = 0; // iOS-safe rewind
+      audioEl.style.display = "none";
+    }
+
+    const statusEl = document.getElementById("captureStatus");
+    if (statusEl) statusEl.innerText = "Ready for next capture";
+
+    // Reveal Results View & Populate Default Channel
+    const resultsView = document.getElementById("resultsView");
+    if (resultsView) resultsView.style.display = "block";
+
+    if (typeof switchChannel === "function") {
+      switchChannel("whatsapp");
+    }
+
+    if (resultsView) resultsView.scrollIntoView({ behavior: "smooth" });
   }
-
+  
   // Human-in-the-Loop Message Editing
   function switchChannel(channel) {
     currentActiveChannel = channel;
