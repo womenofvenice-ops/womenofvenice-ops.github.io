@@ -472,7 +472,24 @@
       </button>
     </div>
     <audio id="audioPreview" controls style="display:none; width: 100%; margin-bottom: 14px;"></audio>
+<!-- 🛡️ SECTOR / ENTITY SELECTOR PILLS & FORM PERSISTENCE -->
+    <label style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--gold, #f6e4b8); letter-spacing: 1px; display: block; margin-bottom: 6px;">
+      Target Sector &amp; Strategic Intent
+    </label>
+    
+    <!-- Hidden input ensures sector value is serialized during POST payload assembly -->
+    <input type="hidden" id="targetSector" name="sector" value="GENERAL">
 
+    <div class="sector-pills" id="sectorPills" role="radiogroup" aria-label="Target Sector Selection">
+      <button type="button" class="sector-btn active" id="secBtn_GENERAL" onclick="selectSector('GENERAL')">🌐 General</button>
+      <button type="button" class="sector-btn" id="secBtn_TALENT" onclick="selectSector('TALENT')">🎭 Talent</button>
+      <button type="button" class="sector-btn" id="secBtn_PRODUCER" onclick="selectSector('PRODUCER')">💼 Producer</button>
+      <button type="button" class="sector-btn" id="secBtn_BRAND" onclick="selectSector('BRAND')">💎 Brand</button>
+      <button type="button" class="sector-btn" id="secBtn_CREW" onclick="selectSector('CREW')">🛠️ Crew</button>
+    </div>
+
+    <label for="fieldNotes">Directorial Notes / Social Profiles</label>
+    <textarea id="fieldNotes" rows="3" placeholder="e.g. Met Elena working at Caffe Florian in Venice. Incredibly composed, Milanese accent. Mentioned studying creative writing at Brera."></textarea>
     <label for="fieldNotes">Directorial Notes / Social Profiles</label>
     <textarea id="fieldNotes" rows="3" placeholder="e.g. Met Laura at Venice Orizzonti screening. Starred in an Italian indie short film. Mentioned looking for self-tape directing tools. IG: @laura.cinema"></textarea>
 
