@@ -1040,6 +1040,133 @@
   window.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => { fetchPipeline(true); }, 800);
   });
+
+  /* =========================================================================
+       SECTOR SELECTOR, HEADSHOTS, PROBES & CALIBRATION (Production Hardened)
+       ========================================================================= */
+
+    /* Sector Selector Pills */
+    .sector-pills {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .sector-pills::-webkit-scrollbar { display: none; }
+    
+    .sector-btn {
+      background: var(--bg-surface-elevated, #161c24);
+      border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+      color: var(--text-muted, #94a3b8);
+      padding: 8px 14px;
+      border-radius: 99px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      touch-action: manipulation;
+    }
+    .sector-btn:active { transform: scale(0.96); }
+    .sector-btn.active {
+      background: rgba(197, 160, 89, 0.18) !important;
+      border-color: var(--gold, #f6e4b8) !important;
+      color: var(--gold, #f6e4b8) !important;
+      box-shadow: 0 0 12px rgba(197, 160, 89, 0.25);
+    }
+
+    /* Headshot Gallery (Anti-Hotlink & Mixed-Content Resilient) */
+    .headshot-gallery {
+      display: flex;
+      gap: 10px;
+      margin: 12px 0 16px 0;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .headshot-gallery::-webkit-scrollbar { display: none; }
+    
+    .headshot-thumb {
+      width: 72px;
+      height: 72px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1.5px solid var(--border, rgba(255, 255, 255, 0.15));
+      background: var(--bg-surface-elevated, #161c24);
+      flex-shrink: 0;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .headshot-thumb:hover {
+      border-color: var(--gold, #f6e4b8);
+      transform: scale(1.05);
+    }
+
+    /* Vector Tags */
+    .vector-pills {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .vector-tag {
+      background: #1c2b2c;
+      color: #f6e4b8;
+      border: 1px solid rgba(246, 228, 184, 0.25);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Active Probes Panel (Grounded Venetian Palette) */
+    .probes-card {
+      background: #141a21;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-left: 3.5px solid var(--gold, #f6e4b8);
+      border-radius: 0 8px 8px 0;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+    }
+    .probes-title {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--gold, #f6e4b8);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .probe-item {
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      line-height: 1.5;
+      margin-bottom: 6px;
+      padding-left: 14px;
+      position: relative;
+    }
+    .probe-item:before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--gold, #f6e4b8);
+      font-weight: bold;
+    }
+
+    /* Interactive Calibration Chatbox */
+    .calibration-box {
+      background: var(--bg-surface-elevated, #161c24);
+      border: 1px dashed rgba(197, 160, 89, 0.4);
+      border-radius: 8px;
+      padding: 14px;
+      margin: 16px 0 20px 0;
+    }
   
 </script>
 </body>
