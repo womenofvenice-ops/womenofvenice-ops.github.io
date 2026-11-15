@@ -624,7 +624,8 @@
   </div>
 
   <!-- STEP 2: AUDIT & INTELLIGENCE DASHBOARD -->
-  <div class="card" id="resultsView">
+  <!-- 🛡️ Starts hidden until renderCandidateProfile() reveals it with real data -->
+  <div class="card" id="resultsView" style="display: none;">
     <div class="card-title">2. Candidate Intelligence Dossier</div>
 
     <div class="profile-header">
@@ -637,8 +638,36 @@
       </div>
     </div>
 
-    <label>Artistic Due Diligence Dossier</label>
-    <div class="dossier-box" id="resDossier">Loading verified research...</div>
+    <!-- 🖼️ Headshot Gallery (Auto-unhides via renderHeadshotGallery) -->
+    <div class="headshot-gallery" id="resGallery" style="display: none;"></div>
+
+    <!-- 🎯 Dynamic Competency Vectors -->
+    <div class="vector-pills" id="resVectors" style="display: none;"></div>
+
+    <label style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--gold, #f6e4b8); letter-spacing: 1px; display: block; margin: 14px 0 6px 0;">
+      Living Entity Dossier
+    </label>
+    <!-- 🛡️ white-space: pre-wrap preserves multi-paragraph AI research linebreaks -->
+    <div class="dossier-box" id="resDossier" style="background: var(--bg-surface-elevated, #161c24); border: 1px solid var(--border, rgba(255,255,255,0.12)); border-radius: 8px; padding: 14px; font-size: 0.88rem; line-height: 1.6; color: #cbd5e1; white-space: pre-wrap;">
+      Loading verified research...
+    </div>
+
+    <!-- 🧠 Active Directorial Probes (AI Questions for Claudio) -->
+    <div class="probes-card" id="resProbesBox" style="display: none;">
+      <div class="probes-title">🎯 Active Directorial Probes (Micro-Experiments)</div>
+      <div id="resProbesList"></div>
+    </div>
+
+    <!-- ⚡ Interactive Calibration Chatbox (Human-in-the-Loop Re-scoring) -->
+    <div class="calibration-box" id="resCalibrationBox">
+      <label style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--gold, #f6e4b8); letter-spacing: 1px; display: block; margin-bottom: 6px;">
+        ⚡ Continuous Calibration &amp; Field Reflections
+      </label>
+      <textarea id="calibrationInput" rows="2" placeholder="Report observation, answers to probes, or conversation outcomes..." style="width: 100%; box-sizing: border-box; background: #0e1217; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #fff; padding: 10px; font-family: inherit; font-size: 0.85rem; resize: vertical; outline: none; margin-bottom: 8px;"></textarea>
+      <button type="button" class="btn-action highlight" id="btnCalibrate" onclick="submitCalibration()" style="width: 100%; background: var(--red, #a8492e); color: #fff; border: none; padding: 10px 16px; border-radius: 99px; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: opacity 0.2s;">
+        ⚡ Calibrate &amp; Re-score Dossier
+      </button>
+    </div>
 
     <!-- STEP 3: HUMAN-IN-THE-LOOP CORRESPONDENCE -->
     <div class="card-title" style="margin-top: 10px;">
