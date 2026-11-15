@@ -431,6 +431,133 @@
     .btn-pill.push { color: var(--gold); border-color: rgba(197, 160, 89, 0.4); }
     .btn-pill.danger { color: #e74c3c; border-color: rgba(231, 76, 60, 0.4); }
     .btn-pill.danger.armed { background: #e74c3c; color: #fff; border-color: #c0392b; animation: pulse 1s infinite; }
+
+    /* =========================================================================
+       SECTOR SELECTOR, HEADSHOTS, PROBES & CALIBRATION (Production Hardened)
+       ========================================================================= */
+
+    /* Sector Selector Pills */
+    .sector-pills {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .sector-pills::-webkit-scrollbar { display: none; }
+    
+    .sector-btn {
+      background: var(--bg-surface-elevated, #161c24);
+      border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+      color: var(--text-muted, #94a3b8);
+      padding: 8px 14px;
+      border-radius: 99px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      touch-action: manipulation;
+    }
+    .sector-btn:active { transform: scale(0.96); }
+    .sector-btn.active {
+      background: rgba(197, 160, 89, 0.18) !important;
+      border-color: var(--gold, #f6e4b8) !important;
+      color: var(--gold, #f6e4b8) !important;
+      box-shadow: 0 0 12px rgba(197, 160, 89, 0.25);
+    }
+
+    /* Headshot Gallery (Anti-Hotlink & Mixed-Content Resilient) */
+    .headshot-gallery {
+      display: flex;
+      gap: 10px;
+      margin: 12px 0 16px 0;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .headshot-gallery::-webkit-scrollbar { display: none; }
+    
+    .headshot-thumb {
+      width: 72px;
+      height: 72px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1.5px solid var(--border, rgba(255, 255, 255, 0.15));
+      background: var(--bg-surface-elevated, #161c24);
+      flex-shrink: 0;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .headshot-thumb:hover {
+      border-color: var(--gold, #f6e4b8);
+      transform: scale(1.05);
+    }
+
+    /* Vector Tags */
+    .vector-pills {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .vector-tag {
+      background: #1c2b2c;
+      color: #f6e4b8;
+      border: 1px solid rgba(246, 228, 184, 0.25);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Active Probes Panel (Grounded Venetian Palette) */
+    .probes-card {
+      background: #141a21;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-left: 3.5px solid var(--gold, #f6e4b8);
+      border-radius: 0 8px 8px 0;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+    }
+    .probes-title {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--gold, #f6e4b8);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .probe-item {
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      line-height: 1.5;
+      margin-bottom: 6px;
+      padding-left: 14px;
+      position: relative;
+    }
+    .probe-item:before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--gold, #f6e4b8);
+      font-weight: bold;
+    }
+
+    /* Interactive Calibration Chatbox */
+    .calibration-box {
+      background: var(--bg-surface-elevated, #161c24);
+      border: 1px dashed rgba(197, 160, 89, 0.4);
+      border-radius: 8px;
+      padding: 14px;
+      margin: 16px 0 20px 0;
+    }
   </style>
 </head>
 <body>
@@ -490,9 +617,7 @@
 
     <label for="fieldNotes">Directorial Notes / Social Profiles</label>
     <textarea id="fieldNotes" rows="3" placeholder="e.g. Met Elena working at Caffe Florian in Venice. Incredibly composed, Milanese accent. Mentioned studying creative writing at Brera."></textarea>
-    <label for="fieldNotes">Directorial Notes / Social Profiles</label>
-    <textarea id="fieldNotes" rows="3" placeholder="e.g. Met Laura at Venice Orizzonti screening. Starred in an Italian indie short film. Mentioned looking for self-tape directing tools. IG: @laura.cinema"></textarea>
-
+    
     <button class="btn-primary" id="btnAnalyze" onclick="executeIntake()">
       ⚡ Initiate Directorial Due Diligence
     </button>
@@ -583,7 +708,94 @@
   let mediaMimeType = "image/jpeg";
   let mediaRecorder = null;
   let audioChunks = [];
+// ==========================================
+  // SECTOR SELECTION & GALLERY CONTROLLERS
+  // ==========================================
 
+  let selectedSector = "GENERAL";
+
+  function selectSector(sectorCode) {
+    const allowedSectors = ["GENERAL", "TALENT", "PRODUCER", "BRAND", "CREW"];
+    selectedSector = allowedSectors.includes(sectorCode) ? sectorCode : "GENERAL";
+
+    // 1. Synchronize Hidden Input
+    const hiddenInput = document.getElementById("targetSector");
+    if (hiddenInput) hiddenInput.value = selectedSector;
+
+    // 2. Toggle UI Classes
+    document.querySelectorAll(".sector-btn").forEach(btn => btn.classList.remove("active"));
+    const activeBtn = document.getElementById("secBtn_" + selectedSector);
+    if (activeBtn) activeBtn.classList.add("active");
+  }
+
+  /**
+   * 🛡️ HEADSHOT GALLERY BUILDER (Anti-Hotlink, Mixed-Content & Auto-Display Guard)
+   */
+  function renderHeadshotGallery(imageUrls, containerId = "resGallery") {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    if (!Array.isArray(imageUrls) || imageUrls.length === 0) {
+      container.innerHTML = "";
+      container.style.display = "none";
+      return;
+    }
+
+    const toSafeHttps = (url) => {
+      if (typeof url !== "string") return "";
+      const trimmed = url.trim();
+      if (!/^https?:\/\//i.test(trimmed)) return "";
+      return trimmed.replace(/^http:\/\//i, "https://");
+    };
+
+    container.innerHTML = "";
+    let appendedCount = 0;
+
+    imageUrls.forEach(item => {
+      const primaryRaw = typeof item === "string" ? item : (item?.imageUrl || item?.thumbnailUrl);
+      const primaryUrl = toSafeHttps(primaryRaw);
+      if (!primaryUrl) return;
+
+      const fallbackUrl = typeof item === "object" && item !== null
+        ? toSafeHttps(item.thumbnailUrl)
+        : "";
+
+      const a = document.createElement("a");
+      a.href = primaryUrl;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.title = "View Full Source";
+
+      const img = document.createElement("img");
+      img.className = "headshot-thumb";
+      img.src = primaryUrl;
+      img.loading = "lazy";
+      img.referrerPolicy = "no-referrer"; // 🛡️ Bypasses third-party CDN hotlink 403s
+      img.alt = "Candidate headshot";
+
+      let triedFallback = false;
+      img.onerror = function() {
+        // Retry once with cached Serper thumbnailUrl if origin imageUrl 403s
+        if (!triedFallback && fallbackUrl && fallbackUrl !== this.src) {
+          triedFallback = true;
+          this.src = fallbackUrl;
+          a.href = fallbackUrl;
+          return;
+        }
+        // Hide the entire <a> wrapper so dead items don't leave empty flex gaps
+        a.style.display = "none";
+        const anyVisible = Array.from(container.children).some(el => el.style.display !== "none");
+        if (!anyVisible) container.style.display = "none";
+      };
+
+      a.appendChild(img);
+      container.appendChild(a);
+      appendedCount++;
+    });
+
+    container.style.display = appendedCount > 0 ? "flex" : "none"; // 🛡️ Auto-unhides only if valid URLs exist
+  }
+  
   // Initialize
   window.addEventListener("DOMContentLoaded", () => {
     const savedUrl = localStorage.getItem("wov_scout_url") || "";
@@ -1058,133 +1270,6 @@
     setTimeout(() => { fetchPipeline(true); }, 800);
   });
 
-  /* =========================================================================
-       SECTOR SELECTOR, HEADSHOTS, PROBES & CALIBRATION (Production Hardened)
-       ========================================================================= */
-
-    /* Sector Selector Pills */
-    .sector-pills {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 16px;
-      overflow-x: auto;
-      padding-bottom: 4px;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-    }
-    .sector-pills::-webkit-scrollbar { display: none; }
-    
-    .sector-btn {
-      background: var(--bg-surface-elevated, #161c24);
-      border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
-      color: var(--text-muted, #94a3b8);
-      padding: 8px 14px;
-      border-radius: 99px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.2s ease;
-      touch-action: manipulation;
-    }
-    .sector-btn:active { transform: scale(0.96); }
-    .sector-btn.active {
-      background: rgba(197, 160, 89, 0.18) !important;
-      border-color: var(--gold, #f6e4b8) !important;
-      color: var(--gold, #f6e4b8) !important;
-      box-shadow: 0 0 12px rgba(197, 160, 89, 0.25);
-    }
-
-    /* Headshot Gallery (Anti-Hotlink & Mixed-Content Resilient) */
-    .headshot-gallery {
-      display: flex;
-      gap: 10px;
-      margin: 12px 0 16px 0;
-      overflow-x: auto;
-      padding-bottom: 6px;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-    }
-    .headshot-gallery::-webkit-scrollbar { display: none; }
-    
-    .headshot-thumb {
-      width: 72px;
-      height: 72px;
-      border-radius: 8px;
-      object-fit: cover;
-      border: 1.5px solid var(--border, rgba(255, 255, 255, 0.15));
-      background: var(--bg-surface-elevated, #161c24);
-      flex-shrink: 0;
-      transition: border-color 0.2s, transform 0.2s;
-    }
-    .headshot-thumb:hover {
-      border-color: var(--gold, #f6e4b8);
-      transform: scale(1.05);
-    }
-
-    /* Vector Tags */
-    .vector-pills {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      margin-bottom: 14px;
-    }
-    .vector-tag {
-      background: #1c2b2c;
-      color: #f6e4b8;
-      border: 1px solid rgba(246, 228, 184, 0.25);
-      font-size: 0.72rem;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 4px;
-      letter-spacing: 0.5px;
-    }
-
-    /* Active Probes Panel (Grounded Venetian Palette) */
-    .probes-card {
-      background: #141a21;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-left: 3.5px solid var(--gold, #f6e4b8);
-      border-radius: 0 8px 8px 0;
-      padding: 14px 16px;
-      margin-bottom: 20px;
-    }
-    .probes-title {
-      font-size: 0.78rem;
-      font-weight: 800;
-      color: var(--gold, #f6e4b8);
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .probe-item {
-      font-size: 0.85rem;
-      color: #cbd5e1;
-      line-height: 1.5;
-      margin-bottom: 6px;
-      padding-left: 14px;
-      position: relative;
-    }
-    .probe-item:before {
-      content: "•";
-      position: absolute;
-      left: 0;
-      color: var(--gold, #f6e4b8);
-      font-weight: bold;
-    }
-
-    /* Interactive Calibration Chatbox */
-    .calibration-box {
-      background: var(--bg-surface-elevated, #161c24);
-      border: 1px dashed rgba(197, 160, 89, 0.4);
-      border-radius: 8px;
-      padding: 14px;
-      margin: 16px 0 20px 0;
-    }
-  
 </script>
 </body>
 </html>
