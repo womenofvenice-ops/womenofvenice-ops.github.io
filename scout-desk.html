@@ -882,59 +882,194 @@
     reader.readAsDataURL(file);
   }
 
-  // Voice Note Recorder (MediaRecorder API with Track Cleanup)
+  // ==========================================
+  // HARDENED CROSS-PLATFORM AUDIO RECORDER
+  // ==========================================
   let activeMediaStream = null;
+  let activeAudioObjectUrl = null;
+  let isAudioBusy = false; // Prevents race conditions during permission or encoding
+
+  function clearAudioAttachmentUI() {
+    const micBtn = document.getElementById("micBtn");
+    if (micBtn) {
+      micBtn.disabled = false;
+      micBtn.classList.remove("recording", "active");
+      micBtn.innerText = "🎙️ Record Voice Note";
+    }
+    const preview = document.getElementById("audioPreview");
+    if (preview) {
+      preview.pause();
+      if (preview.readyState > 0) preview.currentTime = 0;
+      preview.removeAttribute("src");
+      preview.load();
+      preview.style.display = "none";
+    }
+    if (activeAudioObjectUrl) {
+      URL.revokeObjectURL(activeAudioObjectUrl);
+      activeAudioObjectUrl = null;
+    }
+  }
+
+  function clearPhotoAttachmentUI() {
+    const fileIn = document.getElementById("fileInput");
+    if (fileIn) fileIn.value = "";
+    const photoBtn = document.getElementById("photoBtn");
+    if (photoBtn) {
+      photoBtn.classList.remove("active");
+      photoBtn.innerText = "📷 Snap Card / Badge";
+    }
+  }
 
   async function toggleAudioRecording() {
     const micBtn = document.getElementById("micBtn");
+    const analyzeBtn = document.getElementById("btnAnalyze");
+    const preview = document.getElementById("audioPreview");
+    const statusEl = document.getElementById("captureStatus");
+    if (!micBtn) return;
 
+    // 1. If currently recording, STOP and finalize
     if (mediaRecorder && mediaRecorder.state === "recording") {
-      mediaRecorder.stop();
+      isAudioBusy = true;
       micBtn.classList.remove("recording");
-      micBtn.innerText = "🎙️ Record Voice Note";
+      micBtn.innerText = "⏳ Encoding Audio...";
+      micBtn.disabled = true;
+      if (analyzeBtn) analyzeBtn.disabled = true;
+      mediaRecorder.stop();
       return;
     }
+
+    // Prevent double-tap while permission prompt or encoding is in progress
+    if (isAudioBusy) return;
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === "undefined") {
+      alert("Audio recording is not supported in this browser/context (HTTPS required).");
+      return;
+    }
+
+    // 2. Start fresh recording session
+    isAudioBusy = true;
+    micBtn.disabled = true;
 
     try {
       activeMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioChunks = [];
-      
-      const options = MediaRecorder.isTypeSupported('audio/webm') ? { mimeType: 'audio/webm' } : {};
-      mediaRecorder = new MediaRecorder(activeMediaStream, options);
 
-      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
-      mediaRecorder.onstop = () => {
-        // 🛡️ Release hardware microphone tracks immediately
+      // Mutual exclusion: Clear photo or prior audio before starting fresh recording
+      mediaAssetBase64 = null;
+      mediaMimeType = "image/jpeg";
+      clearPhotoAttachmentUI();
+      clearAudioAttachmentUI();
+      micBtn.disabled = true;
+
+      // Detect browser-supported container (WebM/Opus for Chrome/Firefox, MP4/AAC for Safari/iOS)
+      const candidateTypes = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/mp4",
+        "audio/aac"
+      ];
+      let selectedMime = "";
+      if (typeof MediaRecorder.isTypeSupported === "function") {
+        selectedMime = candidateTypes.find(t => MediaRecorder.isTypeSupported(t)) || "";
+      }
+
+      mediaRecorder = selectedMime
+        ? new MediaRecorder(activeMediaStream, { mimeType: selectedMime })
+        : new MediaRecorder(activeMediaStream);
+
+      mediaRecorder.ondataavailable = function(e) {
+        if (e.data && e.data.size > 0) audioChunks.push(e.data);
+      };
+
+      mediaRecorder.onerror = function(e) {
         if (activeMediaStream) {
-          activeMediaStream.getTracks().forEach(track => track.stop());
+          activeMediaStream.getTracks().forEach(t => t.stop());
+          activeMediaStream = null;
+        }
+        isAudioBusy = false;
+        clearAudioAttachmentUI();
+        if (analyzeBtn) analyzeBtn.disabled = false;
+        if (statusEl) statusEl.innerText = "Recording failed";
+        alert("Audio recording error: " + (e?.error?.message || "Hardware stream interrupted."));
+      };
+
+      mediaRecorder.onstop = async function() {
+        // Release hardware microphone tracks immediately
+        if (activeMediaStream) {
+          activeMediaStream.getTracks().forEach(t => t.stop());
           activeMediaStream = null;
         }
 
-        const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
-        mediaMimeType = audioBlob.type || 'audio/webm';
-        
-        const preview = document.getElementById("audioPreview");
-        preview.src = URL.createObjectURL(audioBlob);
-        preview.style.display = "block";
+        // Preserve accurate MIME (prevents forcing audio/webm onto Safari audio/mp4)
+        const resolvedMime = mediaRecorder.mimeType
+          || (audioChunks[0] && audioChunks[0].type)
+          || selectedMime
+          || "audio/mp4";
 
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          mediaAssetBase64 = e.target.result;
+        const recordedBlob = new Blob(audioChunks, { type: resolvedMime });
+
+        // Zero-byte guard (user tapped stop instantly)
+        if (!audioChunks.length || recordedBlob.size === 0) {
+          isAudioBusy = false;
+          clearAudioAttachmentUI();
+          if (analyzeBtn) analyzeBtn.disabled = false;
+          if (statusEl) statusEl.innerText = "Recording too short — try again";
+          return;
+        }
+
+        // Clean MIME for backend payload (strips parameter suffixes like ;codecs=...)
+        mediaMimeType = resolvedMime.split(";")[0].trim();
+
+        // Activate playback preview & revoke prior object URL
+        if (preview) {
+          if (activeAudioObjectUrl) URL.revokeObjectURL(activeAudioObjectUrl);
+          activeAudioObjectUrl = URL.createObjectURL(recordedBlob);
+          preview.src = activeAudioObjectUrl;
+          preview.style.display = "block";
+          preview.load();
+        }
+
+        // Synchronous-style Base64 conversion before unlocking Analyze button
+        try {
+          mediaAssetBase64 = await new Promise(function(resolve, reject) {
+            const reader = new FileReader();
+            reader.onloadend = function() { resolve(reader.result); };
+            reader.onerror = function() { reject(reader.error || new Error("FileReader failed.")); };
+            reader.readAsDataURL(recordedBlob);
+          });
+
+          micBtn.disabled = false;
           micBtn.classList.add("active");
-          document.getElementById("captureStatus").innerText = "Voice memo ready";
-        };
-        reader.readAsDataURL(audioBlob);
+          micBtn.innerText = "✅ Voice Memo Attached";
+          if (statusEl) statusEl.innerText = "Voice memo ready (" + Math.round(recordedBlob.size / 1024) + " KB)";
+        } catch (eConv) {
+          mediaAssetBase64 = null;
+          clearAudioAttachmentUI();
+          alert("Audio encoding error: " + eConv.message);
+        } finally {
+          isAudioBusy = false;
+          if (analyzeBtn) analyzeBtn.disabled = false;
+        }
       };
 
       mediaRecorder.start();
+      isAudioBusy = false;
+      micBtn.disabled = false;
       micBtn.classList.add("recording");
       micBtn.innerText = "⏹️ Stop Recording...";
-      document.getElementById("captureStatus").innerText = "Recording...";
+      if (statusEl) statusEl.innerText = "Recording voice memo...";
     } catch (err) {
-      alert("Microphone permission denied or unsupported on this device: " + err.message);
+      if (activeMediaStream) {
+        activeMediaStream.getTracks().forEach(t => t.stop());
+        activeMediaStream = null;
+      }
+      isAudioBusy = false;
+      clearAudioAttachmentUI();
+      if (analyzeBtn) analyzeBtn.disabled = false;
+      alert("Microphone access notice: " + err.message);
     }
   }
-
+  
   // Execute Real-Time Intake
   async function executeIntake() {
     const webAppUrl = localStorage.getItem("wov_scout_url");
