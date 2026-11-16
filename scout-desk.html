@@ -1081,7 +1081,15 @@
 
     const btn = document.getElementById("btnAnalyze");
     const notes = document.getElementById("fieldNotes").value.trim();
-
+    // 🛡️ Guard against submitting while recording or encoding audio
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      alert("Please stop the voice recording before running due diligence.");
+      return;
+    }
+    if (isAudioBusy) {
+      alert("Audio is still finalizing. Please wait a moment.");
+      return;
+    }
     if (!notes && !mediaAssetBase64) {
       alert("Please provide an encounter note, business card photo, or voice memo.");
       return;
