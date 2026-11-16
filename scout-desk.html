@@ -1215,28 +1215,12 @@
       }
     }
 
-    // 🛡️ Teardown Audio Stream & Reset Media State
+    // 🛡️ Reset Media Assets & UI via Hardened Helpers
     if (typeof mediaAssetBase64 !== "undefined") mediaAssetBase64 = null;
     if (typeof mediaMimeType !== "undefined") mediaMimeType = "image/jpeg";
 
-    const fileIn = document.getElementById("fileInput");
-    if (fileIn) fileIn.value = "";
-
-    const photoBtn = document.getElementById("photoBtn");
-    if (photoBtn) {
-      photoBtn.classList.remove("active");
-      photoBtn.innerText = "📷 Snap Card / Badge";
-    }
-
-    const micBtn = document.getElementById("micBtn");
-    if (micBtn) micBtn.classList.remove("active");
-
-    const audioEl = document.getElementById("audioPreview");
-    if (audioEl) {
-      audioEl.pause();
-      if (audioEl.readyState > 0) audioEl.currentTime = 0; // iOS-safe rewind
-      audioEl.style.display = "none";
-    }
+    if (typeof clearPhotoAttachmentUI === "function") clearPhotoAttachmentUI();
+    if (typeof clearAudioAttachmentUI === "function") clearAudioAttachmentUI();
 
     const statusEl = document.getElementById("captureStatus");
     if (statusEl) statusEl.innerText = "Ready for next capture";
