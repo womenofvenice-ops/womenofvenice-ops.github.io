@@ -873,6 +873,7 @@
         // Compress to efficient JPEG (~150-250KB)
         mediaMimeType = "image/jpeg";
         mediaAssetBase64 = canvas.toDataURL("image/jpeg", 0.75);
+        clearAudioAttachmentUI(); // 🛡️ Disarms audio UI when photo is chosen
         document.getElementById("photoBtn").classList.add("active");
         document.getElementById("photoBtn").innerText = "✅ " + file.name.substring(0, 14) + "...";
         document.getElementById("captureStatus").innerText = "Card photo compressed & ready";
