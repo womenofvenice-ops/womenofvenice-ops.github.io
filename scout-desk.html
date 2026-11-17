@@ -855,7 +855,184 @@
     const activeBtn = document.getElementById("secBtn_" + selectedSector);
     if (activeBtn) activeBtn.classList.add("active");
   }
+// ==========================================
+  // HYBRID AUTOCOMPLETE & APPEND CONTROLLER
+  // ==========================================
 
+  let intakeMode = "NEW"; // 'NEW' or 'APPEND'
+  let selectedAppendScoutId = "";
+  let selectedAppendName = "";
+  let searchDebounceTimer = null;
+  let activeSearchToken = 0;
+  let lastAutocompleteMatches = [];
+
+  function setIntakeMode(mode) {
+    intakeMode = mode;
+    const btnNew = document.getElementById("btnModeNew");
+    const btnAppend = document.getElementById("btnModeAppend");
+    const appendBox = document.getElementById("appendProfileBox");
+
+    if (mode === "NEW") {
+      if (btnNew) btnNew.classList.add("active");
+      if (btnAppend) btnAppend.classList.remove("active");
+      if (appendBox) appendBox.style.display = "none";
+      clearSelectedProfile();
+    } else {
+      if (btnNew) btnNew.classList.remove("active");
+      if (btnAppend) btnAppend.classList.add("active");
+      if (appendBox) appendBox.style.display = "block";
+      const input = document.getElementById("profileSearchInput");
+      if (input) input.focus();
+    }
+  }
+
+  function handleProfileSearch(rawQuery) {
+    const query = String(rawQuery || "").trim().toLowerCase();
+    const dropdown = document.getElementById("autocompleteDropdown");
+    if (!dropdown) return;
+
+    clearTimeout(searchDebounceTimer);
+    const myToken = ++activeSearchToken;
+
+    if (query.length < 2) {
+      lastAutocompleteMatches = [];
+      dropdown.style.display = "none";
+      return;
+    }
+
+    // 1. Instant Local RAM Search (0ms response)
+    let localMatches = [];
+    if (typeof cachedCandidates !== "undefined" && Array.isArray(cachedCandidates)) {
+      localMatches = cachedCandidates.filter(c => {
+        return (c.fullName && c.fullName.toLowerCase().includes(query)) ||
+               (c.primaryHandle && c.primaryHandle.toLowerCase().includes(query)) ||
+               (c.contactEmail && c.contactEmail.toLowerCase().includes(query)) ||
+               (c.scoutId && c.scoutId.toLowerCase().includes(query));
+      }).slice(0, 5);
+    }
+
+    if (localMatches.length > 0) {
+      renderAutocompleteMatches(localMatches);
+    } else {
+      dropdown.innerHTML = `<div style="padding: 10px 14px; font-size: 0.8rem; color: var(--text-muted);">Searching cloud profiles...</div>`;
+      dropdown.style.display = "block";
+    }
+
+    // 2. Debounced Cloud Search
+    searchDebounceTimer = setTimeout(async () => {
+      const webAppUrl = (localStorage.getItem("wov_scout_url") || "").trim();
+      if (!webAppUrl || myToken !== activeSearchToken) return;
+
+      try {
+        const resp = await fetch(webAppUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "searchScoutProfiles", query: query })
+        });
+        if (!resp.ok || myToken !== activeSearchToken) return;
+
+        const data = await resp.json();
+        if (myToken !== activeSearchToken) return;
+
+        if (data && data.ok && Array.isArray(data.matches)) {
+          const existingIds = new Set(localMatches.map(m => m.scoutId));
+          const newCloudMatches = data.matches.filter(m => !existingIds.has(m.scoutId));
+          const combined = localMatches.concat(newCloudMatches).slice(0, 8);
+          renderAutocompleteMatches(combined);
+        } else if (localMatches.length === 0) {
+          renderAutocompleteMatches([]);
+        }
+      } catch (err) {
+        if (myToken === activeSearchToken && localMatches.length === 0) {
+          renderAutocompleteMatches([]);
+        }
+      }
+    }, 280);
+  }
+
+  function renderAutocompleteMatches(matches) {
+    const dropdown = document.getElementById("autocompleteDropdown");
+    if (!dropdown) return;
+
+    lastAutocompleteMatches = Array.isArray(matches) ? matches : [];
+
+    if (lastAutocompleteMatches.length === 0) {
+      dropdown.innerHTML = `<div style="padding: 10px 14px; font-size: 0.8rem; color: var(--text-muted);">No matching profiles found.</div>`;
+      dropdown.style.display = "block";
+      return;
+    }
+
+    dropdown.innerHTML = lastAutocompleteMatches.map((m, idx) => `
+      <div class="autocomplete-item" onclick="selectProfileByIndex(${idx})">
+        <div>
+          <div class="ac-name">${escapeHtml(m.fullName || "Unknown Contact")}</div>
+          <div class="ac-meta">${escapeHtml(m.primaryHandle || m.contactEmail || m.scoutId)}</div>
+        </div>
+        <span class="badge badge-promising" style="font-size: 0.7rem; padding: 2px 6px;">Select ➔</span>
+      </div>
+    `).join("");
+
+    dropdown.style.display = "block";
+  }
+
+  function selectProfileByIndex(idx) {
+    const match = lastAutocompleteMatches[idx];
+    if (!match) return;
+    selectProfileForAppend(match.scoutId, match.fullName || "Unknown Contact");
+  }
+
+  function selectProfileForAppend(scoutId, fullName) {
+    activeSearchToken++; // Cancel any in-flight search responses
+    clearTimeout(searchDebounceTimer);
+
+    selectedAppendScoutId = scoutId;
+    selectedAppendName = fullName;
+
+    const nameEl = document.getElementById("selectedProfileName");
+    const idEl = document.getElementById("selectedProfileId");
+    const badgeEl = document.getElementById("selectedProfileBadge");
+    const dropdown = document.getElementById("autocompleteDropdown");
+    const input = document.getElementById("profileSearchInput");
+    const statusEl = document.getElementById("captureStatus");
+
+    if (nameEl) nameEl.innerText = fullName;
+    if (idEl) idEl.innerText = `[${scoutId}]`;
+    if (badgeEl) badgeEl.style.display = "flex";
+    if (dropdown) dropdown.style.display = "none";
+    if (input) input.value = "";
+    if (statusEl) statusEl.innerText = `Appending to ${fullName}`;
+  }
+
+  function clearSelectedProfile() {
+    activeSearchToken++;
+    clearTimeout(searchDebounceTimer);
+
+    selectedAppendScoutId = "";
+    selectedAppendName = "";
+    lastAutocompleteMatches = [];
+
+    const badge = document.getElementById("selectedProfileBadge");
+    if (badge) badge.style.display = "none";
+    const dropdown = document.getElementById("autocompleteDropdown");
+    if (dropdown) dropdown.style.display = "none";
+    const statusEl = document.getElementById("captureStatus");
+    if (statusEl) statusEl.innerText = "Ready";
+    if (intakeMode === "APPEND") {
+      const input = document.getElementById("profileSearchInput");
+      if (input) input.focus();
+    }
+  }
+
+  // Close autocomplete if user taps outside
+  document.addEventListener("click", (e) => {
+    const appendBox = document.getElementById("appendProfileBox");
+    if (appendBox && !appendBox.contains(e.target)) {
+      activeSearchToken++;
+      const dropdown = document.getElementById("autocompleteDropdown");
+      if (dropdown) dropdown.style.display = "none";
+    }
+  });
+  
   /**
    * 🛡️ HEADSHOT GALLERY BUILDER (Anti-Hotlink, Mixed-Content & Auto-Display Guard)
    */
