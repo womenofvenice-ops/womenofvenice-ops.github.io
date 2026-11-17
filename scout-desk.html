@@ -1389,6 +1389,12 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // 🛡️ Append Mode Validation (before locking button)
+    if (intakeMode === "APPEND" && !selectedAppendScoutId) {
+      alert("Please search and select a profile to append to, or switch to '✨ New Contact'.");
+      return;
+    }
+
     btn.disabled = true;
     btn.innerText = "🧠 Analyzing Craft & Synthesizing Dossier...";
 
@@ -1396,8 +1402,13 @@ window.addEventListener("DOMContentLoaded", () => {
 
     const payload = {
       action: "intakeCandidate",
+      scoutId: (intakeMode === "APPEND") ? selectedAppendScoutId : "",
+      targetName: (intakeMode === "APPEND") ? selectedAppendName : "",
       notes: notes,
       directedSector: targetSector, // 🛡️ Steers Serper & Gemini to sector
+      eventType: (intakeMode === "APPEND")
+        ? (mediaAssetBase64 ? "MULTIMODAL_APPEND" : "FIELD_OBSERVATION")
+        : (mediaAssetBase64 ? "MULTIMODAL_CAPTURE" : "INITIAL_INTAKE"),
       base64Asset: mediaAssetBase64,
       mimeType: mediaMimeType
     };
