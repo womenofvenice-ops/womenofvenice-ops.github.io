@@ -616,8 +616,8 @@
     </div>
 
     <label for="fieldNotes">Directorial Notes / Social Profiles</label>
-    <textarea id="fieldNotes" rows="3" placeholder="e.g. Met Elena working at Caffe Florian in Venice. Incredibly composed, Milanese accent. Mentioned studying creative writing at Brera."></textarea>
-    
+  <textarea id="fieldNotes" rows="3" placeholder="Encounter context, physical observations, background, or social handles (@...)..."></textarea>
+      
     <button class="btn-primary" id="btnAnalyze" onclick="executeIntake()">
       ⚡ Initiate Directorial Due Diligence
     </button>
@@ -732,7 +732,6 @@
   let currentGatewayUrl = "";
   let currentPhone = "";
   let currentActiveChannel = "whatsapp";
-
   let mediaAssetBase64 = null;
   let mediaMimeType = "image/jpeg";
   let mediaRecorder = null;
@@ -825,21 +824,31 @@
     container.style.display = appendedCount > 0 ? "flex" : "none"; // 🛡️ Auto-unhides only if valid URLs exist
   }
   
-  // Initialize
-  window.addEventListener("DOMContentLoaded", () => {
-    const savedUrl = localStorage.getItem("wov_scout_url") || "";
-    document.getElementById("webAppUrl").value = savedUrl;
-    if (!savedUrl) openSettings();
-  });
+  // 🛡️ Self-Healing Connection Guard (Solves Empty Desktop Pipeline)
+window.addEventListener("DOMContentLoaded", () => {
+  const savedUrl = (localStorage.getItem("wov_scout_url") || "").trim();
+  const urlInput = document.getElementById("webAppUrl");
+  if (urlInput) urlInput.value = savedUrl;
+
+  if (!savedUrl) {
+    // Auto-open settings on new desktop devices to prevent silent disconnection
+    openSettings();
+    showToast("⚙️ Please configure your Scout Web App URL to sync pipeline.");
+  } else {
+    // Auto-fetch pipeline immediately on startup
+    setTimeout(() => { fetchPipeline(true); }, 500);
+  }
+});
 
   function openSettings() { document.getElementById("settingsModal").style.display = "flex"; }
   function closeSettings() { document.getElementById("settingsModal").style.display = "none"; }
   function saveSettings() {
-    const url = document.getElementById("webAppUrl").value.trim();
-    localStorage.setItem("wov_scout_url", url);
-    closeSettings();
-    showToast("Endpoint configured successfully.");
-  }
+  const url = document.getElementById("webAppUrl").value.trim();
+  localStorage.setItem("wov_scout_url", url);
+  closeSettings();
+  showToast("Endpoint configured successfully.");
+  if (url) fetchPipeline(true);
+}
 
   function showToast(msg) {
     const toast = document.getElementById("toast");
@@ -1506,11 +1515,6 @@
   function escapeHtml(str) {
     return String(str || "").replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
   }
-
-  // Pre-fetch count on initial load
-  window.addEventListener("DOMContentLoaded", () => {
-    setTimeout(() => { fetchPipeline(true); }, 800);
-  });
 
   // ==========================================
 // LIVING CALIBRATION DISPATCHER (Hardened)
