@@ -558,6 +558,88 @@
       padding: 14px;
       margin: 16px 0 20px 0;
     }
+/* Intake Target Switcher & Autocomplete */
+    .intake-target-toggle {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+      background: var(--bg-surface-elevated, #161c24);
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid var(--border, rgba(255,255,255,0.1));
+    }
+    .target-mode-btn {
+      flex: 1;
+      padding: 8px 12px;
+      background: none;
+      border: none;
+      border-radius: 6px;
+      color: var(--text-muted, #94a3b8);
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .target-mode-btn.active {
+      background: rgba(197, 160, 89, 0.2);
+      color: var(--gold, #f6e4b8);
+      border: 1px solid rgba(197, 160, 89, 0.3);
+    }
+
+    /* Autocomplete Dropdown */
+    .autocomplete-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #141920;
+      border: 1px solid var(--gold, #f6e4b8);
+      border-radius: 8px;
+      max-height: 220px;
+      overflow-y: auto;
+      z-index: 100;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      margin-top: 4px;
+    }
+    .autocomplete-item {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .autocomplete-item:hover, .autocomplete-item.active {
+      background: rgba(197, 160, 89, 0.15);
+    }
+    .ac-name { font-weight: 700; color: #fff; font-size: 0.88rem; }
+    .ac-meta { font-size: 0.75rem; color: var(--text-muted, #94a3b8); }
+
+    /* Selected Target Badge */
+    .selected-profile-badge {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(46, 204, 113, 0.12);
+      border: 1px solid #2ecc71;
+      color: #2ecc71;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-top: 8px;
+      font-size: 0.82rem;
+    }
+    .btn-clear-target {
+      background: none;
+      border: none;
+      color: #e74c3c;
+      font-weight: 700;
+      font-size: 0.75rem;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+    
   </style>
 </head>
 <body>
