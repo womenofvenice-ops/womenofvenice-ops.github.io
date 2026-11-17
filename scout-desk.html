@@ -859,6 +859,13 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // File Upload Ingestion with Automatic Mobile Downsampling (Prevents 10MB GAS Overflows)
   function handleFileSelected(event) {
+    if ((typeof mediaRecorder !== "undefined" && mediaRecorder && mediaRecorder.state === "recording")
+        || (typeof isAudioBusy !== "undefined" && isAudioBusy)) {
+      alert("Please stop or finish your voice recording before attaching a photo.");
+      event.target.value = "";
+      return;
+    }
+
     const file = event.target.files[0];
     if (!file) return;
 
@@ -1082,7 +1089,7 @@ window.addEventListener("DOMContentLoaded", () => {
   
   // Execute Real-Time Intake
   async function executeIntake() {
-    const webAppUrl = localStorage.getItem("wov_scout_url");
+    const webAppUrl = (localStorage.getItem("wov_scout_url") || "").trim();
     if (!webAppUrl) {
       alert("Please configure your deployed Apps Script URL in Settings first.");
       openSettings();
@@ -1126,6 +1133,7 @@ window.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify(payload)
       });
 
+      if (!response.ok) throw new Error(`Server returned HTTP ${response.status}.`);
       const res = await response.json();
       if (!res.ok) throw new Error(res.error || "Failed to process candidate.");
 
@@ -1289,15 +1297,20 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function copyCurrentDraft() {
-    const text = document.getElementById("draftContent").value;
-    navigator.clipboard.writeText(text);
-    showToast("Copied draft to clipboard!");
+  async function copyCurrentDraft() {
+    const text = document.getElementById("draftContent")?.value || "";
+    try {
+      if (!navigator.clipboard) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(text);
+      showToast("Copied draft to clipboard!");
+    } catch (err) {
+      showToast("Copy failed — please select and copy manually.");
+    }
   }
 
   // Update CRM Lifecycle
   async function markCandidateContacted() {
-    const webAppUrl = localStorage.getItem("wov_scout_url");
+    const webAppUrl = (localStorage.getItem("wov_scout_url") || "").trim();
     if (!webAppUrl || !currentScoutId) return;
 
     try {
@@ -1310,9 +1323,11 @@ window.addEventListener("DOMContentLoaded", () => {
           newStatus: "CONTACTED"
         })
       });
+      if (!resp.ok) throw new Error(`Server returned HTTP ${resp.status}.`);
       const res = await resp.json();
-      if (res.ok) showToast("Updated database status to CONTACTED.");
-    } catch(e) {
+      if (!res.ok) throw new Error(res.error || "Failed to update status.");
+      showToast("Updated database status to CONTACTED.");
+    } catch (e) {
       showToast("Error updating status: " + e.message);
     }
   }
@@ -1344,7 +1359,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   async function fetchPipeline(forceRefresh = false) {
-    const webAppUrl = localStorage.getItem("wov_scout_url");
+    const webAppUrl = (localStorage.getItem("wov_scout_url") || "").trim();
     if (!webAppUrl) return;
 
     if (!forceRefresh && cachedCandidates.length > 0) {
@@ -1362,6 +1377,7 @@ window.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ action: "listRecentScouts", limit: 20 })
       });
 
+      if (!resp.ok) throw new Error(`Server returned HTTP ${resp.status}.`);
       const res = await resp.json();
       if (!res.ok) throw new Error(res.error || "Failed to load pipeline.");
 
@@ -1415,11 +1431,18 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   // Index-safe handlers
-  function copyCandidateLink(idx) {
+  async function copyCandidateLink(idx) {
     const c = cachedCandidates[idx];
-    if (c && c.gatewayUrl) {
-      navigator.clipboard.writeText(c.gatewayUrl);
+    if (!c || !c.gatewayUrl) {
+      showToast("No link available for this candidate.");
+      return;
+    }
+    try {
+      if (!navigator.clipboard) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(c.gatewayUrl);
       showToast("Link copied to clipboard!");
+    } catch (err) {
+      showToast("Copy failed — clipboard permission denied.");
     }
   }
 
@@ -1469,7 +1492,7 @@ window.addEventListener("DOMContentLoaded", () => {
     btn.disabled = true;
     btn.innerText = "Wiping...";
 
-    const webAppUrl = localStorage.getItem("wov_scout_url");
+    const webAppUrl = (localStorage.getItem("wov_scout_url") || "").trim();
     if (!webAppUrl) {
       alert("Scout Web App URL is missing. Please check Settings.");
       btn.disabled = false;
@@ -1488,6 +1511,7 @@ window.addEventListener("DOMContentLoaded", () => {
         })
       });
 
+      if (!resp.ok) throw new Error(`Server returned HTTP ${resp.status}.`);
       const data = await resp.json();
 
       // 🛡️ GAS Contract Check: Explicitly verify data.ok (prevents HTTP 200 false positives)
