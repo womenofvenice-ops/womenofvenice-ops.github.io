@@ -668,6 +668,24 @@
       <span id="captureStatus" style="font-weight: normal; color: var(--text-muted); font-size: 0.75rem;">Ready</span>
     </div>
 
+    <!-- 🛡️ INTAKE TARGET SWITCHER (New vs. Append) -->
+    <div class="intake-target-toggle">
+      <button type="button" class="target-mode-btn active" id="btnModeNew" onclick="setIntakeMode('NEW')">✨ New Contact</button>
+      <button type="button" class="target-mode-btn" id="btnModeAppend" onclick="setIntakeMode('APPEND')">📎 Append to Profile</button>
+    </div>
+
+    <!-- 🛡️ HYBRID AUTOCOMPLETE SEARCH BOX (Hidden in 'NEW' mode) -->
+    <div id="appendProfileBox" style="display: none; margin-bottom: 16px;">
+      <div style="position: relative;">
+        <input type="text" id="profileSearchInput" placeholder="Search profile by name, handle, or email..." oninput="handleProfileSearch(this.value)" autocomplete="off" style="margin-bottom: 0;">
+        <div id="autocompleteDropdown" class="autocomplete-dropdown" style="display: none;"></div>
+      </div>
+      <div id="selectedProfileBadge" class="selected-profile-badge" style="display: none;">
+        <span>Target: <strong id="selectedProfileName"></strong> <code id="selectedProfileId" style="opacity: 0.8; font-size: 0.72rem;"></code></span>
+        <button type="button" onclick="clearSelectedProfile()" class="btn-clear-target">✕ Change</button>
+      </div>
+    </div>
+
     <div class="media-grid">
       <!-- Card / Badge Photo Ingestion (Decoupled DOM Nodes) -->
       <label class="media-btn" id="photoBtn" for="fileInput">
