@@ -1835,17 +1835,67 @@ window.addEventListener("DOMContentLoaded", () => {
           <div class="pipeline-dossier">${escapeHtml(c.reconDossier || c.encounterContext || "No dossier recorded.")}</div>
 
           <div class="pipeline-actions">
-            ${c.draftWhatsapp ? `<a class="btn-pill wa" href="https://api.whatsapp.com/send?text=${waText}" target="_blank">💬 WhatsApp</a>` : ''}
-            <button class="btn-pill" onclick="copyCandidateLink(${idx})">🔗 Copy Link</button>
-            <button class="btn-pill push" onclick="promoteCandidateByIndex(${idx})">⚡ Push to Audition Desk</button>
-            <button class="btn-pill danger" id="delBtn_${idx}" onclick="handleDoubleTapDelete(${idx})">🗑️ Wipe</button>
-          </div>
+          <button class="btn-pill push" id="openBtn_${idx}" onclick="openProfileFromPipeline(${idx})">📂 Open Workspace</button>
+          ${c.draftWhatsapp ? `<a class="btn-pill wa" href="https://api.whatsapp.com/send?text=${waText}" target="_blank">💬 WhatsApp</a>` : ''}
+          <button class="btn-pill" onclick="copyCandidateLink(${idx})">🔗 Copy Link</button>
+          <button class="btn-pill push" onclick="promoteCandidateByIndex(${idx})">⚡ Push to Audition Desk</button>
+          <button class="btn-pill danger" id="delBtn_${idx}" onclick="handleDoubleTapDelete(${idx})">🗑️ Wipe</button>
         </div>
-      `;
-    });
+      </div>
+    `;
+  });
 
-    container.innerHTML = html;
+  container.innerHTML = html;
+}
+
+async function openProfileFromPipeline(idx) {
+  const c = cachedCandidates[idx];
+  if (!c || !c.scoutId) return;
+
+  const webAppUrl = (localStorage.getItem("wov_scout_url") || "").trim();
+  if (!webAppUrl) {
+    openSettings();
+    return;
   }
+
+  const btn = document.getElementById(`openBtn_${idx}`);
+  if (btn) {
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.innerText = "⏳ Opening...";
+  }
+
+  try {
+    const resp = await fetch(webAppUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "getScoutProfile", scoutId: c.scoutId })
+    });
+    if (!resp.ok) throw new Error(`Server returned HTTP ${resp.status}.`);
+
+    const res = await resp.json();
+    if (!res || !res.ok) throw new Error(res?.error || "Failed to load profile.");
+
+    switchView("intake");
+    renderCandidateProfile(res, { preservePipelineCache: true, fromPipeline: true });
+  } catch (err) {
+    alert("⚠️ Could not open profile workspace: " + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = "📂 Open Workspace";
+    }
+  }
+}
+
+function appendToCurrentWorkspaceProfile() {
+  if (!currentScoutId) return;
+  const currentName = document.getElementById("resName")?.innerText || "Selected Contact";
+  if (typeof setIntakeMode === "function") setIntakeMode("APPEND");
+  if (typeof selectProfileForAppend === "function") selectProfileForAppend(currentScoutId, currentName);
+  document.getElementById("profileSearchInput")?.blur();
+  document.getElementById("intakeView")?.scrollIntoView({ behavior: "smooth" });
+}
 
   // Index-safe handlers
   async function copyCandidateLink(idx) {
