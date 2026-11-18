@@ -639,6 +639,60 @@
       cursor: pointer;
       text-transform: uppercase;
     }
+    /* Build 3A: Profile Workspace Toolbar & Chronicle Timeline */
+    .workspace-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .workspace-title-row .card-title {
+      margin-bottom: 0;
+    }
+    .workspace-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .chronicle-card {
+      background: #12171e;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-left: 3.5px solid rgba(197, 160, 89, 0.65);
+      border-radius: 0 8px 8px 0;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+    }
+    .chronicle-list {
+      max-height: 240px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .chronicle-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+    .chronicle-meta {
+      font-size: 0.72rem;
+      color: var(--gold, #f6e4b8);
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+    }
+    .chronicle-text {
+      font-size: 0.82rem;
+      color: #cbd5e1;
+      white-space: pre-wrap;
+      line-height: 1.45;
+    }
     
   </style>
 </head>
