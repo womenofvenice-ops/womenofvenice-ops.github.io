@@ -693,6 +693,49 @@
       white-space: pre-wrap;
       line-height: 1.45;
     }
+
+    /* Option A: Manual Contact & Stage Override Panel */
+    .contact-edit-panel {
+      background: var(--bg-surface-elevated, #161c24);
+      border: 1px solid rgba(197, 160, 89, 0.35);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+    .contact-edit-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    @media (max-width: 580px) {
+      .contact-edit-grid { grid-template-columns: 1fr; }
+    }
+    .contact-edit-field label {
+      font-size: 0.7rem;
+      margin-bottom: 4px;
+    }
+    .contact-edit-field input,
+    .contact-edit-field select {
+      width: 100%;
+      background: var(--bg-base, #0a0b0d);
+      border: 1px solid var(--border, #262a30);
+      border-radius: 6px;
+      color: var(--text-main, #f0f2f5);
+      padding: 9px 10px;
+      font-size: 0.85rem;
+      margin-bottom: 0;
+      outline: none;
+    }
+    .contact-edit-field input:focus,
+    .contact-edit-field select:focus {
+      border-color: var(--border-focus, #c5a059);
+    }
+    .contact-edit-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
     
   </style>
 </head>
@@ -777,7 +820,7 @@
     </button>
   </div>
 
-  <!-- STEP 2: AUDIT & INTELLIGENCE DASHBOARD -->
+<!-- STEP 2: AUDIT & INTELLIGENCE DASHBOARD -->
   <!-- 🛡️ Starts hidden until renderCandidateProfile() reveals it with real data -->
   <div class="card" id="resultsView" style="display: none;">
     <div class="workspace-title-row">
@@ -785,6 +828,7 @@
       <div class="workspace-actions">
         <button type="button" class="btn-pill" id="btnBackToPipeline" style="display: none;" onclick="switchView('pipeline')">← Back to Pipeline</button>
         <button type="button" class="btn-pill push" id="btnAppendCurrent" onclick="appendToCurrentWorkspaceProfile()">📎 Append New Media</button>
+        <button type="button" class="btn-pill" id="btnEditContact" onclick="toggleContactEditPanel()">✏️ Edit Contact &amp; Stage</button>
         <a class="btn-pill" id="resVaultLink" href="#" target="_blank" rel="noopener noreferrer" style="display: none;">🗂️ Vault File</a>
       </div>
     </div>
@@ -799,6 +843,44 @@
       </div>
     </div>
 
+    <!-- ✏️ Manual Contact & Status Override Panel -->
+    <div class="contact-edit-panel" id="contactEditPanel" style="display: none;">
+      <div class="contact-edit-grid">
+        <div class="contact-edit-field">
+          <label for="editName">Full Name *</label>
+          <input type="text" id="editName" placeholder="Full professional name">
+        </div>
+        <div class="contact-edit-field">
+          <label for="editHandle">Primary Handle</label>
+          <input type="text" id="editHandle" placeholder="@handle">
+        </div>
+        <div class="contact-edit-field">
+          <label for="editEmail">Contact Email</label>
+          <input type="email" id="editEmail" placeholder="name@domain.com">
+        </div>
+        <div class="contact-edit-field">
+          <label for="editPhone">Phone / WhatsApp</label>
+          <input type="tel" id="editPhone" placeholder="+39 ...">
+        </div>
+        <div class="contact-edit-field" style="grid-column: 1 / -1;">
+          <label for="editStage">Engagement Stage</label>
+          <select id="editStage">
+            <option value="">— Keep Current Stage —</option>
+            <option value="DISCOVERED">DISCOVERED</option>
+            <option value="CALIBRATED">CALIBRATED</option>
+            <option value="CONTACTED">CONTACTED</option>
+            <option value="RESPONDED">RESPONDED</option>
+            <option value="PROMOTED">PROMOTED</option>
+            <option value="ARCHIVED">ARCHIVED</option>
+          </select>
+        </div>
+      </div>
+      <div class="contact-edit-actions">
+        <button type="button" class="btn-action highlight" id="btnSaveContact" onclick="saveContactOverride()">💾 Save Contact &amp; Stage</button>
+        <button type="button" class="btn-action" onclick="toggleContactEditPanel(false)">Cancel</button>
+      </div>
+    </div>
+    
     <!-- 🖼️ Headshot Gallery (Auto-unhides via renderHeadshotGallery) -->
     <div class="headshot-gallery" id="resGallery" style="display: none;"></div>
 
