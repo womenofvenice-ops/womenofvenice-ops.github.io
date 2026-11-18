@@ -1257,32 +1257,141 @@
     container.style.display = appendedCount > 0 ? "flex" : "none"; // 🛡️ Auto-unhides only if valid URLs exist
   }
   
-  // 🛡️ Self-Healing Connection Guard (Solves Empty Desktop Pipeline)
-window.addEventListener("DOMContentLoaded", () => {
-  const savedUrl = (localStorage.getItem("wov_scout_url") || "").trim();
-  const urlInput = document.getElementById("webAppUrl");
-  if (urlInput) urlInput.value = savedUrl;
-
-  if (!savedUrl) {
-    // Auto-open settings on new desktop devices to prevent silent disconnection
-    openSettings();
-    showToast("⚙️ Please configure your Scout Web App URL to sync pipeline.");
-  } else {
-    // Auto-fetch pipeline immediately on startup
-    setTimeout(() => { fetchPipeline(true); }, 500);
+  function validateScoutWebAppUrl(rawUrl) {
+    const trimmed = String(rawUrl || "").trim();
+    if (!trimmed) {
+      return { ok: false, error: "Web App URL is required." };
+    }
+    let parsed;
+    try {
+      parsed = new URL(trimmed);
+    } catch (e) {
+      return { ok: false, error: "Invalid URL format. Paste the full https://script.google.com/.../exec URL." };
+    }
+    if (parsed.protocol !== "https:" || parsed.hostname !== "script.google.com") {
+      return { ok: false, error: "URL must start with https://script.google.com/..." };
+    }
+    const path = parsed.pathname;
+    if (path.includes("/macros/library/")) {
+      return { ok: false, error: "You pasted a /macros/library/ link. Deploy as a Web App and copy the /exec URL." };
+    }
+    if (/\/dev$/i.test(path)) {
+      return { ok: false, error: "You pasted a /dev test link. Use the production /exec URL." };
+    }
+    if (/\/edit$/i.test(path)) {
+      return { ok: false, error: "You pasted an Apps Script /edit link instead of the deployed /exec URL." };
+    }
+    if (!/^(\/macros\/s\/|\/a\/macros\/[^/]+\/s\/|\/a\/[^/]+\/macros\/s\/)[A-Za-z0-9_-]+\/exec$/i.test(path)) {
+      return { ok: false, error: "URL must be a deployed Apps Script Web App ending in /exec." };
+    }
+    return { ok: true, url: trimmed };
   }
-});
 
-  function openSettings() { document.getElementById("settingsModal").style.display = "flex"; }
-  function closeSettings() { document.getElementById("settingsModal").style.display = "none"; }
+  /**
+   * Centralized GAS Web App POST dispatcher:
+   * Enforces /exec URL guard, injects scoutKey if configured, and handles auth lockouts.
+   */
+  async function postScoutApi(payload, fetchOpts = {}) {
+    const webAppUrl = (localStorage.getItem("wov_scout_url") || "").trim();
+    const check = validateScoutWebAppUrl(webAppUrl);
+    if (!check.ok) {
+      openSettings(check.error);
+      throw new Error(check.error);
+    }
+
+    const scoutKey = (localStorage.getItem("wov_scout_key") || "").trim();
+    const bodyObj = Object.assign({}, payload);
+    if (scoutKey) bodyObj.scoutKey = scoutKey;
+
+    const reqInit = {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(bodyObj)
+    };
+    if (fetchOpts && fetchOpts.signal) reqInit.signal = fetchOpts.signal;
+
+    const resp = await fetch(check.url, reqInit);
+    if (!resp.ok) throw new Error(`Server returned HTTP ${resp.status}.`);
+
+    const data = await resp.json();
+    if (data && !data.ok && /unauthorized|access key/i.test(String(data.error || ""))) {
+      openSettings(data.error);
+    }
+    return data;
+  }
+
+  // 🛡️ Self-Healing Connection Guard (Validates /exec + Syncs Desktop Pipeline)
+  window.addEventListener("DOMContentLoaded", () => {
+    const savedUrl = (localStorage.getItem("wov_scout_url") || "").trim();
+    const savedKey = (localStorage.getItem("wov_scout_key") || "").trim();
+    const urlInput = document.getElementById("webAppUrl");
+    const keyInput = document.getElementById("scoutAccessKey");
+    if (urlInput) urlInput.value = savedUrl;
+    if (keyInput) keyInput.value = savedKey;
+
+    if (!savedUrl) {
+      openSettings();
+      showToast("⚙️ Please configure your Scout Web App /exec URL to sync pipeline.");
+      return;
+    }
+
+    const check = validateScoutWebAppUrl(savedUrl);
+    if (!check.ok) {
+      openSettings(check.error);
+      return;
+    }
+
+    setTimeout(() => { fetchPipeline(true); }, 500);
+  });
+
+  function openSettings(errorMsg = "", preserveInputs = false) {
+    const urlInput = document.getElementById("webAppUrl");
+    const keyInput = document.getElementById("scoutAccessKey");
+    const errEl = document.getElementById("settingsError");
+
+    if (!preserveInputs) {
+      if (urlInput) urlInput.value = (localStorage.getItem("wov_scout_url") || "").trim();
+      if (keyInput) keyInput.value = (localStorage.getItem("wov_scout_key") || "").trim();
+    }
+
+    if (errEl) {
+      if (errorMsg) {
+        errEl.innerText = errorMsg;
+        errEl.style.display = "block";
+      } else {
+        errEl.innerText = "";
+        errEl.style.display = "none";
+      }
+    }
+    document.getElementById("settingsModal").style.display = "flex";
+  }
+
+  function closeSettings() {
+    document.getElementById("settingsModal").style.display = "none";
+  }
+
   function saveSettings() {
-  const url = document.getElementById("webAppUrl").value.trim();
-  localStorage.setItem("wov_scout_url", url);
-  closeSettings();
-  showToast("Endpoint configured successfully.");
-  if (url) fetchPipeline(true);
-}
+    const url = (document.getElementById("webAppUrl")?.value || "").trim();
+    const key = (document.getElementById("scoutAccessKey")?.value || "").trim();
+    const check = validateScoutWebAppUrl(url);
 
+    if (!check.ok) {
+      openSettings(check.error, true);
+      return;
+    }
+
+    localStorage.setItem("wov_scout_url", check.url);
+    if (key) {
+      localStorage.setItem("wov_scout_key", key);
+    } else {
+      localStorage.removeItem("wov_scout_key");
+    }
+
+    closeSettings();
+    showToast("Configuration saved & verified.");
+    if (typeof fetchPipeline === "function") fetchPipeline(true);
+  }
+  
   function showToast(msg) {
     const toast = document.getElementById("toast");
     toast.innerText = msg;
