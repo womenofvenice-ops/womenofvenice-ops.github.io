@@ -1507,106 +1507,168 @@ window.addEventListener("DOMContentLoaded", () => {
   // 🎯 CANDIDATE PROFILE RENDERER (Hardened Production · Crash-Safe)
   // Scope-Synchronized · Null-Shielded · Audio Teardown · Safe Array Mutate
   // =========================================================================
-  function renderCandidateProfile(data) {
-    if (!data || typeof data !== "object") return;
+  function renderCandidateProfile(data, options = {}) {
+  if (!data || typeof data !== "object") return;
 
-    // 🛡️ Synchronize Global & Lexical Scopes
-    window.currentScoutId = data.scoutId || "";
-    if (typeof currentScoutId !== "undefined") currentScoutId = window.currentScoutId;
-    if (typeof currentGatewayUrl !== "undefined") currentGatewayUrl = data.gatewayUrl || "";
-    if (typeof currentEmail !== "undefined") currentEmail = (data.email && data.email !== "unknown") ? data.email : "";
-    if (typeof activeDrafts !== "undefined") activeDrafts = data.drafts || {};
-
-    // 🛡️ Invalidate pipeline cache in-place
-    if (typeof cachedCandidates !== "undefined" && Array.isArray(cachedCandidates)) {
-      cachedCandidates.length = 0;
-    }
-
-    // 🛡️ Safe inline fallback for HTML escaping
-    const safeEscape = (typeof escapeHtml === "function")
-      ? escapeHtml
-      : s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-
-    // 🛡️ Null-Safe Header Elements
-    const nameEl = document.getElementById("resName");
-    if (nameEl) nameEl.innerText = data.name || "Identified Contact";
-
-    const metaEl = document.getElementById("resMeta");
-    if (metaEl) {
-      const metaParts = [];
-      if (data.handle) metaParts.push(data.handle);
-      if (data.email && data.email !== "unknown") metaParts.push(data.email);
-      metaEl.innerText = metaParts.join(" · ") || "Direct Contact Tracked";
-    }
-
-    // Null-Safe Score Badge
-    const badge = document.getElementById("resBadge");
-    if (badge) {
-      const score = data.potentialScore ?? data.affinityScore ?? 50;
-      const tier = data.tier || "PROMISING_OPPORTUNITY";
-      badge.innerText = `${score}% Match · ${String(tier).replace(/_/g, " ")}`;
-      badge.className = "badge " + (score >= 80 ? "badge-priority" : "badge-promising");
-    }
-
-    // 1. Render Discovered Headshots Gallery
-    if (typeof renderHeadshotGallery === "function") {
-      renderHeadshotGallery(data.imageUrls || [], "resGallery");
-    }
-
-    // 2. Render Dynamic Competency Vectors
-    const vectorsEl = document.getElementById("resVectors");
-    if (vectorsEl) {
-      if (Array.isArray(data.vectors) && data.vectors.length > 0) {
-        vectorsEl.innerHTML = data.vectors
-          .map(v => `<span class="vector-tag">${safeEscape(String(v ?? "").replace(/_/g, " "))}</span>`)
-          .join("");
-        vectorsEl.style.display = "flex";
-      } else {
-        vectorsEl.style.display = "none";
-      }
-    }
-
-    // 3. Render Living Dossier Text
-    const dossierEl = document.getElementById("resDossier");
-    if (dossierEl) {
-      dossierEl.innerText = data.dossier || "Living entity chronicle updated.";
-    }
-
-    // 4. Render Active Directorial Probes (AI Questions for Claudio)
-    const probesBox = document.getElementById("resProbesBox");
-    const probesList = document.getElementById("resProbesList");
-    if (probesBox && probesList) {
-      if (Array.isArray(data.probes) && data.probes.length > 0) {
-        probesList.innerHTML = data.probes.map(p => {
-          const probeText = (typeof p === "string") ? p : (p?.suggested_human_experiment || p?.uncertainty || JSON.stringify(p));
-          return `<div class="probe-item">${safeEscape(probeText)}</div>`;
-        }).join("");
-        probesBox.style.display = "block";
-      } else {
-        probesBox.style.display = "none";
-      }
-    }
-
-    // 🛡️ Reset Media Assets & UI via Hardened Helpers
-    if (typeof mediaAssetBase64 !== "undefined") mediaAssetBase64 = null;
-    if (typeof mediaMimeType !== "undefined") mediaMimeType = "image/jpeg";
-
-    if (typeof clearPhotoAttachmentUI === "function") clearPhotoAttachmentUI();
-    if (typeof clearAudioAttachmentUI === "function") clearAudioAttachmentUI();
-
-    const statusEl = document.getElementById("captureStatus");
-    if (statusEl) statusEl.innerText = "Ready for next capture";
-
-    // Reveal Results View & Populate Default Channel
-    const resultsView = document.getElementById("resultsView");
-    if (resultsView) resultsView.style.display = "block";
-
-    if (typeof switchChannel === "function") {
-      switchChannel("whatsapp");
-    }
-
-    if (resultsView) resultsView.scrollIntoView({ behavior: "smooth" });
+  // 🛡️ Synchronize Global & Lexical Scopes
+  window.currentScoutId = data.scoutId || "";
+  if (typeof currentScoutId !== "undefined") currentScoutId = window.currentScoutId;
+  if (typeof currentGatewayUrl !== "undefined") currentGatewayUrl = data.gatewayUrl || "";
+  if (typeof currentEmail !== "undefined") {
+    currentEmail = (data.email && !/^(unknown|unknown@example\.com)$/i.test(data.email)) ? data.email : "";
   }
+  if (typeof currentPhone !== "undefined") currentPhone = data.phone || "";
+  if (typeof activeDrafts !== "undefined") activeDrafts = data.drafts || {};
+
+  // 🛡️ Only invalidate pipeline cache after writes, NOT when opening from Pipeline
+  if (!options.preservePipelineCache && typeof cachedCandidates !== "undefined" && Array.isArray(cachedCandidates)) {
+    cachedCandidates.length = 0;
+  }
+
+  // 🛡️ Safe inline fallback for HTML escaping
+  const safeEscape = (typeof escapeHtml === "function")
+    ? escapeHtml
+    : s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+  // Workspace Toolbar Buttons (Back to Pipeline & Vault Link)
+  const backBtn = document.getElementById("btnBackToPipeline");
+  if (backBtn) {
+    backBtn.style.display = options.fromPipeline ? "inline-flex" : "none";
+  }
+
+  const vaultLink = document.getElementById("resVaultLink");
+  if (vaultLink) {
+    const rawVault = String(data.vaultAssetUrl || "").trim();
+    if (/^https?:\/\//i.test(rawVault)) {
+      vaultLink.href = rawVault;
+      vaultLink.style.display = "inline-flex";
+    } else {
+      vaultLink.href = "#";
+      vaultLink.style.display = "none";
+    }
+  }
+
+  // 🛡️ Null-Safe Header Elements
+  const nameEl = document.getElementById("resName");
+  if (nameEl) nameEl.innerText = data.name || "Identified Contact";
+
+  const metaEl = document.getElementById("resMeta");
+  if (metaEl) {
+    const metaParts = [];
+    if (data.handle) metaParts.push(data.handle);
+    if (data.email && !/^(unknown|unknown@example\.com)$/i.test(data.email)) metaParts.push(data.email);
+    if (data.phone && !/^[\s+\-().0]+$/.test(data.phone)) metaParts.push(data.phone);
+    if (data.engagementStage) metaParts.push(data.engagementStage);
+    metaEl.innerText = metaParts.join(" · ") || "Direct Contact Tracked";
+  }
+
+  // Null-Safe Score Badge
+  const badge = document.getElementById("resBadge");
+  if (badge) {
+    const score = data.potentialScore ?? data.affinityScore ?? 50;
+    const tier = data.tier || "PROMISING_OPPORTUNITY";
+    badge.innerText = `${score}% Match · ${String(tier).replace(/_/g, " ")}`;
+    badge.className = "badge " + (score >= 80 ? "badge-priority" : "badge-promising");
+  }
+
+  // 1. Render Discovered Headshots Gallery
+  if (typeof renderHeadshotGallery === "function") {
+    renderHeadshotGallery(data.imageUrls || [], "resGallery");
+  }
+
+  // 2. Render Dynamic Competency Vectors
+  const vectorsEl = document.getElementById("resVectors");
+  if (vectorsEl) {
+    if (Array.isArray(data.vectors) && data.vectors.length > 0) {
+      vectorsEl.innerHTML = data.vectors
+        .map(v => `<span class="vector-tag">${safeEscape(String(v ?? "").replace(/_/g, " "))}</span>`)
+        .join("");
+      vectorsEl.style.display = "flex";
+    } else {
+      vectorsEl.style.display = "none";
+    }
+  }
+
+  // 3. Render Living Dossier Text
+  const dossierEl = document.getElementById("resDossier");
+  if (dossierEl) {
+    dossierEl.innerText = data.dossier || "Living entity chronicle updated.";
+  }
+
+  // 4. Render Active Directorial Probes
+  const probesBox = document.getElementById("resProbesBox");
+  const probesList = document.getElementById("resProbesList");
+  if (probesBox && probesList) {
+    if (Array.isArray(data.probes) && data.probes.length > 0) {
+      probesList.innerHTML = data.probes.map(p => {
+        const probeText = (typeof p === "string") ? p : (p?.suggested_human_experiment || p?.uncertainty || JSON.stringify(p));
+        return `<div class="probe-item">${safeEscape(probeText)}</div>`;
+      }).join("");
+      probesBox.style.display = "block";
+    } else {
+      probesBox.style.display = "none";
+    }
+  }
+
+  // 5. Render Cumulative Interaction Chronicle (Newest First)
+  const chronicleBox = document.getElementById("resChronicleBox");
+  const chronicleList = document.getElementById("resChronicleList");
+  if (chronicleBox && chronicleList) {
+    if (Array.isArray(data.chronicle) && data.chronicle.length > 0) {
+      const events = data.chronicle.slice().reverse();
+      chronicleList.innerHTML = events.map(evt => {
+        const d = evt?.timestamp ? new Date(evt.timestamp) : null;
+        const dateLabel = (d && !isNaN(d.getTime())) ? d.toLocaleString() : String(evt?.timestamp || "");
+        const typeLabel = String(evt?.eventType || "EVENT").replace(/_/g, " ");
+
+        const bodyParts = [];
+        if (evt?.inputNotes) bodyParts.push("Notes: " + evt.inputNotes);
+        if (evt?.extractedContent) bodyParts.push("Captured Media/Audio: " + evt.extractedContent);
+        const bodyText = bodyParts.join("\n") || "Media or capture logged.";
+
+        const rawMedia = String(evt?.mediaUrl || "").trim();
+        const mediaHtml = /^https?:\/\//i.test(rawMedia)
+          ? `<div style="margin-top:6px;"><a class="btn-pill" href="${safeEscape(rawMedia)}" target="_blank" rel="noopener noreferrer">📎 Open Event Media</a></div>`
+          : "";
+
+        return `
+          <div class="chronicle-item">
+            <div class="chronicle-meta">
+              <span>${safeEscape(typeLabel)}</span>
+              <span style="color: var(--text-muted); font-weight: 400;">${safeEscape(dateLabel)}</span>
+            </div>
+            <div class="chronicle-text">${safeEscape(bodyText)}</div>
+            ${mediaHtml}
+          </div>
+        `;
+      }).join("");
+      chronicleBox.style.display = "block";
+    } else {
+      chronicleList.innerHTML = "";
+      chronicleBox.style.display = "none";
+    }
+  }
+
+  // 🛡️ Reset Media Assets & UI via Hardened Helpers
+  if (typeof mediaAssetBase64 !== "undefined") mediaAssetBase64 = null;
+  if (typeof mediaMimeType !== "undefined") mediaMimeType = "image/jpeg";
+
+  if (typeof clearPhotoAttachmentUI === "function") clearPhotoAttachmentUI();
+  if (typeof clearAudioAttachmentUI === "function") clearAudioAttachmentUI();
+
+  const statusEl = document.getElementById("captureStatus");
+  if (statusEl) statusEl.innerText = "Ready for next capture";
+
+  // Reveal Results View & Populate Default Channel
+  const resultsView = document.getElementById("resultsView");
+  if (resultsView) resultsView.style.display = "block";
+
+  if (typeof switchChannel === "function") {
+    switchChannel("whatsapp");
+  }
+
+  if (resultsView) resultsView.scrollIntoView({ behavior: "smooth" });
+}
   
   // Human-in-the-Loop Message Editing
   function switchChannel(channel) {
