@@ -111,7 +111,7 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    textarea, input[type="text"] {
+    textarea, input[type="text"], input[type="password"] {
       width: 100%;
       background: var(--bg-surface-elevated);
       border: 1px solid var(--border);
@@ -961,10 +961,17 @@
 <div id="settingsModal">
   <div class="modal-card">
     <div class="card-title">Scout Satellite Configuration</div>
-    <label for="webAppUrl">Deployed Web App URL</label>
+
+    <div id="settingsError" style="display: none; background: rgba(231, 76, 60, 0.14); border: 1px solid var(--red); color: #ffb4ab; padding: 10px 12px; border-radius: 6px; font-size: 0.8rem; margin-bottom: 14px;"></div>
+
+    <label for="webAppUrl">Deployed Web App URL (/exec)</label>
     <input type="text" id="webAppUrl" placeholder="https://script.google.com/macros/s/.../exec">
+
+    <label for="scoutAccessKey">Scout Access Key (Passcode)</label>
+    <input type="password" id="scoutAccessKey" autocomplete="off" placeholder="Optional until SCOUT_ACCESS_KEY is set on backend">
+
     <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">
-      Saved in your local browser cache. Pointing directly to your <code>WOV_SCOUT_SATELLITE</code> deployment.
+      Saved locally in your browser. Pointing directly to your <code>WOV_SCOUT_SATELLITE</code> <code>/exec</code> deployment.
     </div>
     <div style="display: flex; gap: 10px; justify-content: flex-end;">
       <button class="btn-action" onclick="closeSettings()">Cancel</button>
