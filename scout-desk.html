@@ -780,7 +780,14 @@
   <!-- STEP 2: AUDIT & INTELLIGENCE DASHBOARD -->
   <!-- 🛡️ Starts hidden until renderCandidateProfile() reveals it with real data -->
   <div class="card" id="resultsView" style="display: none;">
-    <div class="card-title">2. Candidate Intelligence Dossier</div>
+    <div class="workspace-title-row">
+      <div class="card-title">2. Candidate Intelligence Dossier</div>
+      <div class="workspace-actions">
+        <button type="button" class="btn-pill" id="btnBackToPipeline" style="display: none;" onclick="switchView('pipeline')">← Back to Pipeline</button>
+        <button type="button" class="btn-pill push" id="btnAppendCurrent" onclick="appendToCurrentWorkspaceProfile()">📎 Append New Media</button>
+        <a class="btn-pill" id="resVaultLink" href="#" target="_blank" rel="noopener noreferrer" style="display: none;">🗂️ Vault File</a>
+      </div>
+    </div>
 
     <div class="profile-header">
       <div>
