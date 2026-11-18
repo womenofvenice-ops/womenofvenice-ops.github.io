@@ -1652,7 +1652,32 @@ window.addEventListener("DOMContentLoaded", () => {
     badge.innerText = `${score}% Match · ${String(tier).replace(/_/g, " ")}`;
     badge.className = "badge " + (score >= 80 ? "badge-priority" : "badge-promising");
   }
+// Sync Manual Contact & Stage Editor fields (always start collapsed on profile load)
+    const editPanel = document.getElementById("contactEditPanel");
+    if (editPanel) editPanel.style.display = "none";
 
+    const cleanField = v => {
+      const s = String(v || "").trim();
+      return /^(unknown|unknown@example\.com|n\/a|none|null)$/i.test(s) ? "" : s;
+    };
+    const editNameEl = document.getElementById("editName");
+    const editHandleEl = document.getElementById("editHandle");
+    const editEmailEl = document.getElementById("editEmail");
+    const editPhoneEl = document.getElementById("editPhone");
+    const editStageEl = document.getElementById("editStage");
+
+    if (editNameEl) editNameEl.value = String(data.name || "").trim();
+    if (editHandleEl) editHandleEl.value = cleanField(data.handle);
+    if (editEmailEl) editEmailEl.value = cleanField(data.email);
+    if (editPhoneEl) {
+      const p = cleanField(data.phone);
+      editPhoneEl.value = /^[\s+\-().0]+$/.test(p) ? "" : p;
+    }
+    if (editStageEl) {
+      const st = String(data.engagementStage || "").trim().toUpperCase();
+      editStageEl.value = ["DISCOVERED", "CALIBRATED", "CONTACTED", "RESPONDED", "PROMOTED", "ARCHIVED"].includes(st) ? st : "";
+    }
+    
   // 1. Render Discovered Headshots Gallery
   if (typeof renderHeadshotGallery === "function") {
     renderHeadshotGallery(data.imageUrls || [], "resGallery");
@@ -1749,7 +1774,7 @@ window.addEventListener("DOMContentLoaded", () => {
     switchChannel("whatsapp");
   }
 
-  if (resultsView) resultsView.scrollIntoView({ behavior: "smooth" });
+  if (resultsView && !options.skipScroll) resultsView.scrollIntoView({ behavior: "smooth" });
 }
   
   // Human-in-the-Loop Message Editing
@@ -1979,6 +2004,99 @@ function appendToCurrentWorkspaceProfile() {
   document.getElementById("intakeView")?.scrollIntoView({ behavior: "smooth" });
 }
 
+  function toggleContactEditPanel(forceState) {
+    const panel = document.getElementById("contactEditPanel");
+    if (!panel) return;
+    const shouldShow = (typeof forceState === "boolean")
+      ? forceState
+      : (panel.style.display === "none" || !panel.style.display);
+    panel.style.display = shouldShow ? "block" : "none";
+  }
+
+  async function saveContactOverride() {
+    const btn = document.getElementById("btnSaveContact");
+    if (!btn || btn.disabled) return;
+
+    const webAppUrl = (localStorage.getItem("wov_scout_url") || "").trim();
+    const activeScoutId = (typeof currentScoutId !== "undefined" && currentScoutId)
+      ? currentScoutId
+      : (window.currentScoutId || "");
+
+    if (!webAppUrl || !activeScoutId) {
+      alert("Missing active scout profile or Web App URL in Settings.");
+      return;
+    }
+
+    const name = (document.getElementById("editName")?.value || "").trim();
+    const handle = (document.getElementById("editHandle")?.value || "").trim();
+    const email = (document.getElementById("editEmail")?.value || "").trim();
+    const phone = (document.getElementById("editPhone")?.value || "").trim();
+    const stageVal = (document.getElementById("editStage")?.value || "").trim();
+
+    if (!name) {
+      alert("Contact name cannot be empty.");
+      return;
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      alert("Please enter a valid email address (or leave it blank to clear).");
+      return;
+    }
+
+    const payload = {
+      action: "updateScoutProfile",
+      scoutId: activeScoutId,
+      name: name,
+      handle: handle,
+      email: email,
+      phone: phone
+    };
+    if (stageVal) payload.engagementStage = stageVal;
+
+    btn.disabled = true;
+    const originalText = btn.innerText;
+    btn.innerText = "⏳ Saving...";
+
+    try {
+      const resp = await fetch(webAppUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+      if (!resp.ok) throw new Error(`Server returned HTTP ${resp.status}.`);
+
+      const res = await resp.json();
+      if (!res || !res.ok) throw new Error(res?.error || "Failed to update contact details.");
+
+      // Sync Pipeline cache in-place so Back to Pipeline reflects updates immediately
+      if (Array.isArray(cachedCandidates)) {
+        const idx = cachedCandidates.findIndex(c => c && c.scoutId === activeScoutId);
+        if (idx !== -1) {
+          cachedCandidates[idx].fullName = res.name || name;
+          cachedCandidates[idx].primaryHandle = res.handle ?? handle;
+          cachedCandidates[idx].contactEmail = res.email ?? email;
+        }
+      }
+
+      const backBtn = document.getElementById("btnBackToPipeline");
+      const wasFromPipeline = Boolean(backBtn && backBtn.style.display !== "none");
+
+      renderCandidateProfile(res, {
+        preservePipelineCache: true,
+        fromPipeline: wasFromPipeline,
+        skipScroll: true
+      });
+
+      if (typeof showToast === "function") {
+        showToast("Contact details & stage saved.");
+      }
+    } catch (err) {
+      alert("⚠️ Could not save contact details: " + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerText = originalText;
+    }
+  }
+  
   // Index-safe handlers
   async function copyCandidateLink(idx) {
     const c = cachedCandidates[idx];
