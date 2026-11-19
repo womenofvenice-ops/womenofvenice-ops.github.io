@@ -1080,14 +1080,7 @@
       if (!webAppUrl || myToken !== activeSearchToken) return;
 
       try {
-        const resp = await fetch(webAppUrl, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "searchScoutProfiles", query: query })
-        });
-        if (!resp.ok || myToken !== activeSearchToken) return;
-
-        const data = await resp.json();
+        const data = await postScoutApi({ action: "searchScoutProfiles", query: query });
         if (myToken !== activeSearchToken) return;
 
         if (data && data.ok && Array.isArray(data.matches)) {
@@ -1680,14 +1673,7 @@
 
     try {
       // CORS SAFELISTED DISPATCH: text/plain prevents OPTIONS preflight drops in GAS
-      const response = await fetch(webAppUrl, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) throw new Error(`Server returned HTTP ${response.status}.`);
-      const res = await response.json();
+      const res = await postScoutApi(payload);
       if (!res.ok) throw new Error(res.error || "Failed to process candidate.");
 
       renderCandidateProfile(res);
@@ -1954,19 +1940,16 @@
     if (!webAppUrl || !currentScoutId) return;
 
     try {
-      const resp = await fetch(webAppUrl, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({
-          action: "updateNurtureStatus",
-          scoutId: currentScoutId,
-          newStatus: "CONTACTED"
-        })
-      });
-      if (!resp.ok) throw new Error(`Server returned HTTP ${resp.status}.`);
-      const res = await resp.json();
-      if (!res.ok) throw new Error(res.error || "Failed to update status.");
-      showToast("Updated database status to CONTACTED.");
+      const res = await postScoutApi({
+  action: "updateNurtureStatus",
+  scoutId: currentScoutId,
+  newStatus: "CONTACTED"
+});
+if (res && res.ok) {
+  showToast("Updated database status to CONTACTED.");
+} else {
+  throw new Error((res && res.error) || "Failed to update status.");
+}
     } catch (e) {
       showToast("Error updating status: " + e.message);
     }
@@ -2011,14 +1994,7 @@
     container.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--text-muted);">Fetching from cloud...</div>`;
 
     try {
-      const resp = await fetch(webAppUrl, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: "listRecentScouts", limit: 20 })
-      });
-
-      if (!resp.ok) throw new Error(`Server returned HTTP ${resp.status}.`);
-      const res = await resp.json();
+      const res = await postScoutApi({ action: "listRecentScouts", limit: 20 });
       if (!res.ok) throw new Error(res.error || "Failed to load pipeline.");
 
       cachedCandidates = res.candidates || [];
@@ -2089,14 +2065,7 @@ async function openProfileFromPipeline(idx) {
   }
 
   try {
-    const resp = await fetch(webAppUrl, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "getScoutProfile", scoutId: c.scoutId })
-    });
-    if (!resp.ok) throw new Error(`Server returned HTTP ${resp.status}.`);
-
-    const res = await resp.json();
+    const res = await postScoutApi({ action: "getScoutProfile", scoutId: c.scoutId });
     if (!res || !res.ok) throw new Error(res?.error || "Failed to load profile.");
 
     switchView("intake");
@@ -2173,14 +2142,7 @@ function appendToCurrentWorkspaceProfile() {
     btn.innerText = "⏳ Saving...";
 
     try {
-      const resp = await fetch(webAppUrl, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
-      });
-      if (!resp.ok) throw new Error(`Server returned HTTP ${resp.status}.`);
-
-      const res = await resp.json();
+      const res = await postScoutApi(payload);
       if (!res || !res.ok) throw new Error(res?.error || "Failed to update contact details.");
 
       // Sync Pipeline cache in-place so Back to Pipeline reflects updates immediately
@@ -2285,17 +2247,10 @@ function appendToCurrentWorkspaceProfile() {
     }
 
     try {
-      const resp = await fetch(webAppUrl, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({
-          action: "deleteScoutRecord",
-          scoutId: candidate.scoutId
-        })
-      });
-
-      if (!resp.ok) throw new Error(`Server returned HTTP ${resp.status}.`);
-      const data = await resp.json();
+      const data = await postScoutApi({
+  action: "deleteScoutRecord",
+  scoutId: candidate.scoutId
+});
 
       // 🛡️ GAS Contract Check: Explicitly verify data.ok (prevents HTTP 200 false positives)
       if (data && data.ok === true) {
@@ -2368,14 +2323,7 @@ async function submitCalibration() {
   };
 
   try {
-    const resp = await fetch(webAppUrl, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" }, // 🛡️ CORS-simple POST bypasses OPTIONS preflight
-      body: JSON.stringify(payload)
-    });
-
-    if (!resp.ok) throw new Error(`Server returned HTTP ${resp.status}.`);
-    const res = await resp.json();
+    const res = await postScoutApi(payload);
     if (!res || !res.ok) throw new Error(res?.error || "Failed to recalibrate profile.");
 
     inputEl.value = "";
