@@ -667,17 +667,18 @@ CANDIDATE: Right before the third siren began.
       window.wovDisplayCurrentCue();
 
       const cue = state.parsedLines[state.currentIdx];
+      if (!cue) { if (typeof wovCompleteScene === "function") wovCompleteScene(); return; }
       const isMyLine = (cue.char === state.myCharacter);
 
-      if (!isMyLine && cue.char !== "DIRECTION") {
-        window.speechSynthesis.cancel();
-        
+      if (!isMyLine && cue.char !== "DIRECTION" && wovHasSpeech()) {
+        wovCancelSpeech();
+
         const utter = new SpeechSynthesisUtterance(cue.text);
         utter.lang = "en-US";
 
         // Match English voice to prevent non-English iOS system voice degradation
         if (_cachedVoices.length === 0) wovLoadVoices();
-        const enVoice = _cachedVoices.find(v => v.lang.startsWith("en") && !v.localService) || 
+        const enVoice = _cachedVoices.find(v => v.lang.startsWith("en") && !v.localService) ||
                         _cachedVoices.find(v => v.lang.startsWith("en"));
         if (enVoice) utter.voice = enVoice;
 
@@ -689,9 +690,12 @@ CANDIDATE: Right before the third siren began.
           state.activeUtterance = null;
           if (!state.isRunning) return;
           setTimeout(() => {
-            if (state.isRunning && state.currentIdx < state.parsedLines.length - 1) {
+            if (!state.isRunning) return;
+            if (state.currentIdx < state.parsedLines.length - 1) {
               state.currentIdx++;
               window.wovExecuteStep();
+            } else {
+              wovCompleteScene();
             }
           }, 350);
         };
@@ -704,7 +708,7 @@ CANDIDATE: Right before the third siren began.
 
         window.speechSynthesis.speak(utter);
       } else {
-        window.speechSynthesis.cancel();
+        wovCancelSpeech();
         state.activeUtterance = null;
       }
     };
@@ -719,7 +723,7 @@ CANDIDATE: Right before the third siren began.
       if (state.audioCtx) {
         try { state.audioCtx.close(); } catch(eA) {}
       }
-      window.speechSynthesis.cancel();
+      wovCancelSpeech();
       window.location.href = "screener.html" + (window.location.search || "");
     };
 
