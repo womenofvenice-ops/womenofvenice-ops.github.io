@@ -736,7 +736,11 @@
       gap: 8px;
       flex-wrap: wrap;
     }
-    
+    .btn-pill:disabled {
+      opacity: 0.55;
+      cursor: default;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -829,6 +833,7 @@
         <button type="button" class="btn-pill" id="btnBackToPipeline" style="display: none;" onclick="switchView('pipeline')">← Back to Pipeline</button>
         <button type="button" class="btn-pill push" id="btnAppendCurrent" onclick="appendToCurrentWorkspaceProfile()">📎 Append New Media</button>
         <button type="button" class="btn-pill" id="btnEditContact" onclick="toggleContactEditPanel()">✏️ Edit Contact &amp; Stage</button>
+        <button type="button" class="btn-pill push" id="btnPromoteWorkspace" onclick="promoteCurrentWorkspaceCandidate()">⚡ Push to Audition Desk</button>
         <a class="btn-pill" id="resVaultLink" href="#" target="_blank" rel="noopener noreferrer" style="display: none;">🗂️ Vault File</a>
       </div>
     </div>
