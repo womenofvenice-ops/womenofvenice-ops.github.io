@@ -814,21 +814,26 @@
       const frameContainer = viewport.querySelector('.video-player-frame');
       const rawUrl = takeNum === 2 ? viewport.getAttribute('data-take2') : viewport.getAttribute('data-take1');
 
-      if (!rawUrl) {
+      const safeRaw = String(rawUrl || '').trim();
+      if (!/^https?:\/\//i.test(safeRaw)) {
         frameContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748B;font-size:12px;">🔒 Master Take Restricted</div>';
         return;
       }
 
       // Automatically detects direct MP4 or future Cloudflare Stream / Mux HLS
-      const isNativeStream = /\.(mp4|webm|mov)(\?.*)?$/i.test(rawUrl) || rawUrl.includes('cloudflarestream.com');
+      const isNativeStream = /\.(mp4|webm|mov)(\?.*)?$/i.test(safeRaw) || safeRaw.includes('cloudflarestream.com');
       if (isNativeStream) {
-        frameContainer.innerHTML = `<video src="${rawUrl}" controls autoplay playsinline style="width:100%;height:100%;object-fit:cover;background:#000;"></video>`;
+        frameContainer.innerHTML = `<video src="${escapeHtml(safeRaw)}" controls autoplay playsinline style="width:100%;height:100%;object-fit:cover;background:#000;"></video>`;
         return;
       }
 
       // Normalize embed and inject autoplay=1
-      const normalizedEmbedUrl = resolvePlayerUrl(rawUrl);
-      frameContainer.innerHTML = `<iframe src="${normalizedEmbedUrl}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen style="width:100%;height:100%;border:none;"></iframe>`;
+      const normalizedEmbedUrl = String(resolvePlayerUrl(safeRaw) || '').trim();
+      if (!/^https?:\/\//i.test(normalizedEmbedUrl)) {
+        frameContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748B;font-size:12px;">🔒 Master Take Restricted</div>';
+        return;
+      }
+      frameContainer.innerHTML = `<iframe src="${escapeHtml(normalizedEmbedUrl)}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen style="width:100%;height:100%;border:none;"></iframe>`;
     }
 
     // 5. Filter Pill Handlers
