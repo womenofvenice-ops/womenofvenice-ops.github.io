@@ -642,6 +642,7 @@
     async function initRoster() {
       try {
         const res = await fetch(BACKEND_URL + "?action=getRoster");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         
         if (data && data.ok && Array.isArray(data.roster)) {
@@ -687,7 +688,8 @@
 
         if (!matchesQuery) return false;
 
-        if (_activeFilter === 'high_delta') return (t.deltaPercent || 0) >= 10;
+        const arch = String(t.archetype || '').toLowerCase();
+        if (_activeFilter === 'high_delta') return (Number(t.deltaPercent) || 0) >= 10;
         if (_activeFilter === 'cinema') return arch.includes('cinema') || arch.includes('feature') || arch.includes('dramatic') || arch.includes('arthouse') || arch.includes('episodic');
         if (_activeFilter === 'creator') return arch.includes('creator') || arch.includes('viral') || arch.includes('commercial') || arch.includes('ugc') || arch.includes('brand');
         return true;
@@ -707,7 +709,8 @@
         const safeName = escapeHtml(t.name);
         const safeArch = escapeHtml(t.archetype || 'Commercial Lead');
         const safeNote = escapeHtml(t.coachingNote ? t.coachingNote.slice(0, 115) + '...' : (t.advisoryRating || 'Director Approved'));
-        const delta = t.deltaPercent || 11;
+        const hasDelta = t.deltaPercent !== undefined && t.deltaPercent !== null && String(t.deltaPercent).trim() !== '';
+        const delta = hasDelta ? t.deltaPercent : 11;
         const take2 = t.take2VideoUrl || '';
         const take1 = t.take1VideoUrl || '';
         const hasTake2 = Boolean(t.hasTake2 && take2);
