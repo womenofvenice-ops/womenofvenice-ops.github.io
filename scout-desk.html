@@ -1784,7 +1784,13 @@
       const st = String(data.engagementStage || "").trim().toUpperCase();
       editStageEl.value = ["DISCOVERED", "CALIBRATED", "CONTACTED", "RESPONDED", "PROMOTED", "ARCHIVED"].includes(st) ? st : "";
     }
-    
+    const promoWsBtn = document.getElementById("btnPromoteWorkspace");
+    if (promoWsBtn) {
+      const isAlreadyPromoted = String(data.engagementStage || data.nurtureStatus || "").trim().toUpperCase() === "PROMOTED";
+      promoWsBtn.disabled = isAlreadyPromoted;
+      promoWsBtn.innerText = isAlreadyPromoted ? "✅ Promoted" : "⚡ Push to Audition Desk";
+      promoWsBtn.classList.toggle("push", !isAlreadyPromoted);
+    }
   // 1. Render Discovered Headshots Gallery
   if (typeof renderHeadshotGallery === "function") {
     renderHeadshotGallery(data.imageUrls || [], "resGallery");
@@ -2042,7 +2048,9 @@ if (res && res.ok) {
           <button class="btn-pill push" id="openBtn_${idx}" onclick="openProfileFromPipeline(${idx})">📂 Open Workspace</button>
           ${c.draftWhatsapp ? `<a class="btn-pill wa" href="https://api.whatsapp.com/send?text=${waText}" target="_blank">💬 WhatsApp</a>` : ''}
           <button class="btn-pill" onclick="copyCandidateLink(${idx})">🔗 Copy Link</button>
-          <button class="btn-pill push" onclick="promoteCandidateByIndex(${idx})">⚡ Push to Audition Desk</button>
+          ${String(c.engagementStage || c.nurtureStatus || "").trim().toUpperCase() === "PROMOTED"
+              ? `<button class="btn-pill" id="promoteBtn_${idx}" disabled>✅ Promoted</button>`
+              : `<button class="btn-pill push" id="promoteBtn_${idx}" onclick="promoteCandidateByIndex(${idx})">⚡ Push to Audition Desk</button>`}
           <button class="btn-pill danger" id="delBtn_${idx}" onclick="handleDoubleTapDelete(${idx})">🗑️ Wipe</button>
         </div>
       </div>
@@ -2196,20 +2204,138 @@ function appendToCurrentWorkspaceProfile() {
     }
   }
 
-  function promoteCandidateByIndex(idx) {
-    const c = cachedCandidates[idx];
-    if (!c) return;
+  async function executePromoteCandidate_(scoutId, fullName, email, btnEl, onPromoteSuccess) {
+    if (btnEl && btnEl.disabled) return;
 
-    if (!c.contactEmail) {
-      alert(`Cannot promote ${c.fullName} yet: No contact email address on file.`);
+    const cleanId = String(scoutId || "").trim();
+    const cleanName = String(fullName || "").trim();
+    const cleanEmail = String(email || "").trim().toLowerCase();
+
+    if (!cleanId || cleanId.indexOf("SCT_") !== 0) {
+      alert("Missing valid candidate Scout ID.");
+      return;
+    }
+    if (!cleanName || /^(Unknown Performer|Unknown Contact|Unknown Entity|Manual Review Required|Candidate|Contact)$/i.test(cleanName)) {
+      alert("Please set the candidate's real full name via Edit Contact & Stage before promoting.");
+      return;
+    }
+    if (!cleanEmail || cleanEmail.indexOf("@") === -1 || /^unknown@|@(example\.(com|org|net)|test\.com)$/i.test(cleanEmail)) {
+      alert(`Cannot promote ${cleanName} yet: a real, valid contact email is required (use Edit Contact & Stage).`);
       return;
     }
 
-    const confirmed = confirm(`Promote ${c.fullName} (${c.contactEmail}) to the Core Audition Desk? This will provision her record in PROSPECTS_CRM.`);
+    const confirmed = confirm(
+      `Promote ${cleanName} (${cleanEmail}) to the Core Audition Desk?\n\n` +
+      `This will provision her record in PROSPECTS_CRM + Talent_Roster (appearing in review.html) and mark her PROMOTED.`
+    );
     if (!confirmed) return;
 
-    showToast(`Promotion staged for ${c.fullName}.`);
-    // Hook ready for Core EXEC promotion endpoint
+    const originalText = btnEl ? btnEl.innerText : "⚡ Push to Audition Desk";
+    if (btnEl) {
+      btnEl.disabled = true;
+      btnEl.innerText = "⏳ Pushing...";
+    }
+
+    const syncLocalPromotedState = () => {
+      if (Array.isArray(cachedCandidates)) {
+        const matchIdx = cachedCandidates.findIndex(item => item && item.scoutId === cleanId);
+        if (matchIdx !== -1) {
+          cachedCandidates[matchIdx].engagementStage = "PROMOTED";
+          cachedCandidates[matchIdx].nurtureStatus = "PROMOTED";
+          const cardBtn = document.getElementById(`promoteBtn_${matchIdx}`);
+          if (cardBtn) {
+            cardBtn.disabled = true;
+            cardBtn.classList.remove("push");
+            cardBtn.innerText = "✅ Promoted";
+          }
+        }
+      }
+
+      const activeWsId = (typeof currentScoutId !== "undefined" && currentScoutId)
+        ? currentScoutId
+        : (window.currentScoutId || "");
+      if (activeWsId === cleanId) {
+        const wsBtn = document.getElementById("btnPromoteWorkspace");
+        if (wsBtn) {
+          wsBtn.disabled = true;
+          wsBtn.classList.remove("push");
+          wsBtn.innerText = "✅ Promoted";
+        }
+        const stageSelect = document.getElementById("editStage");
+        if (stageSelect) stageSelect.value = "PROMOTED";
+
+        const metaEl = document.getElementById("resMeta");
+        if (metaEl) {
+          const h = (document.getElementById("editHandle")?.value || "").trim();
+          const e = (document.getElementById("editEmail")?.value || cleanEmail).trim();
+          const p = (document.getElementById("editPhone")?.value || "").trim();
+          const metaParts = [h, e, p, "PROMOTED"].filter(Boolean);
+          if (metaParts.length > 0) metaEl.innerText = metaParts.join(" · ");
+        }
+      }
+
+      if (typeof onPromoteSuccess === "function") onPromoteSuccess();
+    };
+
+    try {
+      const res = await postScoutApi({
+        action: "promoteScoutToCRM",
+        scoutId: cleanId
+      });
+
+      if (!res || !res.ok) {
+        const errMsg = (res && res.error) ? res.error : "Promotion failed.";
+        if (/already been promoted/i.test(errMsg)) {
+          syncLocalPromotedState();
+        }
+        throw new Error(errMsg);
+      }
+
+      syncLocalPromotedState();
+      if (typeof showToast === "function") {
+        showToast(`✅ ${res.name || cleanName} promoted to Audition Desk!`);
+      }
+    } catch (err) {
+      alert("⚠️ Promotion notice: " + err.message);
+      if (btnEl && btnEl.innerText === "⏳ Pushing...") {
+        btnEl.disabled = false;
+        btnEl.innerText = originalText;
+      }
+    }
+  }
+
+  function promoteCandidateByIndex(idx) {
+    const c = cachedCandidates[idx];
+    if (!c) return;
+    const btn = document.getElementById(`promoteBtn_${idx}`);
+    executePromoteCandidate_(c.scoutId, c.fullName, c.contactEmail, btn);
+  }
+
+  function promoteCurrentWorkspaceCandidate() {
+    const activeId = (typeof currentScoutId !== "undefined" && currentScoutId)
+      ? currentScoutId
+      : (window.currentScoutId || "");
+
+    const editPanel = document.getElementById("contactEditPanel");
+    if (editPanel && editPanel.style.display !== "none") {
+      const savedName = (document.getElementById("resName")?.innerText || "").trim();
+      const draftName = (document.getElementById("editName")?.value || "").trim();
+      const savedEmail = (typeof currentEmail !== "undefined" ? currentEmail : "").trim().toLowerCase();
+      const draftEmail = (document.getElementById("editEmail")?.value || "").trim().toLowerCase();
+      if (draftName !== savedName || draftEmail !== savedEmail) {
+        alert("Please click '💾 Save Contact & Stage' first before pushing to Audition Desk.");
+        return;
+      }
+    }
+
+    const fullName = (document.getElementById("resName")?.innerText || "").trim();
+    const email = (
+      (typeof currentEmail !== "undefined" && currentEmail) ||
+      document.getElementById("editEmail")?.value ||
+      ""
+    ).trim();
+    const btn = document.getElementById("btnPromoteWorkspace");
+    executePromoteCandidate_(activeId, fullName, email, btn);
   }
 
   // ==========================================
