@@ -558,6 +558,33 @@ CANDIDATE: Right before the third siren began.
     };
 
     // 7. Rehearsal Execution Loop
+    function wovCompleteScene() {
+      wovCancelSpeech();
+      state.activeUtterance = null;
+      state.currentIdx = 0;
+      state.isRunning = false;
+      const btn = document.getElementById("startPrompterBtn");
+      if (btn) {
+        btn.innerText = "▶ Restart Scene";
+        btn.classList.remove("active");
+      }
+      const speakerEl = document.getElementById("speakerTag");
+      const lineEl = document.getElementById("lineText");
+      const paceBar = document.getElementById("paceBar");
+      if (speakerEl) {
+        speakerEl.innerText = "SCENE COMPLETE";
+        speakerEl.className = "speaker-tag is-actor";
+      }
+      if (lineEl) {
+        lineEl.innerText = "🎬 Scene complete. Tap screen or 'Restart' to run again.";
+        lineEl.className = "line-text active-actor";
+      }
+      if (paceBar) {
+        paceBar.style.transition = "none";
+        paceBar.style.width = "0%";
+      }
+    }
+
     window.wovToggleRehearsal = function() {
       const btn = document.getElementById("startPrompterBtn");
       state.isRunning = !state.isRunning;
@@ -569,31 +596,37 @@ CANDIDATE: Right before the third siren began.
       } else {
         btn.innerText = "▶ Resume Rehearsal";
         btn.classList.remove("active");
-        window.speechSynthesis.cancel();
+        wovCancelSpeech();
       }
     };
 
     // 🛡️ Self-Healing Cue Advance & Seamless Scene Restart
     window.wovAdvanceCue = function() {
-      window.speechSynthesis.cancel();
       const btn = document.getElementById("startPrompterBtn");
+      if (!state.parsedLines || state.parsedLines.length === 0 || (btn && btn.style.display === "none")) {
+        return;
+      }
+
+      wovCancelSpeech();
 
       if (!state.isRunning) {
+        const isFreshOrRestart = btn && (btn.innerText.includes("Start") || btn.innerText.includes("Restart"));
         state.isRunning = true;
-        btn.innerText = "⏸ Pause Rehearsal";
-        btn.classList.add("active");
+        if (btn) {
+          btn.innerText = "⏸ Pause Rehearsal";
+          btn.classList.add("active");
+        }
+        if (isFreshOrRestart && state.currentIdx === 0) {
+          window.wovExecuteStep();
+          return;
+        }
       }
 
       if (state.currentIdx < state.parsedLines.length - 1) {
         state.currentIdx++;
         window.wovExecuteStep();
       } else {
-        state.currentIdx = 0;
-        state.isRunning = false;
-        btn.innerText = "▶ Restart Scene";
-        btn.classList.remove("active");
-        document.getElementById("lineText").innerText = "🎬 Scene complete. Tap screen or 'Restart' to run again.";
-        window.wovDisplayCurrentCue();
+        wovCompleteScene();
       }
     };
 
