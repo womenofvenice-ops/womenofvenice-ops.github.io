@@ -850,9 +850,19 @@
 
     // 6. Modal Controls & Phase 2C Soft-Hold Booking Engine (Body Scroll-Lock Protected)
     const modalBackdrop = document.getElementById('bookingModalBackdrop');
-    
-    // 🛡️ Edit 3: Lock body scroll when modal opens
+    let _modalCloseTimer = null;
+
+    // 🛡️ Lock body scroll & clear stale submit state when modal opens
     function openSoftHoldModal(talentName) {
+      if (_modalCloseTimer) {
+        clearTimeout(_modalCloseTimer);
+        _modalCloseTimer = null;
+      }
+      const submitBtn = document.getElementById('inquirySubmitBtn');
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "🚀 Dispatch Availability Inquiry ↗";
+      }
       document.getElementById('inquiryTalentName').value = talentName;
       document.getElementById('modalTitle').innerText = "Check Availability: " + talentName;
       document.getElementById('bookingStatusAlert').style.display = 'none';
@@ -862,6 +872,10 @@
 
     // Centralized modal close routine restores scrolling
     function closeModal() {
+      if (_modalCloseTimer) {
+        clearTimeout(_modalCloseTimer);
+        _modalCloseTimer = null;
+      }
       modalBackdrop.style.display = 'none';
       document.body.style.overflow = ''; // Restores background scroll
     }
@@ -904,6 +918,7 @@
           headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
+        if (!res.ok) throw new Error(`Server returned HTTP ${res.status}.`);
         const data = await res.json();
 
         if (data && data.ok) {
@@ -912,13 +927,15 @@
           alertBox.innerText = `✓ Hold registered. Deal ID: ${data.dealId || 'ACTIVE'}`;
           alertBox.style.display = 'block';
           btn.innerText = "✓ Dispatched to Desk";
-          setTimeout(() => { 
-            closeModal(); 
-            btn.disabled = false; 
-            btn.innerText = "🚀 Dispatch Availability Inquiry ↗"; 
+          document.getElementById('bookingInquiryForm')?.reset();
+          _modalCloseTimer = setTimeout(() => {
+            _modalCloseTimer = null;
+            closeModal();
+            btn.disabled = false;
+            btn.innerText = "🚀 Dispatch Availability Inquiry ↗";
           }, 2400);
         } else {
-          throw new Error(data.error || "Unable to process inquiry.");
+          throw new Error((data && data.error) || "Unable to process inquiry.");
         }
       } catch (err) {
         alertBox.style.background = "#FEE2E2";
