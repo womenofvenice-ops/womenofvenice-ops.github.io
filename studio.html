@@ -294,12 +294,20 @@ CANDIDATE: Right before the third siren began.
 
     // Web Speech Voice Cache for iOS Safari
     let _cachedVoices = [];
+    function wovHasSpeech() {
+      return typeof window !== "undefined" && Boolean(window.speechSynthesis) && typeof SpeechSynthesisUtterance !== "undefined";
+    }
+    function wovCancelSpeech() {
+      if (wovHasSpeech()) {
+        try { window.speechSynthesis.cancel(); } catch (e) {}
+      }
+    }
     function wovLoadVoices() {
-      if (typeof window !== "undefined" && window.speechSynthesis) {
+      if (wovHasSpeech()) {
         _cachedVoices = window.speechSynthesis.getVoices() || [];
       }
     }
-    if (typeof window !== "undefined" && window.speechSynthesis) {
+    if (wovHasSpeech()) {
       wovLoadVoices();
       window.speechSynthesis.onvoiceschanged = wovLoadVoices;
     }
@@ -362,11 +370,13 @@ CANDIDATE: Right before the third siren began.
       const nextCueBtn = document.getElementById("nextCueBtn");
 
       try {
-        // Unlock Web Speech API safely on physical user tap
-        window.speechSynthesis.cancel();
-        const dummyUtter = new SpeechSynthesisUtterance(" ");
-        dummyUtter.volume = 0.01;
-        window.speechSynthesis.speak(dummyUtter);
+        // Unlock Web Speech API safely on physical user tap (no-op on WebViews without TTS)
+        if (wovHasSpeech()) {
+          wovCancelSpeech();
+          const dummyUtter = new SpeechSynthesisUtterance(" ");
+          dummyUtter.volume = 0.01;
+          window.speechSynthesis.speak(dummyUtter);
+        }
 
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
         state.audioCtx = new AudioContextClass();
