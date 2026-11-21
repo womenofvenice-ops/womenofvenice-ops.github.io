@@ -536,14 +536,15 @@ CANDIDATE: Right before the third siren began.
       state.parsedLines = parseScreenplayScript(text);
 
       const charSelect = document.getElementById("characterSelect");
+      const previousSelection = charSelect.value || state.myCharacter;
       const characters = [...new Set(state.parsedLines.map(p => p.char).filter(c => c !== "DIRECTION"))];
-      
+
       charSelect.innerHTML = "";
       characters.forEach(c => {
         const opt = document.createElement("option");
         opt.value = c;
         opt.innerText = c;
-        if (c === state.myCharacter) opt.selected = true;
+        if (c === previousSelection) opt.selected = true;
         charSelect.appendChild(opt);
       });
       if (charSelect.value) state.myCharacter = charSelect.value;
@@ -551,11 +552,28 @@ CANDIDATE: Right before the third siren began.
 
     window.wovSaveScriptAndClose = function() {
       const charSelect = document.getElementById("characterSelect");
-      if (charSelect.value) state.myCharacter = charSelect.value;
+      const chosenChar = charSelect ? charSelect.value : "";
+      window.wovParseAndPopulateScript();
+      if (chosenChar && Array.from(charSelect.options).some(o => o.value === chosenChar)) {
+        charSelect.value = chosenChar;
+        state.myCharacter = chosenChar;
+      }
+      wovCancelSpeech();
+      state.isRunning = false;
+      const btn = document.getElementById("startPrompterBtn");
+      if (btn) {
+        btn.innerText = "▶ Start Rehearsal";
+        btn.classList.remove("active");
+      }
       state.currentIdx = 0;
       window.wovCloseScriptDrawer();
       window.wovDisplayCurrentCue();
     };
+
+    const scriptTa = document.getElementById("scriptTextarea");
+    if (scriptTa) {
+      scriptTa.addEventListener("input", window.wovParseAndPopulateScript);
+    }
 
     // 7. Rehearsal Execution Loop
     function wovCompleteScene() {
