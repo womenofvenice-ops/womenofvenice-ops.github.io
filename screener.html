@@ -2070,7 +2070,7 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
     
     const state = window._screenerState || {};
     const urlParams = new URLSearchParams(window.location.search);
-    const talentName = state.rawTalentName || urlParams.get("name") || "Elena B.";
+    const talentName = state.rawTalentName || urlParams.get("name") || urlParams.get("talent") || urlParams.get("cid") || urlParams.get("id") || "Talent";
 
     const payload = {
       action: "b2bBookingInquiry",
@@ -2220,13 +2220,17 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
       hud.style.animation = "fadeInOut 3.8s forwards";
     }
 
-    // 3. Programmatic Seek for HTML5 Native Video Players (Active when direct MP4/CDN is used)
-    const nativeVid = document.getElementById("playerFrame") || document.querySelector("video");
-    if (nativeVid && nativeVid.currentTime !== undefined) {
+    // 3. Programmatic Seek for HTML5 Native Video Players (Targets #playerVideo, not iframe #playerFrame)
+    const nativeVid = document.getElementById("playerVideo") || document.querySelector("video");
+    if (nativeVid && typeof nativeVid.currentTime === "number") {
       const parts = cleanTime.split(":");
       const secs = (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
-      nativeVid.currentTime = secs;
-      nativeVid.play().catch(function(){});
+      if (!isNaN(secs)) {
+        nativeVid.currentTime = secs;
+        if (typeof nativeVid.play === "function") {
+          nativeVid.play().catch(function(){});
+        }
+      }
     }
   };
 
@@ -2778,7 +2782,7 @@ function getDemoProfile_(key) {
       }
     },
     setupAlignmentPattern: function() {
-      var pos = (this.typeNumber === 4) ? 26 : 30;
+      var pos = (this.typeNumber === 4) ? 26 : ((this.typeNumber === 5) ? 30 : 34);
       for (var r = -2; r <= 2; r++) {
         for (var c = -2; c <= 2; c++) {
           this.modules[pos + r][pos + c] = (r === -2 || r === 2 || c === -2 || c === 2 || (r === 0 && c === 0));
@@ -2823,10 +2827,17 @@ function getDemoProfile_(key) {
       }
     },
     createData: function() {
-      var rsBlocks = (this.typeNumber === 4) ? [1, 100, 80] : [1, 134, 108];
+      var rsConfig = (this.typeNumber === 4)
+        ? { blocks: 1, totalPerBlock: 100, dataPerBlock: 80 }
+        : ((this.typeNumber === 5)
+          ? { blocks: 1, totalPerBlock: 134, dataPerBlock: 108 }
+          : { blocks: 2, totalPerBlock: 86, dataPerBlock: 68 });
+      var totalDataCount = rsConfig.blocks * rsConfig.dataPerBlock;
       var textBytes = [];
-      for (var i = 0; i < this.dataList[0].length; i++) textBytes.push(this.dataList[0].charCodeAt(i));
-      var totalDataCount = rsBlocks[2], dataBytes = [], currentByte = 0, bitsInByte = 0;
+      for (var i = 0; i < this.dataList[0].length && textBytes.length < totalDataCount - 2; i++) {
+        textBytes.push(this.dataList[0].charCodeAt(i));
+      }
+      var dataBytes = [], currentByte = 0, bitsInByte = 0;
       var writeBit = function(b) {
         currentByte = (currentByte << 1) | (b ? 1 : 0); bitsInByte++;
         if (bitsInByte === 8) { dataBytes.push(currentByte); currentByte = 0; bitsInByte = 0; }
@@ -2837,22 +2848,41 @@ function getDemoProfile_(key) {
       for (var i = 0; i < 4 && dataBytes.length < totalDataCount; i++) writeBit(0);
       while (bitsInByte > 0) writeBit(0);
       var pad = 0; while (dataBytes.length < totalDataCount) { dataBytes.push(pad % 2 === 0 ? 236 : 17); pad++; }
-      var ecCount = rsBlocks[1] - rsBlocks[2], g = new QRPolynomial([1], 0);
+
+      var ecCount = rsConfig.totalPerBlock - rsConfig.dataPerBlock;
+      var g = new QRPolynomial([1], 0);
       for (var i = 0; i < ecCount; i++) g = g.multiply(new QRPolynomial([1, QRMath.gexp(i)], 0));
-      var rawPoly = new QRPolynomial(dataBytes, g.getLength() - 1);
-      var modPoly = rawPoly.mod(g);
-      var ecBytes = new Array(g.getLength() - 1);
-      for (var i = 0; i < ecBytes.length; i++) {
-        var modIdx = i + modPoly.getLength() - ecBytes.length;
-        ecBytes[i] = (modIdx >= 0) ? modPoly.get(modIdx) : 0;
+
+      var dcBlocks = [], ecBlocks = [];
+      for (var blk = 0; blk < rsConfig.blocks; blk++) {
+        var offset = blk * rsConfig.dataPerBlock;
+        var dc = dataBytes.slice(offset, offset + rsConfig.dataPerBlock);
+        dcBlocks.push(dc);
+        var rawPoly = new QRPolynomial(dc, g.getLength() - 1);
+        var modPoly = rawPoly.mod(g);
+        var ec = new Array(g.getLength() - 1);
+        for (var j = 0; j < ec.length; j++) {
+          var modIdx = j + modPoly.getLength() - ec.length;
+          ec[j] = (modIdx >= 0) ? modPoly.get(modIdx) : 0;
+        }
+        ecBlocks.push(ec);
       }
-      return dataBytes.concat(ecBytes);
+
+      var result = [];
+      for (var c = 0; c < rsConfig.dataPerBlock; c++) {
+        for (var blk = 0; blk < rsConfig.blocks; blk++) result.push(dcBlocks[blk][c]);
+      }
+      for (var c = 0; c < ecCount; c++) {
+        for (var blk = 0; blk < rsConfig.blocks; blk++) result.push(ecBlocks[blk][c]);
+      }
+      return result;
     }
   };
 
   window.wovDrawAuthenticQR = function(ctx, text, x, y, size) {
     try {
-      var qr = new QRCodeModel(text.length > 78 ? 5 : 4);
+      var qrType = (text.length > 106) ? 6 : ((text.length > 78) ? 5 : 4);
+      var qr = new QRCodeModel(qrType);
       qr.addData(text);
       qr.make();
       var count = qr.getModuleCount();
@@ -2894,7 +2924,8 @@ function getDemoProfile_(key) {
     const d = t.directabilityDelta || null;
     const radar = t.latestRadar || {};
 
-    const talentName = String(t.name || t.talent || new URLSearchParams(window.location.search).get("name") || "Talent").trim();
+    const storyParamsOpen = new URLSearchParams(window.location.search);
+    const talentName = String(t.name || t.talent || storyParamsOpen.get("name") || storyParamsOpen.get("talent") || "Talent").trim();
     const archetype = String(t.marketArchetype || "Feature Cinema Lead").trim();
 
     const hasDelta = Boolean(d && (t.hasTake2 || (t.takes && t.takes.length > 1)));
@@ -3007,7 +3038,17 @@ function getDemoProfile_(key) {
     if (resolvedTalent) queryParts.push("name=" + encodeURIComponent(resolvedTalent));
     if (cid) queryParts.push("ref=" + encodeURIComponent(cid));
 
-    const refUrl = "https://womenofvenice.com/screener.html" + (queryParts.length ? "?" + queryParts.join("&") : "");
+    let refUrl = "https://womenofvenice.com/screener.html" + (queryParts.length ? "?" + queryParts.join("&") : "");
+    if (refUrl.length > 134) {
+      const publicNameUrl = resolvedTalent
+        ? ("https://womenofvenice.com/screener.html?name=" + encodeURIComponent(resolvedTalent))
+        : "";
+      if (publicNameUrl && publicNameUrl.length <= 134) {
+        refUrl = publicNameUrl;
+      } else if (cid) {
+        refUrl = "https://womenofvenice.com/screener.html?cid=" + encodeURIComponent(cid);
+      }
+    }
     // Draw high-contrast vector QR code badge on left side of seal box
     if (typeof window.wovDrawAuthenticQR === "function") {
       window.wovDrawAuthenticQR(ctx, refUrl, 175, 1495, 180);
@@ -3047,7 +3088,8 @@ function getDemoProfile_(key) {
     const canvas = document.getElementById("wovStoryCanvas");
     const t = window._currentTalent || {};
     const d = t.directabilityDelta || (t.takes && t.takes[1] && t.takes[1].progression ? { overall_delta_pct: 14 } : null);
-    const talentName = String(t.name || t.talent || new URLSearchParams(window.location.search).get("name") || "Elena Cone").trim();
+    const storyParamsShare = new URLSearchParams(window.location.search);
+    const talentName = String(t.name || t.talent || storyParamsShare.get("name") || storyParamsShare.get("talent") || "Talent").trim();
     const candidateId = new URLSearchParams(window.location.search).get("cid") || new URLSearchParams(window.location.search).get("id") || "";
 
     // 🛡️ Use hardened WovViralEngine if available, fallback to legacy wovDrawStoryCard
@@ -3084,7 +3126,8 @@ function getDemoProfile_(key) {
     const canvas = document.getElementById("wovStoryCanvas");
     if (!canvas) return;
     const t = window._currentTalent || {};
-    const talentName = String(t.name || t.talent || new URLSearchParams(window.location.search).get("name") || "Elena Cone").trim();
+    const storyParamsShare = new URLSearchParams(window.location.search);
+    const talentName = String(t.name || t.talent || storyParamsShare.get("name") || storyParamsShare.get("talent") || "Talent").trim();
     const candidateId = new URLSearchParams(window.location.search).get("cid") || new URLSearchParams(window.location.search).get("id") || "";
 
     // 🛡️ Fast-path WebKit gesture-safe share via WovViralEngine
