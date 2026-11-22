@@ -1023,17 +1023,30 @@ if (isPro && talentObj) {
         '</div>';
     }
 
-    // 🛡️ 7. FLATTENED HEADER ACTION BUTTON
+    // 🛡️ 7. ROLE-AWARE HEADER ACTION BUTTONS (Zero-Take vs Paywall vs Pro Cinema/Creator)
+    const escHeader = (typeof esc === "function")
+      ? esc
+      : s => String(s || "").replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[m]);
     let headerActionBtnHtml = "";
-    if (!isPro && isZeroTake) {
+    if (isZeroTake) {
       const studioHeaderParams = new URLSearchParams(window.location.search);
       if (!studioHeaderParams.get("name") && rawTalentName && rawTalentName !== "Talent") {
         studioHeaderParams.set("name", rawTalentName);
       }
+      if (!studioHeaderParams.get("track") && isCreator) {
+        studioHeaderParams.set("track", "creator");
+      }
+      if (!studioHeaderParams.get("format") && talent.targetAmbition) {
+        studioHeaderParams.set("format", talent.targetAmbition);
+      }
       const studioHeaderQs = studioHeaderParams.toString();
+      const qsSuffix = escHeader(studioHeaderQs ? "?" + studioHeaderQs : "");
       headerActionBtnHtml =
-        '<a href="studio.html' + esc(studioHeaderQs ? "?" + studioHeaderQs : "") + '" target="_blank" rel="noopener noreferrer" class="pdf-btn" style="background:var(--red,#A8492E);text-decoration:none;">' +
+        '<a href="studio.html' + qsSuffix + '" target="_blank" rel="noopener noreferrer" class="pdf-btn" style="background:var(--red,#A8492E);text-decoration:none;">' +
           '🎙️ Launch Studio Prompter ↗' +
+        '</a>' +
+        '<a href="upload.html' + qsSuffix + '" target="_blank" rel="noopener noreferrer" class="pdf-btn" style="background:transparent;color:var(--ink,#1C2B2C);border:1.5px solid var(--border,#CBD5E1);text-decoration:none;">' +
+          '📤 Submit Take #1 ↗' +
         '</a>';
     } else if (!isPro) {
       headerActionBtnHtml = 
@@ -1057,13 +1070,15 @@ if (isPro && talentObj) {
           (isCreator ? '⚡ Unlock Media Kit (€29)' : '🎬 Unlock Casting Deck (€29)') +
         '</button>';
     } else {
-      // 🛡️ Safe Parameter & Comp Card URL Resolution (Prevents ReferenceError)
-      const currentParams = new URLSearchParams(window.location.search);
-      const currentId = currentParams.get("id");
-      const safeName = rawTalentName || "Elena B.";
-      const compCardHref = `comp-card.html?name=${encodeURIComponent(safeName)}${currentId ? `&id=${encodeURIComponent(currentId)}` : ""}`;
+      const safeName = rawTalentName || "Talent";
+      const ownerCid = (talent.isOwner && (talent.candidateId || urlCid || localStorage.getItem("wov_cid_" + normKey))) || "";
+      const compCardHref = `comp-card.html?name=${encodeURIComponent(safeName)}${ownerCid ? `&cid=${encodeURIComponent(ownerCid)}` : ""}`;
+      const epkHref = `epk.html?talent=${encodeURIComponent(safeName)}`;
+      const studioParams = new URLSearchParams(window.location.search);
+      if (!studioParams.get("name") && safeName !== "Talent") studioParams.set("name", safeName);
+      if (ownerCid && !studioParams.get("cid")) studioParams.set("cid", ownerCid);
+      const studioHref = `studio.html${studioParams.toString() ? "?" + studioParams.toString() : ""}`;
 
-      // 💼 B2B Directorial Trigger Button (Suppressed on Print)
       const b2bBtnLabel = isCreator ? '💼 Inquire to Book' : '🎬 Check Availability';
       const b2bButtonHtml = `
         <button type="button" onclick="wovOpenB2BModal()" class="no-print"
@@ -1075,10 +1090,20 @@ if (isPro && talentObj) {
       headerActionBtnHtml = 
         b2bButtonHtml +
         (!isCreator ? `
-          <a href="${compCardHref}" target="_blank" rel="noopener noreferrer" class="no-print"
+          <a href="${escHeader(epkHref)}" target="_blank" rel="noopener noreferrer" class="no-print"
+             style="background:transparent;color:var(--ink,#1C2B2C);border:1.5px solid var(--border,#CBD5E1);padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
+            📄 Agency EPK ↗
+          </a>
+          <a href="${escHeader(compCardHref)}" target="_blank" rel="noopener noreferrer" class="no-print"
              onclick="if (typeof wovSendMilestone === 'function') wovSendMilestone('COMP_CARD_OPENED');"
-             style="background:transparent;color:var(--ink);border:1.5px solid var(--border);padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:border-color 0.2s;">
+             style="background:transparent;color:var(--ink,#1C2B2C);border:1.5px solid var(--border,#CBD5E1);padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:border-color 0.2s;">
             📇 Comp Card (A4) ↗
+          </a>
+        ` : '') +
+        (talent.isOwner ? `
+          <a href="${escHeader(studioHref)}" target="_blank" rel="noopener noreferrer" class="no-print"
+             style="background:rgba(168,73,46,0.1);color:#A8492E;border:1.5px solid rgba(168,73,46,0.4);padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
+            🎙️ Studio Prompter ↗
           </a>
         ` : '') +
         '<button onclick="if (typeof wovSendMilestone === \'function\') wovSendMilestone(\'PDF_EXPORT_CLICKED\'); window.print();" class="pdf-btn">' +
@@ -2192,29 +2217,72 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
     }
   };
 
-  // ⚖️ 1-CLICK GDPR TAKEDOWN DISPATCHER (Protected & Unblockable)
+  // ⚖️ 1-CLICK GDPR TAKEDOWN DISPATCHER (Aligned with Code.gs strictIdOnly Owner Gate)
   window.wovRequestTakedown = function(e) {
     if (e && e.preventDefault) e.preventDefault();
 
     const params = new URLSearchParams(window.location.search);
-    const talentIdentifier = params.get("name") || params.get("talent") || "";
-    const cleanId = talentIdentifier.toLowerCase().trim();
+    const state = window._screenerState || {};
+    const talentName = String(state.rawTalentName || params.get("name") || params.get("talent") || "").trim();
+    const normKey = talentName.toLowerCase().replace(/\s+/g, "_");
+    let storedCid = "";
+    try {
+      storedCid = (normKey && localStorage.getItem("wov_cid_" + normKey)) || "";
+    } catch (eSt) {}
 
-    // 🛡️ Protect Studio Demos from being de-indexed
-    if (cleanId === "elena b" || cleanId === "elena" || cleanId === "marta creator" || cleanId === "marta") {
+    // Prioritize UUID (cid / id / candidateId / storedCid) ahead of token / session_id
+    const ownerToken = String(
+      params.get("cid") ||
+      params.get("id") ||
+      (state.talent && state.talent.candidateId) ||
+      storedCid ||
+      params.get("token") ||
+      params.get("session_id") ||
+      ""
+    ).trim();
+
+    const cleanName = talentName.toLowerCase().replace(/[.\-_]/g, " ").replace(/\s+/g, " ").trim();
+    const isDemoProfile = !ownerToken && (cleanName === "elena b" || cleanName === "elena" || cleanName === "marta creator" || cleanName === "marta");
+
+    if (isDemoProfile) {
       alert("ℹ️ Studio Reference Demos are permanent public benchmarks and cannot be de-indexed.");
       return;
     }
 
-    if (confirm("Would you like to immediately withdraw this portfolio critique and revoke public access?")) {
-      try {
-        localStorage.removeItem("wov_unlocked_" + talentIdentifier);
-        localStorage.removeItem("wov_screener_talent");
-      } catch(err) {}
+    if (!ownerToken) {
+      if (confirm("Automated 1-click erasure requires your private Owner Vault link (cid). Would you like to send an instant GDPR Art. 17 takedown email to the Studio Desk?")) {
+        const subject = encodeURIComponent("GDPR Art. 17 Takedown Request — " + (talentName || "Portfolio Dossier"));
+        window.location.href = "mailto:" + STUDIO_INQUIRY_EMAIL + "?subject=" + subject;
+      }
+      return;
+    }
 
-      fetch(EXEC + "?action=takedown&id=" + encodeURIComponent(talentIdentifier) + "&confirm=true", { mode: "no-cors" });
-      alert("Request received. Your dossier has been de-indexed.");
-      window.location.replace("https://womenofvenice.com");
+    if (confirm("Would you like to immediately withdraw this portfolio critique and revoke public access?")) {
+      fetch(EXEC + "?action=takedown&cid=" + encodeURIComponent(ownerToken) + "&confirm=true")
+        .then(res => {
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          return res.json();
+        })
+        .then(data => {
+          if (data && data.ok) {
+            try {
+              [talentName, normKey, ownerToken].filter(Boolean).forEach(k => {
+                localStorage.removeItem("wov_unlocked_" + k);
+                localStorage.removeItem("wov_directive_" + k);
+                localStorage.removeItem("wov_compcard_" + k);
+                localStorage.removeItem("wov_cid_" + k);
+              });
+              localStorage.removeItem("wov_screener_talent");
+            } catch (err) {}
+            alert("✓ Request processed. Your dossier has been de-indexed.");
+            window.location.replace("https://womenofvenice.com");
+          } else {
+            alert("⚠️ " + ((data && data.error) || "Unable to verify owner token. Please email " + STUDIO_INQUIRY_EMAIL + "."));
+          }
+        })
+        .catch(() => {
+          alert("⚠️ Connection interrupted while processing takedown. Please retry or email " + STUDIO_INQUIRY_EMAIL + ".");
+        });
     }
   };
   
