@@ -604,7 +604,8 @@
     let pollAttempts = 0;
     const maxPolls = 14;
 
-  function fetchLiveScreener() {
+  function fetchLiveScreener(resetPoll) {
+    if (resetPoll === true) pollAttempts = 0;
     const urlParams = new URLSearchParams(window.location.search);
     const cleanToken = function(v) {
       const s = String(v || "").trim();
@@ -725,7 +726,8 @@
           }
         }
       });
- }
+  }
+  window.fetchLiveScreener = fetchLiveScreener;
 
   function verifyStripeReturnAndLoad_() {
     const escHtml = s => String(s || "").replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[m]);
@@ -922,20 +924,24 @@ if (isPro && talentObj) {
     // 🎬 1. Multi-Take Selector (Neutralized to prevent duplicate rows)
     let takeSelectorHtml = "";
 
-    // 📈 2. Directability Delta Benchmark Scorecard (Defensively Guarded)
+    // 📈 2. Directability Delta Benchmark Scorecard (XSS-Escaped & Defensively Guarded)
     let deltaCardHtml = "";
     if (talent.directabilityDelta) {
       const d = talent.directabilityDelta;
-      const sub1 = (d.take1 && d.take1.subtext) || 88;
-      const sub2 = (d.take2 && d.take2.subtext) || 94;
-      const still1 = (d.take1 && d.take1.stillness) || 85;
-      const still2 = (d.take2 && d.take2.stillness) || 91;
+      const sub1 = esc((d.take1 && d.take1.subtext) || 88);
+      const sub2 = esc((d.take2 && d.take2.subtext) || 94);
+      const still1 = esc((d.take1 && d.take1.stillness) || 85);
+      const still2 = esc((d.take2 && d.take2.stillness) || 91);
+      const deltaPctVal = d.deltaPercent != null ? d.deltaPercent : (d.overall_delta_pct != null ? d.overall_delta_pct : 5.3);
+      const deltaText = esc(d.deltaDisplay || ("+" + deltaPctVal + "%"));
+      const framingText = esc(d.framingImprovement || ((d.metrics && d.metrics.framing_compliance != null) ? ("+" + d.metrics.framing_compliance + "%") : "+12%"));
+      const ratingText = esc(d.rating || d.take2_advisory_rating || "Tier-1 Exceptional Adaptation");
 
       deltaCardHtml = 
         `<div class="delta-card" style="background:#FFF;border:1.5px solid #E2E8F0;border-radius:12px;padding:18px 20px;margin:16px 0;box-shadow:0 4px 20px rgba(0,0,0,0.04);">` +
           `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">` +
             `<div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#A8492E;">Empirical Directability Delta</div>` +
-            `<div style="font-size:12px;font-weight:800;background:#DCFCE7;color:#166534;padding:3px 8px;border-radius:99px;">${d.deltaDisplay || "+" + (d.deltaPercent || 5.3) + "%"} Adaptation</div>` +
+            `<div style="font-size:12px;font-weight:800;background:#DCFCE7;color:#166534;padding:3px 8px;border-radius:99px;">${deltaText} Adaptation</div>` +
           `</div>` +
           `<div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;text-align:center;">` +
             `<div style="background:#F8FAFC;padding:10px;border-radius:8px;">` +
@@ -948,10 +954,10 @@ if (isPro && talentObj) {
             `</div>` +
             `<div style="background:#F8FAFC;padding:10px;border-radius:8px;">` +
               `<div style="font-size:10px;color:#64748B;text-transform:uppercase;font-weight:700;">Framing Control</div>` +
-              `<div style="font-size:15px;font-weight:800;color:#166534;margin-top:2px;">${d.framingImprovement || "+12%"}</div>` +
+              `<div style="font-size:15px;font-weight:800;color:#166534;margin-top:2px;">${framingText}</div>` +
             `</div>` +
           `</div>` +
-          `<div style="font-size:11.5px;color:#64748B;margin-top:10px;text-align:center;">Verified Rating: <b>${d.rating || "Tier-1 Exceptional Adaptation"}</b> under Director Claudio.</div>` +
+          `<div style="font-size:11.5px;color:#64748B;margin-top:10px;text-align:center;">Verified Rating: <b>${ratingText}</b> under Director Claudio.</div>` +
         `</div>`;
     }
 
@@ -1511,10 +1517,10 @@ if (isPro && talentObj) {
           statusEl.style.color = "#4ADE80";
           statusEl.innerHTML = "✓ Take #2 Ingested! Directability Delta: <b>+" + (data.delta ? data.delta.deltaPercent : "5") + "%</b>. Refreshing studio deck...";
         }
-        // Refresh screener to mount multi-take player and delta scorecard
+        // Refresh screener in-place to mount multi-take player and delta scorecard
         setTimeout(function() {
-          if (typeof fetchLiveScreener === "function") {
-            fetchLiveScreener();
+          if (typeof window.fetchLiveScreener === "function") {
+            window.fetchLiveScreener(true);
           } else {
             window.location.reload();
           }
@@ -1540,9 +1546,15 @@ if (isPro && talentObj) {
   function renderTake2BridgeHtml(talent, isPro, isCreator, rawTalentName) {
     if (!isPro || talent.status === "ready_for_recording" || talent.readyForRecording || !Array.isArray(talent.takes) || talent.takes.length === 0) return "";
 
+    // 🎬 HELPER: Take 2 Directability Benchmark Bridge (Pro View Only, after Take #1 exists)
+  function renderTake2BridgeHtml(talent, isPro, isCreator, rawTalentName) {
+    if (!isPro || talent.status === "ready_for_recording" || talent.readyForRecording || !Array.isArray(talent.takes) || talent.takes.length === 0) return "";
+
     // 🛡️ 1. When Take 2 is ALREADY submitted: Display verified calibration completion badge
     if (talent.hasTake2 || (talent.takes && talent.takes.length > 1)) {
-      const delta = talent.directabilityDelta ? (talent.directabilityDelta.deltaDisplay || "+5.3%") : "+5.3%";
+      const d = talent.directabilityDelta || {};
+      const deltaPct = d.deltaPercent != null ? d.deltaPercent : (d.overall_delta_pct != null ? d.overall_delta_pct : 5.3);
+      const delta = esc(d.deltaDisplay || ("+" + deltaPct + "%"));
       return `
         <div class="telemetry-card" style="background:#F0FDF4;border:1.5px solid #BBF7D0;border-radius:12px;padding:22px;margin:20px 0;text-align:center;">
           <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:#166534;text-transform:uppercase;margin-bottom:6px;">✓ Stage 2 Directability Protocol Completed</div>
@@ -1558,7 +1570,8 @@ if (isPro && talentObj) {
       `;
     }
 
-    // 🛡️ 2. When Take 2 is PENDING: Display active directive & anchor to on-page #take2 upload portal
+    // 🛡️ 2. Pending Take #2 coaching bridge & #take2 anchor are exclusively for authenticated Owner Mode
+    if (!talent.isOwner) return "";
     const takes = talent.takes || [];
     const latestTake = takes[takes.length - 1] || {};
     const dirNotes = latestTake.directorNotes || {};
@@ -1602,7 +1615,7 @@ if (isPro && talentObj) {
                 <b style="color:#7C3AED;">Need to rehearse this adjustment?</b>
                 <span style="color:#64748B;display:block;font-size:11.5px;margin-top:2px;">Launch the direct-to-lens prompter with your virtual reader &amp; audio clipping meter.</span>
               </div>
-              <a href="${studioUrl}" target="_blank" rel="noopener noreferrer" style="background:#7C3AED;color:#FFF;padding:8px 18px;border-radius:99px;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(124,58,237,0.25);">
+              <a href="${esc(studioUrl)}" target="_blank" rel="noopener noreferrer" style="background:#7C3AED;color:#FFF;padding:8px 18px;border-radius:99px;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(124,58,237,0.25);">
                 🎙️ Launch Studio Prompter ↗
               </a>
             </div>
