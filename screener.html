@@ -1803,6 +1803,9 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
       if (!launchParams.get("type") && state.isCreator) {
         launchParams.set("type", "creator");
       }
+      if (!launchParams.get("track") && state.isCreator) {
+        launchParams.set("track", "creator");
+      }
       if (!launchParams.get("format") && state.talent && state.talent.targetAmbition) {
         launchParams.set("format", state.talent.targetAmbition);
       }
