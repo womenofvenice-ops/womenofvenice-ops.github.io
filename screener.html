@@ -504,9 +504,11 @@
     
     // 🛡️ Safe Parameter Resolution with Case & Whitespace Normalization
     let targetName = String(params.get("name") || params.get("talent") || "").trim();
+    const urlExplicitId = String(params.get("cid") || params.get("id") || "").trim();
+    const refParam = String(params.get("ref") || "").trim();
     const stripeSessionId = String(params.get("session_id") || params.get("token") || "").trim();
 
-    if (!targetName && (params.get("pro") || stripeSessionId)) {
+    if (!targetName && !urlExplicitId && (params.get("pro") || stripeSessionId)) {
       targetName = String(localStorage.getItem("wov_screener_talent") || "").trim();
     }
 
@@ -529,17 +531,18 @@
       localStorage.setItem("wov_screener_talent", targetName);
     }
 
-    // 🔄 Auto-repair address bar on return from VIP (DO NOT strip session_id if verification is pending)
-    if (!params.get("name") && targetName && window.history.replaceState && !stripeSessionId) {
+    // 🔄 Auto-repair address bar only when name wasn't paired with an explicit id/cid lookup
+    if (!params.get("name") && !urlExplicitId && targetName && window.history.replaceState && !stripeSessionId) {
       const cleanUrl = window.location.pathname + '?name=' + encodeURIComponent(targetName) + (params.get("pro") ? '&pro=true' : '');
       window.history.replaceState({}, '', cleanUrl);
     }
 // 🛰️ CLAUD-IA MILESTONE TELEMETRY DISPATCHER (Uses keepalive to survive unloads & Safari 302s)
     window.wovSendMilestone = function(eventType, meta) {
-      if (!targetName) return;
+      const milestoneTarget = targetName || urlExplicitId;
+      if (!milestoneTarget) return;
       const payload = {
         action: "logEngagementEvent",
-        talentId: targetName,
+        talentId: milestoneTarget,
         eventType: eventType,
         meta: meta || {}
       };
