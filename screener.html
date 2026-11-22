@@ -1928,7 +1928,7 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
     const dirNotes = tk.directorNotes || {};
     const fmtDiag = tk.formatDiag || {};
     const beatMap = tk.temporalBeatMap || tk.beatMap || [];
-    const takeLabel = totalTakes > 1 ? (" (Take #" + (tk.takeNumber || (idx + 1)) + ")") : "";
+    const takeLabel = totalTakes > 1 ? (" (Take #" + esc(tk.takeNumber || (idx + 1)) + ")") : "";
 
     // Titles
     const assessTitle = (isCreator ? "💼 Brand Deal & Viral Retention Audit" : "🎬 Directorial Craft Assessment") + takeLabel;
@@ -1994,7 +1994,7 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
         const rawTs = esc(b.timestamp || ("Beat " + (bIdx + 1)));
         const isTimecode = /\d{1,2}:\d{2}/.test(rawTs);
         const beatBadge = isTimecode 
-          ? '<button type="button" class="ts-link" style="font-size:11px;padding:3px 6px;white-space:nowrap;" onclick="wovSeekTimecode(\'' + rawTs + '\')" title="Inspect Beat">▶ ' + rawTs + '</button>'
+          ? '<button type="button" class="ts-link" style="font-size:11px;padding:3px 6px;white-space:nowrap;" data-ts="' + rawTs + '" onclick="wovSeekTimecode(this.dataset.ts)" title="Inspect Beat">▶ ' + rawTs + '</button>'
           : '<div style="background:#0F172A;color:#38BDF8;font-family:monospace;font-size:11px;font-weight:700;padding:3px 6px;border-radius:5px;white-space:nowrap;">' + rawTs + '</div>';
 
         beatMapHtml += 
