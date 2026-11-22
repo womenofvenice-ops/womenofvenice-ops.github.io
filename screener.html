@@ -989,8 +989,8 @@ if (isPro && talentObj) {
         tag: "⚡ CREATOR MONETIZATION ACCELERATOR",
         title: "Command €1,000–€3,000 for Your Next Brand Deal",
         desc: "Brands reject 70% of creator pitches because they fear audience drop-off. Unlock your third-party audited 1-page PDF media sheet to prove your 3-second hook retention.",
-        btnText: "💼 Unlock Verified Media Kit Deck (PDF) — €49",
-        anchor: "€49 <span style='font-size:14px;color:#94A3B8;text-decoration:line-through;'>€99 Studio Rate</span>",
+        btnText: "💼 Unlock Verified Media Kit Deck (PDF) — €29",
+        anchor: "€29 <span style='font-size:14px;color:#94A3B8;text-decoration:line-through;'>€99 Studio Rate</span>",
         benefit: "✓ Verified Retention Metrics · Brand-Ready Media Kit PDF · Commercial Comps"
       } : {
         tag: "🎭 OFFICIAL CASTING TELEMETRY DECK",
@@ -1597,7 +1597,7 @@ if (isPro && talentObj) {
   
   // 💼 HELPER: Unified Rate Card & Brand Pitch Outreach Engine (Creator Pro View Only)
 function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, pScore) {
-  if (!isCreator || !isPro) return "";
+  if (!isCreator || !isPro || !talent || talent.status === "ready_for_recording" || talent.readyForRecording || !Array.isArray(talent.takes) || talent.takes.length === 0) return "";
 
   const safeEscape = typeof esc === "function" ? esc : function(s) { 
     return String(s || "").replace(/[&<>"']/g, function(m) {
@@ -2090,7 +2090,7 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
     const urlParams = new URLSearchParams(window.location.search);
     const state = window._screenerState || {};
     const talentName = state.rawTalentName || urlParams.get("name") || urlParams.get("talent") || "Talent";
-    const dossierId = urlParams.get("id") || "";
+    const dossierId = urlParams.get("cid") || urlParams.get("id") || (state.talent && state.talent.candidateId) || "";
     const isCreator = state.isCreator || (urlParams.get("type") === "creator");
 
     // Dynamic Persona Copy
@@ -2109,14 +2109,15 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
       if (btnTextEl) btnTextEl.innerText = "📄 Unlock Casting Deck (PDF) — €29.00";
     }
 
-    // 🛡️ Safe Stripe Binding: Prioritize UUID over display name to prevent anti-fraud mismatches
+    // 🛡️ Safe Stripe Binding: Uses hoisted BASE_STRIPE_CHECKOUT_URL & preserves talent context for return
     if (checkoutLink) {
-      const baseStripe = (typeof baseStripeUrl !== "undefined" && baseStripeUrl.indexOf("YOUR_STRIPE_LINK") === -1)
-        ? baseStripeUrl
+      const baseStripe = (typeof BASE_STRIPE_CHECKOUT_URL !== "undefined" && BASE_STRIPE_CHECKOUT_URL.indexOf("YOUR_STRIPE_LINK") === -1)
+        ? BASE_STRIPE_CHECKOUT_URL
         : "https://buy.stripe.com/YOUR_STRIPE_LINK";
-      
+
       const trackingIdentifier = encodeURIComponent(dossierId || talentName);
-      checkoutLink.href = baseStripe + "?client_reference_id=" + trackingIdentifier;
+      const sep = baseStripe.indexOf("?") >= 0 ? "&" : "?";
+      checkoutLink.href = baseStripe + sep + "client_reference_id=" + trackingIdentifier;
 
       checkoutLink.onclick = function(e) {
         if (baseStripe.indexOf("YOUR_STRIPE_LINK") >= 0) {
@@ -2126,7 +2127,14 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
             status.style.color = "#64748B";
             status.innerHTML = "Direct checkout initializing. Enter your private claim code below.";
           }
+          return;
         }
+        try {
+          if (talentName && talentName !== "Talent") localStorage.setItem("wov_screener_talent", talentName);
+          if (dossierId && talentName) {
+            localStorage.setItem("wov_cid_" + talentName.toLowerCase().replace(/\s+/g, "_"), dossierId);
+          }
+        } catch (err) {}
       };
     }
 
@@ -2261,12 +2269,8 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
     if (rawEl) rawEl.textContent = "+€" + rawRate;
     if (totalEl) totalEl.textContent = "€" + totalPackage;
 
-    // 🔗 Preserve Magic Dossier Token if available
-    const urlParams = new URLSearchParams(window.location.search);
-    const dossierId = urlParams.get("id");
-    const cleanScreenerUrl = dossierId
-      ? "https://womenofvenice.com/screener.html?id=" + encodeURIComponent(dossierId)
-      : "https://womenofvenice.com/screener.html?name=" + encodeURIComponent(talentName) + "&type=creator";
+    // 🔗 Always share public Industry/Brand link (never expose private Owner Mode cid to brands)
+    const cleanScreenerUrl = "https://womenofvenice.com/screener.html?name=" + encodeURIComponent(talentName) + "&type=creator";
 
     // ✉️ Clean, Authoritative Subject Line
     const subject = `Partnership Concept: ${brand} × ${talentName} (Audited Retention Index)`;
