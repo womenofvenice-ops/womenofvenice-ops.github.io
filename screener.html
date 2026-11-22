@@ -566,18 +566,19 @@
     
     const container = getAppEl();
 
-    if (!targetName) {
+    if (!targetName && !urlExplicitId) {
       container.innerHTML = 
-        '<div style="text-align:center;padding:60px 0;"><h2>⚠️ Missing Talent Parameter</h2><p style="color:var(--inkS);margin-top:8px;">Add ?name=TalentName to the URL to view a casting deck.</p></div>';
+        '<div style="text-align:center;padding:60px 0;"><h2>⚠️ Missing Talent Parameter</h2><p style="color:var(--inkS);margin-top:8px;">Add ?name=TalentName or ?cid=UUID to the URL to view a casting deck.</p></div>';
       return;
     }
 
-    // 🌟 BUILT-IN STUDIO REFERENCE DEMOS (Works 100% offline & with empty databases)
+    // 🌟 BUILT-IN STUDIO REFERENCE DEMOS (Skipped whenever a real cid, id, session, or gw_ token is present)
     const rawTarget = typeof targetName !== "undefined" ? targetName : (new URLSearchParams(window.location.search).get("name") || "");
     const demoKey = String(rawTarget || "").toLowerCase().replace(/[.\-_]/g, " ").replace(/\s+/g, " ").trim();
+    const hasLiveLookupParam = Boolean(urlExplicitId || /^gw_/i.test(refParam) || stripeSessionId);
 
-    // 1. Intercept Studio Reference Profiles
-    if (demoKey === "elena b" || demoKey === "elena" || demoKey === "marta creator" || demoKey === "marta") {
+    // 1. Intercept Studio Reference Profiles only for direct demo links (and demo print QR ?ref=pdf_qr)
+    if (!hasLiveLookupParam && (demoKey === "elena b" || demoKey === "elena" || demoKey === "marta creator" || demoKey === "marta")) {
       if (typeof getDemoProfile_ === "function") {
         renderScreener(getDemoProfile_(demoKey));
         return;
@@ -879,7 +880,9 @@ const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
     
     const radar = talent.latestRadar || {};
     const comps = talent.comps || {};
-    const takes = Array.isArray(talent.takes) && talent.takes.length > 0 ? talent.takes : [{}];
+    const hasAuditedTakes = Array.isArray(talent.takes) && talent.takes.length > 0;
+    const isZeroTake = Boolean(talent.status === "ready_for_recording" || talent.readyForRecording || !hasAuditedTakes);
+    const takes = hasAuditedTakes ? talent.takes : [{}];
     const initialTakeIdx = takes.length - 1;
 
     // Cache state on window for dynamic, lossless take switching
@@ -888,6 +891,7 @@ const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
       takes: takes,
       currentTakeIdx: initialTakeIdx,
       isCreator: isCreator,
+      isZeroTake: isZeroTake,
       safeFirstName: safeFirstName,
       rawTalentName: rawTalentName
     };
@@ -936,9 +940,9 @@ const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
         `</div>`;
     }
 
-    // 🔒 3. Private Take #2 Submission Portal (Gated exclusively to Owner Mode)
+    // 🔒 3. Private Take #2 Submission Portal (Only after Take #1 is audited)
     let take2PortalHtml = "";
-    if (talent.isOwner && !talent.hasTake2) {
+    if (talent.isOwner && !talent.hasTake2 && !isZeroTake) {
       take2PortalHtml = 
         `<div id="take2" class="take2-portal-card no-print" style="background:#FFF;border:1.5px dashed #A8492E;border-radius:12px;padding:24px;margin:24px 0;">` +
           `<div style="font-size:11.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#A8492E;margin-bottom:6px;">Directorial Calibration Submission</div>` +
@@ -963,9 +967,9 @@ const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
     }
     const hookContext = isCreator && pScore ? ` · ${getHookTier(pScore)}` : "";
 
-    // 6. DYNAMIC CONVERSION PAYWALL CARD (Dual-Persona with Embedded VIP Box)
+    // 6. DYNAMIC CONVERSION PAYWALL CARD (Suppressed until Take #1 is audited)
     let paywallHtml = "";
-    if (!isPro) {
+    if (!isPro && !isZeroTake) {
       const config = isCreator ? {
         tag: "⚡ CREATOR MONETIZATION ACCELERATOR",
         title: "Command €1,000–€3,000 for Your Next Brand Deal",
@@ -1136,7 +1140,15 @@ const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
       <!-- 📈 Directability Delta Benchmark Scorecard -->
       ${deltaCardHtml}
       
-      <!-- 📊 Geometric 4-Axis Spider Radar Chart (Class Name Fixed) -->
+      <!-- 📊 Geometric 4-Axis Spider Radar Chart (Pending Slate for Zero-Take Profiles) -->
+      ${isZeroTake ? `
+        <div class="telemetry-card" style="text-align:center;padding:26px 20px;">
+          <div class="section-title" style="margin-bottom:8px;">${radarTitle}</div>
+          <div style="font-size:13.5px;color:var(--inkS);max-width:480px;margin:0 auto;line-height:1.55;">
+            Telemetry axes will populate automatically once your <b>Take #1</b> screen test is recorded and indexed by CLAUD-IA.
+          </div>
+        </div>
+      ` : `
       <div class="telemetry-card" style="text-align:center;padding:28px 18px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
           <div class="section-title" style="margin-bottom:0;">${radarTitle}</div>
@@ -1182,6 +1194,7 @@ const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
           </svg>
         </div>
       </div>
+      `}
 
       <!-- Dynamic Take Section: Updates Synchronously on Tab Switch -->
       <div id="dynamicTakeContainer"></div>
@@ -1468,9 +1481,9 @@ const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
     });
   };
   
-  // 🎬 HELPER: Take 2 Directability Benchmark Bridge (Pro View Only)
+  // 🎬 HELPER: Take 2 Directability Benchmark Bridge (Pro View Only, after Take #1 exists)
   function renderTake2BridgeHtml(talent, isPro, isCreator, rawTalentName) {
-    if (!isPro) return "";
+    if (!isPro || talent.status === "ready_for_recording" || talent.readyForRecording || !Array.isArray(talent.takes) || talent.takes.length === 0) return "";
 
     // 🛡️ 1. When Take 2 is ALREADY submitted: Display verified calibration completion badge
     if (talent.hasTake2 || (talent.takes && talent.takes.length > 1)) {
@@ -1797,6 +1810,7 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
 
   // 📝 SUB-RENDERER: Generates synchronized critique and assessment for the active take
   function buildTakeContentHtml(tk, isCreator, idx, totalTakes) {
+    if (window._screenerState && window._screenerState.isZeroTake) return "";
     const dirNotes = tk.directorNotes || {};
     const fmtDiag = tk.formatDiag || {};
     const beatMap = tk.temporalBeatMap || tk.beatMap || [];
