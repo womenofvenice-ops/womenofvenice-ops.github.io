@@ -483,6 +483,8 @@
 <script>
   const EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
   const STUDIO_INQUIRY_EMAIL = "studio.wov@gmail.com";
+  // TODO: Swap Stripe test_ URL to your live Stripe Payment Link before production launch
+  const BASE_STRIPE_CHECKOUT_URL = "https://buy.stripe.com/test_fZubJ22f1cy05apbA42wU00";
 
   function esc(s) { 
     return String(s || "").replace(/[&<>"']/g, function(c) {
@@ -528,7 +530,12 @@
     }
 
     if (targetName) {
-      localStorage.setItem("wov_screener_talent", targetName);
+      try {
+        localStorage.setItem("wov_screener_talent", targetName);
+        if (urlExplicitId) {
+          localStorage.setItem("wov_cid_" + targetName.toLowerCase().replace(/\s+/g, "_"), urlExplicitId);
+        }
+      } catch (eStore) {}
     }
 
     // 🔄 Auto-repair address bar only when name wasn't paired with an explicit id/cid lookup
@@ -718,8 +725,85 @@
           }
         }
       });
+ }
+
+  function verifyStripeReturnAndLoad_() {
+    const escHtml = s => String(s || "").replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[m]);
+    const loadEl = document.getElementById("loadingState") || getAppEl();
+    if (loadEl) {
+      loadEl.innerHTML =
+        '<div style="max-width:480px;margin:80px auto;background:#FFF;border-radius:16px;padding:36px 24px;text-align:center;font-family:\'Inter\',sans-serif;border:1.5px solid #E2E8F0;box-shadow:0 10px 40px rgba(0,0,0,0.06);">' +
+          '<div style="font-size:32px;margin-bottom:10px;">💳</div>' +
+          '<h2 style="font-family:\'Playfair Display\',Georgia,serif;font-size:21px;color:#1C2B2C;margin-bottom:8px;">Verifying Studio Payment Receipt...</h2>' +
+          '<p style="font-size:13px;color:#64748B;">Confirming Stripe checkout and unlocking your Pro Dossier.</p>' +
+        '</div>';
+    }
+
+    const verifyId = urlExplicitId || targetName;
+    const verifyUrl = EXEC + "?action=verifyPayment&session_id=" + encodeURIComponent(stripeSessionId) +
+      "&id=" + encodeURIComponent(verifyId) +
+      (targetName ? "&name=" + encodeURIComponent(targetName) : "");
+
+    fetch(verifyUrl)
+      .then(res => {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(vData => {
+        if (vData && vData.ok && vData.paid) {
+          const verifiedName = String(vData.candidate || targetName || "").trim();
+          const verifiedCid = String(vData.candidateId || urlExplicitId || "").trim();
+          try {
+            [verifiedName, targetName, verifiedCid].filter(Boolean).forEach(k => {
+              localStorage.setItem("wov_unlocked_" + k, "true");
+              localStorage.setItem("wov_unlocked_" + k.toLowerCase().replace(/\s+/g, "_"), "true");
+              if (verifiedCid) {
+                localStorage.setItem("wov_cid_" + k.toLowerCase().replace(/\s+/g, "_"), verifiedCid);
+              }
+            });
+            if (verifiedName) localStorage.setItem("wov_screener_talent", verifiedName);
+          } catch (eStore) {}
+
+          if (window.history && window.history.replaceState) {
+            const cleanUrl = new URL(window.location.href);
+            if (verifiedName) cleanUrl.searchParams.set("name", verifiedName);
+            if (verifiedCid) cleanUrl.searchParams.set("cid", verifiedCid);
+            // Always strip session_id/token after verified payment so reloads don't re-run verifyPayment
+            cleanUrl.searchParams.delete("session_id");
+            cleanUrl.searchParams.delete("token");
+            window.history.replaceState({}, "", cleanUrl.toString());
+          }
+          fetchLiveScreener();
+        } else {
+          const errMsg = (vData && vData.error) ? vData.error : "Payment verification could not be completed.";
+          if (loadEl) {
+            loadEl.innerHTML =
+              '<div style="max-width:500px;margin:80px auto;background:#FFF;border-radius:16px;padding:36px 24px;text-align:center;font-family:\'Inter\',sans-serif;border:1.5px solid #FCA5A5;box-shadow:0 10px 40px rgba(0,0,0,0.06);">' +
+                '<div style="font-size:32px;margin-bottom:10px;">⚠️</div>' +
+                '<h2 style="font-family:\'Playfair Display\',Georgia,serif;font-size:20px;color:#1C2B2C;margin-bottom:8px;">Payment Verification Notice</h2>' +
+                '<p style="font-size:13px;color:#64748B;line-height:1.5;margin-bottom:18px;">' + escHtml(errMsg) + '</p>' +
+                '<a href="mailto:' + STUDIO_INQUIRY_EMAIL + '?subject=Stripe%20Verification%20—%20' + encodeURIComponent(stripeSessionId) + '" style="display:inline-block;background:#1C2B2C;color:#FFF;padding:10px 22px;border-radius:99px;font-size:12.5px;font-weight:700;text-decoration:none;">Contact Studio Desk ↗</a>' +
+              '</div>';
+          }
+        }
+      })
+      .catch(err => {
+        if (loadEl) {
+          loadEl.innerHTML =
+            '<div style="max-width:480px;margin:80px auto;background:#FFF;border-radius:16px;padding:36px 24px;text-align:center;font-family:\'Inter\',sans-serif;border:1.5px solid #FCA5A5;">' +
+              '<h2 style="font-size:19px;color:#1C2B2C;margin-bottom:8px;">📡 Payment Verification Interrupted</h2>' +
+              '<p style="font-size:13px;color:#64748B;margin-bottom:16px;">' + escHtml(err.message || err) + '</p>' +
+              '<button onclick="window.location.reload()" style="padding:9px 22px;background:#1C2B2C;color:#FFF;border:none;border-radius:99px;cursor:pointer;font-size:13px;font-weight:700;">Retry Verification</button>' +
+            '</div>';
+        }
+      });
   }
- fetchLiveScreener();
+
+  if (stripeSessionId && /^cs_/i.test(stripeSessionId)) {
+    verifyStripeReturnAndLoad_();
+  } else {
+    fetchLiveScreener();
+  }
 });
   function renderScreener(talent) {
     // 🛡️ 1. SAFE NAMES FIRST: Eliminates ReferenceError Temporal Dead Zone (TDZ)
@@ -782,46 +866,15 @@ for (let k = 0; k < keysToCheck.length; k++) {
 const isTalentPro = Boolean(talentObj.isPro === true);
 const isPro = isVaultUnlocked || isTalentPro;
 
-// 🛡️ Unified DOM Sync Helper: Keeps master desk AND .header-actions unlocked on reload
-window.applyProDomState = function(talentData) {
-  const t = talentData || talentObj;
-  const safeName = (t && (t.name || t.candidate)) || safeTargetName || "Talent";
-  const candidateCid = (t && (t.candidateId || t.cid || t.id)) || urlCid || localStorage.getItem("wov_cid_" + normKey) || "";
-  const directive = cachedDirective || (t && t.nextSessionDirective) || "";
+// Persist verified owner cid for reload continuity without clobbering .header-actions
+if (talentObj && talentObj.isOwner && talentObj.candidateId && normKey) {
+  try {
+    localStorage.setItem("wov_cid_" + normKey, String(talentObj.candidateId));
+  } catch (eCidStore) {}
+}
 
-  // 1. Lift blur on master desk and remove paywall card
-  const gatedDesk = document.getElementById("gatedMasterDesk") || document.querySelector(".gated-wrapper");
-  if (gatedDesk) gatedDesk.classList.remove("is-locked");
-
-  document.querySelectorAll(".telemetry-card").forEach(card => {
-    if (card.innerHTML.indexOf("vipCodeInput") >= 0) card.remove();
-  });
-
-  // 2. Inject Directive text and show gold VIP badge
-  const directiveDisplay = document.getElementById("directorDirectiveDisplay");
-  if (directiveDisplay && directive) directiveDisplay.textContent = directive;
-
-  const vipIndicator = document.getElementById("vipIndicator");
-  if (vipIndicator) vipIndicator.style.display = "inline-block";
-
-  // 3. Synchronize Header Actions (Check Availability, EPK One-Sheet, Studio Prompter, Comp Card A4, VIP badge)
-  const headerActions = document.querySelector(".header-actions");
-  if (headerActions) {
-    const compCardHref = cachedCompCard || (t && t.compCardUrl) || `comp-card.html?name=${encodeURIComponent(safeName)}${candidateCid ? `&candidate=${encodeURIComponent(candidateCid)}` : ""}`;
-    // 🛡️ Dynamically construct the Agency EPK One-Sheet URL
-    const epkHref = `epk.html?talent=${encodeURIComponent(safeName)}`;
-    // 🛡️ Studio Prompter Highway: Inherits active credentials (?name=...&cid=...)
-    const studioHref = `studio.html${window.location.search || `?name=${encodeURIComponent(safeName)}${candidateCid ? `&cid=${encodeURIComponent(candidateCid)}` : ""}`}`;
-
-    headerActions.innerHTML = 
-      `<button type="button" onclick="wovOpenB2BModal()" class="no-print" style="background:#1C2B2C;color:#FAF8F5;border:1px solid rgba(255,255,255,0.2);padding:6px 14px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">🎬 Check Availability ↗</button>` +
-      `<a href="${epkHref}" target="_blank" rel="noopener noreferrer" class="no-print" style="background:transparent;color:var(--ink,#1C2B2C);border:1.5px solid var(--border,#CBD5E1);padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">📄 Agency EPK ↗</a>` +
-      `<a href="${studioHref}" target="_blank" rel="noopener noreferrer" class="no-print" style="background:rgba(168,73,46,0.1);color:#A8492E;border:1.5px solid rgba(168,73,46,0.4);padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">🎙️ Studio Prompter ↗</a>` +
-      `<a href="${compCardHref}" target="_blank" rel="noopener noreferrer" class="no-print" style="background:transparent;color:var(--ink,#1C2B2C);border:1.5px solid var(--border,#CBD5E1);padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">📇 Comp Card (A4) ↗</a>` +
-      `<button onclick="window.print();" class="pdf-btn" style="padding:6px 14px;font-size:11.5px;font-weight:700;">📄 Export PDF Deck</button>` +
-      `<div class="verified-pill" style="font-size:10px;padding:4px 10px;background:rgba(34,197,94,0.1);color:#166534;border-radius:99px;font-weight:700;">👑 VIP CALIBRATION ACTIVE</div>`;
-  }
-};
+// Non-destructive compatibility stub (renderScreener paints role-aware .header-actions directly)
+window.applyProDomState = function() {};
 
 // Hydrate Directive & Comp Card into memory
 if (isPro && talentObj) {
@@ -838,49 +891,7 @@ if (isPro && talentObj) {
   if (cachedCompCard) {
     talentObj.compCardUrl = cachedCompCard;
   }
-
-  // Executes safely after renderScreener finishes painting all DOM cards
-  setTimeout(() => window.applyProDomState(talentObj), 50);
 }
-    
-  // 🛡️ 4. TRACKABLE STRIPE PAYMENT LINK & SMART CHECKOUT ROUTER
-const baseStripeUrl = "https://buy.stripe.com/test_fZubJ22f1cy05apbA42wU00";
-const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
-  ? baseStripeUrl
-  : (baseStripeUrl + "?client_reference_id=" + encodeURIComponent(rawTalentName));
-
-   // 💳 SMART CHECKOUT ROUTER (Never Freezes · Auto-Scroll & Demo Safe)
-    window.wovHandlePaymentClick = function(e) {
-      if (e && e.preventDefault) e.preventDefault();
-      try {
-        localStorage.setItem("wov_screener_talent", rawTalentName);
-      } catch (err) {}
-
-      const cleanLowerName = rawTalentName.toLowerCase();
-      const isDemo = false;
-      const isPlaceholder = !stripePaymentUrl || stripePaymentUrl.indexOf("YOUR_STRIPE_LINK") >= 0;
-
-      // 🛡️ Demo Mode OR Unconfigured Stripe: Guide to VIP Scholarship
-      if (isDemo || isPlaceholder) {
-        const vipBox = document.getElementById("vipCodeInput");
-        const statusEl = document.getElementById("vipCodeStatus");
-
-        if (vipBox) {
-          vipBox.scrollIntoView({ behavior: "smooth", block: "center" });
-          setTimeout(function() { vipBox.focus(); }, 400);
-
-          if (statusEl) {
-            statusEl.style.color = "#F6E4B8";
-            statusEl.innerHTML = "Enter your single-use scholarship pass or agency credential below to unlock.";
-          }
-        }
-        return false;
-      }
-
-      // 🚀 Real checkout link: Navigate to live checkout
-      window.location.href = stripePaymentUrl;
-    };
-    window.wovPrepCheckout = window.wovHandlePaymentClick;
     
     const radar = talent.latestRadar || {};
     const comps = talent.comps || {};
