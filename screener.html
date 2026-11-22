@@ -642,10 +642,14 @@
       : "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
 
     fetch(targetExec + "?action=screener&" + queryParts.join("&"))
-      .then(res => res.json())
-      .then(data => {
-        // 🔄 1. IN-PLACE POLLING: If take is still processing in the queue, keep polling
-        const isProcessing = data && (data.status === "processing" || (data.ok && (!data.takes || data.takes.length === 0)));
+    .then(res => {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    })
+    .then(data => {
+      // 🔄 1. IN-PLACE POLLING: Poll ONLY when status === "processing" (never trap ready_for_recording 0-take profiles)
+      const isReadyForRecording = Boolean(data && (data.status === "ready_for_recording" || data.readyForRecording));
+      const isProcessing = Boolean(data && data.status === "processing" && !isReadyForRecording);
         
         if (isProcessing) {
           pollAttempts++;
@@ -1010,7 +1014,17 @@ const stripePaymentUrl = (baseStripeUrl.indexOf("YOUR_STRIPE_LINK") >= 0)
 
     // 🛡️ 7. FLATTENED HEADER ACTION BUTTON
     let headerActionBtnHtml = "";
-    if (!isPro) {
+    if (!isPro && isZeroTake) {
+      const studioHeaderParams = new URLSearchParams(window.location.search);
+      if (!studioHeaderParams.get("name") && rawTalentName && rawTalentName !== "Talent") {
+        studioHeaderParams.set("name", rawTalentName);
+      }
+      const studioHeaderQs = studioHeaderParams.toString();
+      headerActionBtnHtml =
+        '<a href="studio.html' + esc(studioHeaderQs ? "?" + studioHeaderQs : "") + '" target="_blank" rel="noopener noreferrer" class="pdf-btn" style="background:var(--red,#A8492E);text-decoration:none;">' +
+          '🎙️ Launch Studio Prompter ↗' +
+        '</a>';
+    } else if (!isPro) {
       headerActionBtnHtml = 
         '<button type="button" onclick="wovOpenUnlockModal()" class="pdf-btn pulse-glow-btn" style="' +
           'background: linear-gradient(135deg, #E24E42 0%, #C83B2F 100%);' +
@@ -1778,8 +1792,51 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
         directLinkWrap.innerHTML = `<span style="color:#64748B;font-size:11px;font-weight:600;">🔒 Archive Restricted</span>`;
       }
 
+    } else if (state && state.isZeroTake) {
+      // 3A. Stage 1 Pre-Audition Onboarding Slate
+      const escAttr = s => String(s || "").replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[m]);
+      const launchParams = new URLSearchParams(window.location.search);
+      const resolvedLaunchName = (state && state.rawTalentName) || safeTalentName || "";
+      if (!launchParams.get("name") && resolvedLaunchName && resolvedLaunchName !== "Talent") {
+        launchParams.set("name", resolvedLaunchName);
+      }
+      if (!launchParams.get("type") && state.isCreator) {
+        launchParams.set("type", "creator");
+      }
+      if (!launchParams.get("format") && state.talent && state.talent.targetAmbition) {
+        launchParams.set("format", state.talent.targetAmbition);
+      }
+      const qs = launchParams.toString();
+      const studioLaunchUrl = "studio.html" + (qs ? "?" + qs : "");
+      const uploadLaunchUrl = "upload.html" + (qs ? "?" + qs : "");
+
+      if (wrapper) {
+        wrapper.innerHTML = `
+          <div id="videoPlaceholder" style="position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(145deg,#0B111E,#162235);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#FFF;padding:28px 22px;text-align:center;box-sizing:border-box;">
+            <div style="font-family:'Inter',monospace;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:#F6E4B8;background:rgba(246,228,184,0.1);padding:5px 14px;border-radius:99px;margin-bottom:12px;border:1px solid rgba(246,228,184,0.25);">
+              🎬 Stage 1 Audition Ready
+            </div>
+            <h3 style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin:0 0 8px;color:#FFF;">
+              Studio Profile Primed for Take #1
+            </h3>
+            <p style="font-size:12.5px;color:#94A3B8;max-width:460px;line-height:1.55;margin:0 auto 18px;">
+              Rehearse with the direct-to-lens Studio Prompter or upload your initial self-tape. Once ingested by CLAUD-IA, your video player, 4-axis radar, and beat breakdown will appear here.
+            </p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+              <a href="${escAttr(studioLaunchUrl)}" target="_blank" rel="noopener noreferrer" style="background:var(--red,#A8492E);color:#FFF;padding:10px 20px;border-radius:99px;font-size:12.5px;font-weight:700;text-decoration:none;">
+                🎙️ Launch Studio Prompter ↗
+              </a>
+              <a href="${escAttr(uploadLaunchUrl)}" target="_blank" rel="noopener noreferrer" style="background:rgba(255,255,255,0.1);color:#FFF;border:1px solid rgba(255,255,255,0.25);padding:10px 20px;border-radius:99px;font-size:12.5px;font-weight:700;text-decoration:none;">
+                📤 Submit Take #1 Self-Tape ↗
+              </a>
+            </div>
+          </div>`;
+      }
+      if (directLinkWrap) {
+        directLinkWrap.innerHTML = `<span style="color:#F6E4B8;font-size:11px;font-weight:700;">🎬 Ready for Take #1</span>`;
+      }
     } else {
-      // 3. Temporary Processing Placeholder
+      // 3B. Temporary Processing Placeholder
       if (wrapper) {
         wrapper.innerHTML = `
           <div id="videoPlaceholder" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94A3B8;padding:20px;text-align:center;box-sizing:border-box;">
