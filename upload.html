@@ -234,7 +234,7 @@
       <div style="font-family:'Inter',monospace;font-size:10.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--red,#A8492E);margin-bottom:6px;">
         Vaulted to Studio Cloud
       </div>
-      <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:700;color:var(--ink,#1C2B2C);margin-bottom:8px;">
+      <h2 id="successTakeHeading" style="font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:700;color:var(--ink,#1C2B2C);margin-bottom:8px;">
         Take #1 Successfully Registered
       </h2>
       <p style="font-size:13.5px;color:var(--inkS,#64748B);line-height:1.6;margin-bottom:24px;max-width:440px;margin-left:auto;margin-right:auto;">
@@ -303,8 +303,9 @@
       return "";
     }
     
-    // 1. Resolve Candidate Name (URL Param -> SessionStorage Fallback)
+    // 1. Resolve Candidate Name & Owner CID (URL Param -> SessionStorage Fallback)
     const rawName = params.get("name") || safeStorage("wov_applicant_name");
+    window._wovInboundCid = String(params.get("cid") || params.get("id") || "").trim();
     const nameInput = document.getElementById("name") || document.getElementById("talentName");
     if (rawName && nameInput) {
       nameInput.value = rawName;
@@ -324,7 +325,7 @@
     }
 
     // 3. Intelligent Track & Ambition Format Mapping
-    const track = (params.get("track") || safeStorage("wov_applicant_track")).toLowerCase();
+    const track = (params.get("track") || params.get("type") || safeStorage("wov_applicant_track")).toLowerCase();
     const format = params.get("format") || "";
     const formatEl = document.getElementById("targetFormat");
     let resolvedTrackLabel = "Screen Acting (Cinema)";
@@ -345,7 +346,8 @@
       if (formatEl) formatEl.value = "Indie / Feature Cinema";
       resolvedTrackLabel = "Screen Acting (Cinema)";
     } else if (format && formatEl) {
-      formatEl.value = format;
+      const hasExactOption = Array.from(formatEl.options || []).some(function(o) { return o.value === format; });
+      if (hasExactOption) formatEl.value = format;
       resolvedTrackLabel = format;
     }
 
@@ -377,6 +379,12 @@
   fileInput.addEventListener("change", function() {
     if (fileInput.files.length > 0) {
       const file = fileInput.files[0];
+      if (!file.size || file.size <= 0) {
+        alert("⚠️ Selected file appears to be empty (0 bytes). Please choose or record a valid video.");
+        fileInput.value = "";
+        fileNameDisplay.innerText = "";
+        return;
+      }
       const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
       
       // 🛡️ 35.5 MB Safe Ceiling
@@ -400,6 +408,10 @@
     }
 
     const file = fileInput.files[0];
+    if (!file.size || file.size <= 0) {
+      alert("⚠️ Selected file is empty (0 bytes). Please select a valid video.");
+      return;
+    }
     const totalBytes = file.size;
     const totalMb = (totalBytes / (1024 * 1024)).toFixed(1);
 
@@ -428,45 +440,35 @@
       const b64Data = evt.target.result.split(",")[1];
       const payload = JSON.stringify({
         action: "talentSelfServeTake",
+        cid: window._wovInboundCid || "",
         name: document.getElementById("name").value.trim(),
         email: document.getElementById("email").value.trim(),
         targetFormat: document.getElementById("targetFormat").value,
-socialHandle: document.getElementById("talentSocial") ? document.getElementById("talentSocial").value.trim() : "",
-takeNum: document.getElementById("takeNum").value ? parseInt(document.getElementById("takeNum").value, 10) : 0,        
-notes: document.getElementById("notes").value.trim(),
+        socialHandle: document.getElementById("talentSocial") ? document.getElementById("talentSocial").value.trim() : "",
+        takeNum: document.getElementById("takeNum").value ? parseInt(document.getElementById("takeNum").value, 10) : 0,
+        notes: document.getElementById("notes").value.trim(),
         studioSecurity: document.getElementById("studioSecurity").value, // 👈 Bot Trap
         fileName: file.name,
         mimeType: file.type || "video/mp4",
         fileData: b64Data
       });
 
-      // ⏱️ Phase 1: Smooth 0% -> 100% Transfer
+      // ⏱️ Phase 1: Estimated transfer progress capped at 92% until server confirms receipt
       const startTime = new Date().getTime();
       const estimatedSec = Math.max(8, Math.round(totalBytes / (0.85 * 1024 * 1024)));
       let currentPercent = 0;
 
       const progressTimer = setInterval(function() {
         const elapsedSec = (new Date().getTime() - startTime) / 1000;
-        currentPercent = Math.min(100, Math.round((elapsedSec / estimatedSec) * 100));
+        currentPercent = Math.min(92, Math.round((elapsedSec / estimatedSec) * 100));
 
         const simLoadedMb = Math.min(totalMb, ((currentPercent / 100) * totalMb).toFixed(1));
         progressFill.style.width = currentPercent + "%";
         percentLabel.innerText = "Streaming: " + currentPercent + "%";
         bytesLabel.innerText = simLoadedMb + " MB / " + totalMb + " MB";
 
-        // Phase 2: When transfer hits 100%, immediately show the Aperture
-        if (currentPercent >= 100) {
-          clearInterval(progressTimer);
-          const pBg = document.querySelector(".progress-bar-bg");
-          const tRow = document.querySelector(".telemetry-row");
-          if (pBg) pBg.style.display = "none";
-          if (tRow) tRow.style.display = "none";
-          if (speedLabel) speedLabel.style.display = "none";
-          
-          const apLoader = document.getElementById("apertureLoader");
-          const hfText = document.getElementById("handoffText");
-          if (apLoader) apLoader.style.display = "block";
-          if (hfText) hfText.style.display = "block";
+        if (currentPercent >= 92 && speedLabel) {
+          speedLabel.innerText = "Finalizing studio vault transfer — please keep this screen active...";
         }
       }, 200);
 
@@ -477,31 +479,36 @@ notes: document.getElementById("notes").value.trim(),
         body: payload
       })
       .then(function(res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
         return res.text();
       })
       .then(function(text) {
         clearInterval(progressTimer);
- // ⚡ Release screen lock & allow tab closing (Transfer is complete)
         releaseWakeLock();
         window.removeEventListener('beforeunload', preventTabClose);
 
         // 🎬 Helper: Safely configure and reveal the Live Screener Bridge
-        function showScreenerBridge() {
+        function showScreenerBridge(serverData) {
           const nameInput = document.getElementById("name");
           const formatInput = document.getElementById("targetFormat");
+          const takeInput = document.getElementById("takeNum");
           const urlParams = new URLSearchParams(window.location.search);
 
-          const candidateName = (nameInput && nameInput.value.trim()) || urlParams.get("name") || "Talent";
-          const rawFormat = (formatInput && formatInput.value) || urlParams.get("track") || "";
-          const isCreator = rawFormat.indexOf("Short-Form") >= 0 || rawFormat.indexOf("Creator") >= 0;
+          const candidateName = (serverData && (serverData.name || serverData.candidate)) || (nameInput && nameInput.value.trim()) || urlParams.get("name") || "Talent";
+          const rawFormat = (formatInput && formatInput.value) || urlParams.get("track") || urlParams.get("type") || "";
+          const isCreator = rawFormat.indexOf("Short-Form") >= 0 || rawFormat.indexOf("Creator") >= 0 || rawFormat.toLowerCase() === "creator";
           const cleanTrack = isCreator ? "creator" : "cinema";
+          const resolvedCid = (serverData && (serverData.candidateId || serverData.cid)) || window._wovInboundCid || "";
+          const resolvedTakeNum = (serverData && (serverData.takeNumber || serverData.takeNum)) || (takeInput && parseInt(takeInput.value, 10)) || 1;
 
-          const relativeUrl = `screener.html?name=${encodeURIComponent(candidateName)}&type=${cleanTrack}`;
+          const relativeUrl = `screener.html?name=${encodeURIComponent(candidateName)}&type=${cleanTrack}${resolvedCid ? `&cid=${encodeURIComponent(resolvedCid)}` : ""}`;
 
+          const headingEl = document.getElementById("successTakeHeading");
           const nameEl = document.getElementById("successCandidateName");
           const viewBtn = document.getElementById("viewDossierBtn");
           const urlDisplay = document.getElementById("screenerUrlDisplay");
 
+          if (headingEl) headingEl.textContent = `Take #${resolvedTakeNum} Successfully Registered`;
           if (nameEl) nameEl.textContent = candidateName;
           if (viewBtn) viewBtn.href = relativeUrl;
           if (urlDisplay) urlDisplay.textContent = `womenofvenice.com/${relativeUrl}`;
@@ -511,21 +518,30 @@ notes: document.getElementById("notes").value.trim(),
           document.getElementById("successBox").style.display = "block";
         }
 
+        let data = null;
         try {
-          const data = JSON.parse(text);
-          if (data && data.ok) {
-            setTimeout(showScreenerBridge, 600);
-          } else {
-            alert("⚠️ Upload warning: " + (data ? (data.error || data.message) : text));
-            resetFormState();
-          }
+          data = JSON.parse(text);
         } catch (parseErr) {
-          if (text.indexOf("ok") >= 0 || text.indexOf("true") >= 0) {
-            setTimeout(showScreenerBridge, 600);
-          } else {
-            alert("⚠️ Server communication error: " + text);
-            resetFormState();
-          }
+          alert("⚠️ Server returned an unexpected non-JSON response. Please retry.");
+          resetFormState();
+          return;
+        }
+
+        if (data && (data.ok || data.status === "ok")) {
+          const pBg = document.querySelector(".progress-bar-bg");
+          const tRow = document.querySelector(".telemetry-row");
+          if (pBg) pBg.style.display = "none";
+          if (tRow) tRow.style.display = "none";
+          if (speedLabel) speedLabel.style.display = "none";
+          const apLoader = document.getElementById("apertureLoader");
+          const hfText = document.getElementById("handoffText");
+          if (apLoader) apLoader.style.display = "block";
+          if (hfText) hfText.style.display = "block";
+
+          setTimeout(function() { showScreenerBridge(data); }, 600);
+        } else {
+          alert("⚠️ Upload warning: " + (data ? (data.error || data.message || "Transfer rejected") : "Unknown error"));
+          resetFormState();
         }
       })
       .catch(function(err) {
