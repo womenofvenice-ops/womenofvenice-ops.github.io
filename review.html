@@ -120,9 +120,24 @@
     var val = input ? input.value.trim().replace(/^["']|["']$/g, "") : "";
     if(!val) return;
     KEY = val;
+    window.KEY = KEY;
     localStorage.setItem("wov_review_key", KEY);
     app.innerHTML = "Authenticating…";
     loadAll();
+  };
+
+  window.wovResetAuth = function(){
+    KEY = "";
+    window.KEY = "";
+    try { localStorage.removeItem("wov_review_key"); } catch(e) {}
+    if (window.history && window.history.replaceState) {
+      try {
+        var cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete("key");
+        window.history.replaceState({}, "", cleanUrl.toString());
+      } catch(eUrl) {}
+    }
+    renderUnlock();
   };
 
   // --- 🎬 MULTI-TAKE UNIFIED TALENT GROUPER ---
@@ -175,7 +190,7 @@
   function filterButtons(){
     return '<div class="filterrow">' +
       '<button class="'+(filter==="await"?"on":"")+'" onclick="wovFilter(\'await\')">Needs review</button>' +
-      '<button class="'+(filter==="approved"?"on":"")+'" onclick="wovFilter(\'approved\')">Approved</button>' +
+      '<button class="'+(filter==="approved"?"on":"")+'" onclick="wovFilter(\'approved\')">Shortlisted / Approved</button>' +
       '<button class="'+(filter==="all"?"on":"")+'" onclick="wovFilter(\'all\')">All</button>' +
       '</div>';
   }
@@ -217,7 +232,8 @@
 
     var filtered = allTalent.filter(function(t){
       var s = (t.status||"").toLowerCase();
-      var statusOk = filter==="all" ? true : (filter==="approved" ? s.indexOf("approved")>=0 : s.indexOf("approved")<0);
+      var isShortlistedOrApproved = (s.indexOf("approved")>=0 || s.indexOf("shortlist")>=0);
+      var statusOk = filter==="all" ? true : (filter==="approved" ? isShortlistedOrApproved : !isShortlistedOrApproved);
       var searchOk = !searchQuery || t.baseName.toLowerCase().indexOf(searchQuery.toLowerCase())>=0;
       return statusOk && searchOk;
     });
@@ -238,7 +254,7 @@
       var arch = (dos.castingDossier && dos.castingDossier.marketArchetype) ? dos.castingDossier.marketArchetype : (t.targetFormat || "");
       var takeLabel = t.isNewIntake ? "⏳ Awaiting First Take" : ("🎬 " + t.takes.length + (t.takes.length === 1 ? " Take" : " Takes"));
 
-      html += '<div class="card" onclick="wovOpenTalentByName(\''+esc(t.baseName).replace(/'/g, "\\'")+'\')">' +
+      html += '<div class="card" data-talent="'+esc(t.baseName)+'" onclick="wovOpenTalentByName(this.dataset.talent)">' +
         '<div class="name">'+esc(t.baseName)+'</div>' +
         (arch ? '<span class="archetype-tag">🎭 '+esc(arch)+'</span>' : '') +
         '<span class="archetype-tag" style="background:#EBF5FF;color:#0969DA;margin-left:4px;">'+takeLabel+'</span>' +
@@ -272,28 +288,32 @@
     } else {
       sessionStatusHtml = 
         '<div style="margin:12px 0 16px;">' +
-          '<button id="activateBtn" style="width:100%;background:#1F6FEB;color:#fff;padding:12px;border-radius:12px;font-size:14px;font-weight:700;" onclick="wovActivateCallbackForName(\''+esc(t.baseName).replace(/'/g, "\\'")+'\','+t.takes.length+')">' +
+          '<button id="activateBtn" data-talent="'+esc(t.baseName)+'" data-takes="'+t.takes.length+'" style="width:100%;background:#1F6FEB;color:#fff;padding:12px;border-radius:12px;font-size:14px;font-weight:700;" onclick="wovActivateCallbackForName(this.dataset.talent, Number(this.dataset.takes)||0)">' +
             '🎬 Activate Session for ' + esc(t.baseName) +
           '</button>' +
         '</div>';
     }
-   // 🔗 1-Click Public Producer Screener Link
-    var screenerUrl = "https://womenofvenice.com/screener.html?name=" + encodeURIComponent(t.baseName);
+    // 🔗 1-Click Public Producer Screener Link (Strictly public ?name= — never exposes private ?cid=)
+    var screenerUrl = "https://womenofvenice.com/screener.html?name=" + encodeURIComponent(t.baseName).replace(/'/g, "%27");
     var screenerBtnHtml = 
       '<div style="margin:10px 0 16px;">' +
-        '<button class="small" style="width:100%;background:#1C2B2C;color:#FFFFFF;padding:10px;border-radius:10px;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;" onclick="navigator.clipboard.writeText(\'' + screenerUrl + '\');alert(\'📋 Public Screener Link Copied!\\n\\nYou can now paste and send this to directors, producers, or agents:\\n' + screenerUrl + '\');">' +
+        '<button type="button" class="small" data-url="' + esc(screenerUrl) + '" style="width:100%;background:#1C2B2C;color:#FFFFFF;padding:10px;border-radius:10px;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;" onclick="wovCopyPublicScreener(this.dataset.url)">' +
           '🔗 Copy Producer Screener Link' +
         '</button>' +
       '</div>';
     
     // Direct Actionable Contacts (WhatsApp, Phone, Instagram, Email)
     var cleanPhone = (t.phone||"").replace(/[^\d+]/g, "");
+    var rawSocial = String(t.instagram || "").trim();
+    var socialHref = /^https?:\/\//i.test(rawSocial)
+      ? rawSocial
+      : (rawSocial ? ("https://instagram.com/" + encodeURIComponent(rawSocial.replace(/^@+/, ""))) : "");
     var contactHtml = 
       '<div class="section-lbl">📱 Talent Contact & Intake Profile</div>' +
       '<div class="dossier-box" style="background:#fff;border-left:3.5px solid #58A6FF;">' +
         (t.targetFormat ? '<div class="d-row"><div class="d-title">🎯 Target Ambition</div><b>'+esc(t.targetFormat)+'</b></div>' : '') +
-        (t.instagram ? '<div class="d-row"><div class="d-title">📸 Instagram / Portfolio</div><a href="https://instagram.com/'+esc(t.instagram).replace('@','')+'" target="_blank" style="color:#58A6FF;text-decoration:none;font-weight:600;">'+esc(t.instagram)+' ↗</a></div>' : '') +
-        (t.phone ? '<div class="d-row"><div class="d-title">📞 Phone & WhatsApp</div><a href="tel:'+cleanPhone+'" style="color:#1C2B2C;text-decoration:none;font-weight:600;">'+esc(t.phone)+'</a> &nbsp;·&nbsp; <a href="https://wa.me/'+cleanPhone.replace('+','')+'" target="_blank" style="color:#22C55E;text-decoration:none;font-weight:600;">💬 Open WhatsApp ↗</a></div>' : '') +
+        (rawSocial ? '<div class="d-row"><div class="d-title">📸 Instagram / Portfolio</div><a href="'+esc(socialHref)+'" target="_blank" rel="noopener noreferrer" style="color:#58A6FF;text-decoration:none;font-weight:600;">'+esc(rawSocial)+' ↗</a></div>' : '') +
+        (t.phone ? '<div class="d-row"><div class="d-title">📞 Phone & WhatsApp</div><a href="tel:'+esc(cleanPhone)+'" style="color:#1C2B2C;text-decoration:none;font-weight:600;">'+esc(t.phone)+'</a> &nbsp;·&nbsp; <a href="https://wa.me/'+esc(cleanPhone.replace(/\+/g,''))+'" target="_blank" rel="noopener noreferrer" style="color:#22C55E;text-decoration:none;font-weight:600;">💬 Open WhatsApp ↗</a></div>' : '') +
         (t.email ? '<div class="d-row"><div class="d-title">✉️ Email Address</div><a href="mailto:'+esc(t.email)+'" style="color:#58A6FF;text-decoration:none;font-weight:600;">'+esc(t.email)+' ↗</a></div>' : '') +
         (t.intakeNotes ? '<div class="d-row"><div class="d-title">📝 Intake Directing Notes</div>'+esc(t.intakeNotes)+'</div>' : '') +
       '</div>';
@@ -390,10 +410,14 @@
               '<div style="font-size:12px;color:var(--inkS);">' + new Date(takeItem.date).toLocaleDateString() + '</div>' +
             '</div>' +
             
-            (fId ? '<div style="margin:10px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
-         '<button type="button" class="small" style="background:#1C2B2C;color:#FFF;font-weight:700;" onclick="wovStreamTake(\''+fId+'\')">⚡ Stream Video (1s Instant) ↗</button>' +
-         '<button type="button" class="small" id="playbtn_'+fId+'" onclick="wovPlayTakeAudio(\''+fId+'\')">▶ Play Local</button>' +
-       '</div><div id="audiobox_'+fId+'"></div>' : '') +
+            (fId ? (function() {
+              var safeFidAttr = esc(fId);
+              var safeFidDom = String(fId).replace(/[^a-zA-Z0-9_-]/g, "");
+              return '<div style="margin:10px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
+                '<button type="button" class="small" data-fid="' + safeFidAttr + '" style="background:#1C2B2C;color:#FFF;font-weight:700;" onclick="wovStreamTake(this.dataset.fid)">⚡ Stream Video (1s Instant) ↗</button>' +
+                '<button type="button" class="small" id="playbtn_' + safeFidDom + '" data-fid="' + safeFidAttr + '" onclick="wovPlayTakeAudio(this.dataset.fid)">▶ Play Local</button>' +
+              '</div><div id="audiobox_' + safeFidDom + '"></div>';
+            })() : '') +
      
 // 📊 THE 3 EXPANDED CONTAINERS (Telemetry, Ambition, Comps)
             radarHtml +
@@ -402,25 +426,24 @@
 
 // 💌 Critique for Actress with Video Playback & Talent Locker Hub
             (dos.talentFeedback ? (function() {
-              var candName = (t && t.name) || (takeItem && takeItem.name) || "Talent";
+              var candName = (t && t.baseName) || String((takeItem && takeItem.name) || "").replace(/\s*\(Take\s*\d+\)/i, "").trim() || "Talent";
               var firstName = candName.split(" ")[0] || "Talent";
               var candEmail = (t && (t.email || t.contactEmail || t.contact)) || "";
-              var vidUrl = (dos && dos.videoUrl) || (fId ? "https://drive.google.com/file/d/" + fId + "/preview" : "");
-              var hubUrl = (dos && dos.hubFolderUrl) || "";
-              var domId = "feedback_text_" + (fId ? fId.replace(/[^a-zA-Z0-9_-]/g, "") : ("take_" + takeNum));
-              var safeJsName = esc(candName).replace(/'/g, "\\'");
-              var safeJsEmail = esc(candEmail).replace(/'/g, "\\'");
-              var safeJsVid = esc(vidUrl).replace(/'/g, "\\'");
-              var safeJsHub = esc(hubUrl).replace(/'/g, "\\'");
+              var rawVid = (dos && dos.videoUrl) || (fId ? "https://drive.google.com/file/d/" + encodeURIComponent(fId) + "/preview" : "");
+              var vidUrl = /^https?:\/\//i.test(String(rawVid)) ? String(rawVid) : "";
+              var rawHub = (dos && dos.hubFolderUrl) || "";
+              var hubUrl = /^https?:\/\//i.test(String(rawHub)) ? String(rawHub) : "";
+              var safeTakeNum = parseInt(takeNum, 10) || (t.takes.length - idx);
+              var domId = "feedback_text_" + (fId ? fId.replace(/[^a-zA-Z0-9_-]/g, "") : ("take_" + safeTakeNum + "_" + idx));
 
               return '<div class="dossier-box d-feedback" style="margin-top:10px;">' +
                 '<div class="d-title">💌 Critique for Actress</div>' +
                 '<div id="' + domId + '" style="font-size:14px;line-height:1.5;margin-bottom:10px;">' + esc(dos.talentFeedback) + '</div>' +
                 '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
-                  '<button class="small" onclick="var el=document.getElementById(\'' + domId + '\'); if(el){ navigator.clipboard.writeText(el.innerText); alert(\'Feedback copied!\'); }">📋 Copy Feedback</button>' +
-                  (candEmail ? '<button class="small" style="background:#A8492E;color:#fff;font-weight:700;" onclick="wovEmailCritique(\'' + safeJsName + '\',' + takeNum + ',\'' + domId + '\',\'' + safeJsEmail + '\',\'' + safeJsVid + '\',\'' + safeJsHub + '\')">✉️ Email Directing Note to ' + esc(firstName) + '</button>' : '') +
-                  (vidUrl ? '<a href="' + esc(vidUrl) + '" target="_blank" class="small" style="display:inline-block;padding:6px 12px;background:#1C2B2C;color:#fff;text-decoration:none;border-radius:6px;font-size:12px;font-weight:700;">🎬 Watch Video</a>' : '') +
-                  (hubUrl ? '<a href="' + esc(hubUrl) + '" target="_blank" class="small" style="display:inline-block;padding:6px 12px;background:#FAF5FF;color:#7E22CE;border:1px solid #D8B4FE;text-decoration:none;border-radius:6px;font-size:12px;font-weight:700;">📁 Talent Locker</a>' : '') +
+                  '<button type="button" class="small" data-dom="' + domId + '" onclick="wovCopyFeedbackText(this.dataset.dom)">📋 Copy Feedback</button>' +
+                  (candEmail ? '<button type="button" class="small" data-name="' + esc(candName) + '" data-take="' + safeTakeNum + '" data-dom="' + domId + '" data-email="' + esc(candEmail) + '" data-vid="' + esc(vidUrl) + '" data-hub="' + esc(hubUrl) + '" style="background:#A8492E;color:#fff;font-weight:700;" onclick="wovEmailCritique(this.dataset.name, Number(this.dataset.take), this.dataset.dom, this.dataset.email, this.dataset.vid, this.dataset.hub)">✉️ Email Directing Note to ' + esc(firstName) + '</button>' : '') +
+                  (vidUrl ? '<a href="' + esc(vidUrl) + '" target="_blank" rel="noopener noreferrer" class="small" style="display:inline-block;padding:6px 12px;background:#1C2B2C;color:#fff;text-decoration:none;border-radius:6px;font-size:12px;font-weight:700;">🎬 Watch Video</a>' : '') +
+                  (hubUrl ? '<a href="' + esc(hubUrl) + '" target="_blank" rel="noopener noreferrer" class="small" style="display:inline-block;padding:6px 12px;background:#FAF5FF;color:#7E22CE;border:1px solid #D8B4FE;text-decoration:none;border-radius:6px;font-size:12px;font-weight:700;">📁 Talent Locker</a>' : '') +
                 '</div>' +
               '</div>';
             })() : '') +
@@ -504,7 +527,7 @@
       contactHtml +
       takesHtml +
       storySectionHtml +
-      '<button class="danger" style="margin-top:24px;" onclick="wovDeleteTalentAll(\''+esc(t.baseName).replace(/'/g, "\\'")+'\')">🗑 Delete this talent profile</button>' +
+      '<button type="button" class="danger" data-talent="'+esc(t.baseName)+'" style="margin-top:24px;" onclick="wovDeleteTalentAll(this.dataset.talent, this)">🗑 Delete this talent profile</button>' +
       '<div class="status" id="savemsg"></div>';
 
     if (document.getElementById("storybox")) {
@@ -695,13 +718,17 @@
       .then(function(r){ return r.json(); })
       .then(function(data){ 
         if(data && data.error){
-          app.innerHTML = '<div class="auth-box"><div style="color:var(--red);font-weight:700;margin-bottom:8px">⚠️ ' + esc(data.error) + '</div><button onclick="localStorage.removeItem(\'wov_review_key\');location.reload();">Re-enter Key</button></div>';
+          app.innerHTML = '<div class="auth-box"><div style="color:var(--red);font-weight:700;margin-bottom:8px">⚠️ ' + esc(data.error) + '</div><button onclick="wovResetAuth()">Re-enter Key</button></div>';
           return;
         }
         items = (data && data.items) || []; 
-        if(data && data.activeCandidate){
-          ACTIVE_TALENT = data.activeCandidate;
-          localStorage.setItem("wov_active_talent", ACTIVE_TALENT);
+        if(data && Object.prototype.hasOwnProperty.call(data, "activeCandidate")){
+          ACTIVE_TALENT = String(data.activeCandidate || "").trim();
+          if (ACTIVE_TALENT) {
+            localStorage.setItem("wov_active_talent", ACTIVE_TALENT);
+          } else {
+            localStorage.removeItem("wov_active_talent");
+          }
         }
         renderList(); 
       })
