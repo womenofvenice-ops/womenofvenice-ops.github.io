@@ -145,13 +145,24 @@
     var grouped = {};
     var order = [];
 
+    function safeTime(d) {
+      var t = d ? new Date(d).getTime() : 0;
+      return isNaN(t) ? 0 : t;
+    }
+
     rawItems.forEach(function(it) {
+      if (!it) return;
+      // Skip GDPR Art. 17 revoked / takedown rows from active review queue
+      if (/revoked|takedown/i.test(String(it.status || ""))) return;
+
       var clean = (it.name || "Talent").replace(/\s*\(Take\s*\d+\)/i, "").trim();
-      var key = clean.toLowerCase();
+      var key = clean.replace(/[.\-_]/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
+      var isRealTake = !it.isNewIntake;
 
       if (!grouped[key]) {
         grouped[key] = {
           baseName: clean,
+          cid: String(it.cid || it.candidateId || it.id || "").trim(),
           latestTake: it,
           takes: [],
           instagram: it.instagram || "",
@@ -160,28 +171,41 @@
           targetFormat: it.targetFormat || "",
           intakeNotes: it.intakeNotes || "",
           status: it.status || "Awaiting review",
-          isNewIntake: it.isNewIntake || false
+          isNewIntake: Boolean(it.isNewIntake)
         };
         order.push(key);
       }
 
-      grouped[key].takes.push(it);
+      if (isRealTake) {
+        grouped[key].takes.push(it);
+      }
 
-      if (new Date(it.date) >= new Date(grouped[key].latestTake.date)) {
+      var tNew = safeTime(it.date);
+      var tCur = safeTime(grouped[key].latestTake.date);
+      if (it.cid || it.candidateId || it.id) {
+        grouped[key].cid = grouped[key].cid || String(it.cid || it.candidateId || it.id).trim();
+      }
+      if (it.targetFormat && (!grouped[key].targetFormat || tNew >= tCur)) grouped[key].targetFormat = it.targetFormat;
+      if (it.instagram && (!grouped[key].instagram || tNew >= tCur)) grouped[key].instagram = it.instagram;
+      if (it.phone && (!grouped[key].phone || tNew >= tCur)) grouped[key].phone = it.phone;
+      if (it.email && (!grouped[key].email || tNew >= tCur)) grouped[key].email = it.email;
+      if (it.intakeNotes && (!grouped[key].intakeNotes || tNew >= tCur)) grouped[key].intakeNotes = it.intakeNotes;
+
+      if ((isRealTake && grouped[key].latestTake.isNewIntake) || (isRealTake === !grouped[key].latestTake.isNewIntake && tNew >= tCur)) {
         grouped[key].latestTake = it;
-        grouped[key].status = it.status;
-        if (it.targetFormat) grouped[key].targetFormat = it.targetFormat;
-        if (it.instagram) grouped[key].instagram = it.instagram;
-        if (it.phone) grouped[key].phone = it.phone;
-        if (it.email) grouped[key].email = it.email;
-        if (it.intakeNotes) grouped[key].intakeNotes = it.intakeNotes;
+        grouped[key].status = it.status || grouped[key].status;
       }
     });
 
     order.forEach(function(k) {
       grouped[k].takes.sort(function(a, b) {
-        return new Date(b.date) - new Date(a.date);
+        return safeTime(b.date) - safeTime(a.date);
       });
+      grouped[k].isNewIntake = (grouped[k].takes.length === 0);
+      if (grouped[k].takes.length > 0) {
+        grouped[k].latestTake = grouped[k].takes[0];
+        grouped[k].status = grouped[k].takes[0].status || grouped[k].status;
+      }
     });
 
     return order.map(function(k) { return grouped[k]; });
@@ -276,7 +300,8 @@
   function wovRenderProfile(t){
     currentTalent = t;
     var activeTalentName = (typeof ACTIVE_TALENT !== "undefined" && ACTIVE_TALENT) ? ACTIVE_TALENT : (localStorage.getItem("wov_active_talent") || "");
-    var isActive = activeTalentName && (activeTalentName.toLowerCase() === t.baseName.toLowerCase());
+    var normActiveMatch = function(v){ return String(v||"").replace(/[.\-_]/g," ").replace(/\s+/g," ").trim().toLowerCase(); };
+    var isActive = Boolean(activeTalentName && (normActiveMatch(activeTalentName) === normActiveMatch(t.baseName)));
 
     var sessionStatusHtml = "";
     if (isActive) {
@@ -535,9 +560,34 @@
     }
   }
 
+  window.wovCopyPublicScreener = async function(url) {
+    if (!url) return;
+    try {
+      if (!navigator.clipboard) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(url);
+      alert("📋 Public Screener Link Copied!\n\nYou can now paste and send this to directors, producers, or agents:\n" + url);
+    } catch (e) {
+      window.prompt("Copy Public Screener Link:", url);
+    }
+  };
+
+  window.wovCopyFeedbackText = async function(domId) {
+    var el = domId ? document.getElementById(domId) : null;
+    var text = el ? (el.innerText || el.textContent || "").trim() : "";
+    if (!text) return;
+    try {
+      if (!navigator.clipboard) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(text);
+      alert("Feedback copied!");
+    } catch (e) {
+      window.prompt("Copy Feedback:", text);
+    }
+  };
+
   // ⚡ 1-Second Instant Drive Stream (Bypasses 60s Base64 lag completely)
   window.wovStreamTake = function(fileId) {
-    var box = document.getElementById("audiobox_" + fileId);
+    var safeDom = String(fileId || "").replace(/[^a-zA-Z0-9_-]/g, "");
+    var box = document.getElementById("audiobox_" + safeDom);
     if (!box) return;
     box.innerHTML = 
       '<div style="position:relative;width:100%;padding-top:56.25%;background:#000;border-radius:10px;overflow:hidden;margin-top:8px;">' +
@@ -549,8 +599,9 @@
 
   // 🎬 Local Media Player (Blob fallback for local/offline playback)
   window.wovPlayTakeAudio = async function(fileId){
-    var btn = document.getElementById("playbtn_" + fileId);
-    var box = document.getElementById("audiobox_" + fileId);
+    var safeDom = String(fileId || "").replace(/[^a-zA-Z0-9_-]/g, "");
+    var btn = document.getElementById("playbtn_" + safeDom);
+    var box = document.getElementById("audiobox_" + safeDom);
     if(btn) { btn.disabled = true; btn.textContent = "⏳ Loading media…"; }
     
     try{
@@ -609,26 +660,33 @@
   window.wovSaveTalentStatus = async function(status){
     if(!currentTalent || !currentTalent.latestTake) return;
     var box = document.getElementById("storybox");
-    var text = box ? box.value : "";
+    var text = box ? box.value : (currentTalent.latestTake.draft || "");
     var eb = document.getElementById("editbtn"), ab = document.getElementById("approvebtn");
     if(eb) eb.disabled = true; if(ab) ab.disabled = true;
     var msg = document.getElementById("savemsg");
     if(msg) msg.textContent = "Saving…";
 
     try{
-      await fetch(EXEC, { 
+      var res = await fetch(EXEC, { 
         method: "POST", 
-        mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({ action: "storyUpdate", key: KEY, rowId: currentTalent.latestTake.rowId, finalStory: text, status: status }) 
       });
+      if(!res.ok) throw new Error("HTTP " + res.status);
+      var raw = await res.text();
+      var data = null;
+      try { data = JSON.parse(raw); } catch(eP) {}
+      if(data && (data.error || data.ok === false)) throw new Error(data.error || "Update rejected");
+      if(!data && raw.trim() !== "storyUpdate") throw new Error("Unexpected server response");
+
       currentTalent.latestTake.draft = text;
       currentTalent.latestTake.status = status;
       currentTalent.status = status;
       if(msg) msg.textContent = "✓ Saved";
       setTimeout(function(){ renderList(); }, 700);
     }catch(err){
-      if(msg) msg.textContent = "⚠️ " + err;
+      if(eb) eb.disabled = false; if(ab) ab.disabled = false;
+      if(msg) msg.textContent = "⚠️ " + (err && err.message ? err.message : err);
     }
   };
 
@@ -642,22 +700,26 @@
     if(btn){ btn.disabled = true; btn.textContent = "Activating Session in Cloud…"; }
 
     try {
-      await fetch(EXEC, {
+      var res = await fetch(EXEC, {
         method: "POST",
-        mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({ action: "activateCallback", key: KEY, name: name, takeCount: takesCount })
       });
+      if(!res.ok) throw new Error("HTTP " + res.status);
+      var raw = await res.text();
+      var data = null;
+      try { data = JSON.parse(raw); } catch(eP) {}
+      if(!data || (!data.ok && data.status !== "ok") || data.error) throw new Error((data && data.error) || "Activation rejected");
 
       ACTIVE_TALENT = name;
       localStorage.setItem("wov_active_talent", name);
       wovOpenTalentByName(name);
     } catch(err) {
-      if(btn){ btn.disabled = false; btn.textContent = "⚠️ Error: " + err; }
+      if(btn){ btn.disabled = false; btn.textContent = "⚠️ Error: " + (err && err.message ? err.message : err); }
     }
   };
 
-  window.wovDeleteTalentAll = window.wovDeleteTalent = function(name) {
+  window.wovDeleteTalentAll = window.wovDeleteTalent = function(name, btnEl) {
     if (!name) return;
 
     // 🛡️ CONFIRMATION 1: Initial Intent Check
@@ -674,6 +736,8 @@
     if (!confirm(finalWarning)) {
       return; // Cancelled at the second check
     }
+
+    if (btnEl) { btnEl.disabled = true; btnEl.textContent = "Deleting…"; }
 
     var apiUrl = (typeof EXEC !== "undefined" && EXEC) || 
                  window.EXEC || 
@@ -692,11 +756,18 @@
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(payload)
     })
-    .then(function(res) { return res.json(); })
+    .then(function(res) {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    })
     .then(function(data) {
       if (data && data.ok) {
+        var normDelMatch = function(v){ return String(v||"").replace(/[.\-_]/g," ").replace(/\s+/g," ").trim().toLowerCase(); };
+      if (ACTIVE_TALENT && normDelMatch(ACTIVE_TALENT) === normDelMatch(name)) {
+          ACTIVE_TALENT = "";
+          try { localStorage.removeItem("wov_active_talent"); } catch(eSt) {}
+        }
         alert("🗑 " + name + " has been permanently deleted.");
-        // Clear active talent and reload roster
         currentTalent = null;
         if (typeof loadAll === "function") {
           loadAll();
@@ -704,10 +775,12 @@
           window.location.reload();
         }
       } else {
+        if (btnEl) { btnEl.disabled = false; btnEl.textContent = "🗑 Delete this talent profile"; }
         alert("⚠️ " + (data ? data.error : "Failed to delete talent."));
       }
     })
     .catch(function(err) {
+      if (btnEl) { btnEl.disabled = false; btnEl.textContent = "🗑 Delete this talent profile"; }
       alert("Network error deleting talent: " + err);
     });
   };
