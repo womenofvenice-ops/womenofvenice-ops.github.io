@@ -1546,10 +1546,6 @@ if (isPro && talentObj) {
   function renderTake2BridgeHtml(talent, isPro, isCreator, rawTalentName) {
     if (!isPro || talent.status === "ready_for_recording" || talent.readyForRecording || !Array.isArray(talent.takes) || talent.takes.length === 0) return "";
 
-    // 🎬 HELPER: Take 2 Directability Benchmark Bridge (Pro View Only, after Take #1 exists)
-  function renderTake2BridgeHtml(talent, isPro, isCreator, rawTalentName) {
-    if (!isPro || talent.status === "ready_for_recording" || talent.readyForRecording || !Array.isArray(talent.takes) || talent.takes.length === 0) return "";
-
     // 🛡️ 1. When Take 2 is ALREADY submitted: Display verified calibration completion badge
     if (talent.hasTake2 || (talent.takes && talent.takes.length > 1)) {
       const d = talent.directabilityDelta || {};
