@@ -834,6 +834,7 @@
         <button type="button" class="btn-pill push" id="btnAppendCurrent" onclick="appendToCurrentWorkspaceProfile()">📎 Append New Media</button>
         <button type="button" class="btn-pill" id="btnEditContact" onclick="toggleContactEditPanel()">✏️ Edit Contact &amp; Stage</button>
         <button type="button" class="btn-pill push" id="btnPromoteWorkspace" onclick="promoteCurrentWorkspaceCandidate()">⚡ Push to Audition Desk</button>
+        <button type="button" class="btn-pill push" id="btnCopyOwnerScreener" style="display: none;" onclick="copyOwnerScreenerLink()" title="Private Owner Link (includes ?cid= Owner Mode — send only to this candidate)">🔗 Copy Owner Screener Link</button>
         <a class="btn-pill" id="resVaultLink" href="#" target="_blank" rel="noopener noreferrer" style="display: none;">🗂️ Vault File</a>
       </div>
     </div>
@@ -991,6 +992,7 @@
   let activeDrafts = { whatsapp: "", instagram_dm: "", email: "" };
   let currentScoutId = "";
   let currentGatewayUrl = "";
+  let currentScreenerOwnerUrl = "";
   let currentPhone = "";
   let currentActiveChannel = "whatsapp";
   let mediaAssetBase64 = null;
@@ -1703,6 +1705,7 @@
   window.currentScoutId = data.scoutId || "";
   if (typeof currentScoutId !== "undefined") currentScoutId = window.currentScoutId;
   if (typeof currentGatewayUrl !== "undefined") currentGatewayUrl = data.gatewayUrl || "";
+    if (typeof currentScreenerOwnerUrl !== "undefined") currentScreenerOwnerUrl = String(data.screenerOwnerUrl || "").trim();
   if (typeof currentEmail !== "undefined") {
     currentEmail = (data.email && !/^(unknown|unknown@example\.com)$/i.test(data.email)) ? data.email : "";
   }
@@ -1725,7 +1728,12 @@
     backBtn.style.display = options.fromPipeline ? "inline-flex" : "none";
   }
 
-  const vaultLink = document.getElementById("resVaultLink");
+  const ownerLinkBtn = document.getElementById("btnCopyOwnerScreener");
+    if (ownerLinkBtn) {
+      ownerLinkBtn.style.display = /^https?:\/\//i.test(currentScreenerOwnerUrl) ? "inline-flex" : "none";
+    }
+
+    const vaultLink = document.getElementById("resVaultLink");
   if (vaultLink) {
     const rawVault = String(data.vaultAssetUrl || "").trim();
     if (/^https?:\/\//i.test(rawVault)) {
@@ -2049,8 +2057,9 @@ if (res && res.ok) {
           ${c.draftWhatsapp ? `<a class="btn-pill wa" href="https://api.whatsapp.com/send?text=${waText}" target="_blank">💬 WhatsApp</a>` : ''}
           <button class="btn-pill" onclick="copyCandidateLink(${idx})">🔗 Copy Link</button>
           ${String(c.engagementStage || c.nurtureStatus || "").trim().toUpperCase() === "PROMOTED"
-              ? `<button class="btn-pill" id="promoteBtn_${idx}" disabled>✅ Promoted</button>`
-              : `<button class="btn-pill push" id="promoteBtn_${idx}" onclick="promoteCandidateByIndex(${idx})">⚡ Push to Audition Desk</button>`}
+            ? `<button class="btn-pill" id="promoteBtn_${idx}" disabled>✅ Promoted</button>`
+            : `<button class="btn-pill push" id="promoteBtn_${idx}" onclick="promoteCandidateByIndex(${idx})">⚡ Push to Audition Desk</button>`}
+          <button class="btn-pill push" id="ownerLinkBtn_${idx}" style="${/^https?:\/\//i.test(String(c.screenerOwnerUrl || "")) ? "" : "display:none;"}" onclick="copyOwnerScreenerByIndex(${idx})" title="Private Owner Link (includes ?cid= Owner Mode — send only to this candidate)">🔗 Owner Screener</button>
           <button class="btn-pill danger" id="delBtn_${idx}" onclick="handleDoubleTapDelete(${idx})">🗑️ Wipe</button>
         </div>
       </div>
@@ -2080,6 +2089,15 @@ async function openProfileFromPipeline(idx) {
   try {
     const res = await postScoutApi({ action: "getScoutProfile", scoutId: c.scoutId });
     if (!res || !res.ok) throw new Error(res?.error || "Failed to load profile.");
+
+    if (res.screenerOwnerUrl) {
+      c.screenerOwnerUrl = res.screenerOwnerUrl;
+      if (/^https?:\/\//i.test(String(res.screenerOwnerUrl))) {
+        const cardOwnerBtn = document.getElementById(`ownerLinkBtn_${idx}`);
+        if (cardOwnerBtn) cardOwnerBtn.style.display = "inline-flex";
+      }
+    }
+    if (res.engagementStage) c.engagementStage = res.engagementStage;
 
     switchView("intake");
     renderCandidateProfile(res, { preservePipelineCache: true, fromPipeline: true });
@@ -2165,6 +2183,12 @@ function appendToCurrentWorkspaceProfile() {
           cachedCandidates[idx].fullName = res.name || name;
           cachedCandidates[idx].primaryHandle = res.handle ?? handle;
           cachedCandidates[idx].contactEmail = res.email ?? email;
+          if (res.engagementStage) cachedCandidates[idx].engagementStage = res.engagementStage;
+          if (typeof res.screenerOwnerUrl === "string") {
+            cachedCandidates[idx].screenerOwnerUrl = res.screenerOwnerUrl.trim();
+          } else if (res.engagementStage && String(res.engagementStage).toUpperCase() !== "PROMOTED") {
+            cachedCandidates[idx].screenerOwnerUrl = "";
+          }
         }
       }
 
@@ -2204,6 +2228,35 @@ function appendToCurrentWorkspaceProfile() {
     }
   }
 
+  async function copyOwnerUrlToClipboard_(url, successMsg) {
+    const cleanUrl = String(url || "").trim();
+    if (!/^https?:\/\//i.test(cleanUrl)) {
+      const msg = "Open Workspace or push to Audition Desk to load the Owner Screener link.";
+      if (typeof showToast === "function") {
+        showToast(msg);
+      } else {
+        alert(msg);
+      }
+      return;
+    }
+    try {
+      if (!navigator.clipboard) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(cleanUrl);
+      if (typeof showToast === "function") showToast(successMsg || "🔗 Owner Screener Link copied! (Private ?cid=)");
+    } catch (err) {
+      window.prompt("Copy Private Owner Screener Link (send only to this candidate):", cleanUrl);
+    }
+  }
+
+  function copyOwnerScreenerLink() {
+    copyOwnerUrlToClipboard_(currentScreenerOwnerUrl, "🔗 Owner Screener Link copied! (Private ?cid=)");
+  }
+
+  function copyOwnerScreenerByIndex(idx) {
+    const c = cachedCandidates[idx];
+    if (!c) return;
+    copyOwnerUrlToClipboard_(c.screenerOwnerUrl || "", `🔗 Owner Screener Link copied for ${c.fullName || "candidate"}!`);
+  }
   async function executePromoteCandidate_(scoutId, fullName, email, btnEl, onPromoteSuccess) {
     if (btnEl && btnEl.disabled) return;
 
@@ -2236,12 +2289,20 @@ function appendToCurrentWorkspaceProfile() {
       btnEl.innerText = "⏳ Pushing...";
     }
 
-    const syncLocalPromotedState = () => {
+    const syncLocalPromotedState = (promotedRes) => {
+      const ownerUrl = String((promotedRes && promotedRes.screenerOwnerUrl) || "").trim();
+      const hasValidOwnerUrl = /^https?:\/\//i.test(ownerUrl);
+
       if (Array.isArray(cachedCandidates)) {
         const matchIdx = cachedCandidates.findIndex(item => item && item.scoutId === cleanId);
         if (matchIdx !== -1) {
           cachedCandidates[matchIdx].engagementStage = "PROMOTED";
           cachedCandidates[matchIdx].nurtureStatus = "PROMOTED";
+          if (hasValidOwnerUrl) {
+            cachedCandidates[matchIdx].screenerOwnerUrl = ownerUrl;
+            const cardOwnerBtn = document.getElementById(`ownerLinkBtn_${matchIdx}`);
+            if (cardOwnerBtn) cardOwnerBtn.style.display = "inline-flex";
+          }
           const cardBtn = document.getElementById(`promoteBtn_${matchIdx}`);
           if (cardBtn) {
             cardBtn.disabled = true;
@@ -2255,6 +2316,13 @@ function appendToCurrentWorkspaceProfile() {
         ? currentScoutId
         : (window.currentScoutId || "");
       if (activeWsId === cleanId) {
+        if (hasValidOwnerUrl && typeof currentScreenerOwnerUrl !== "undefined") {
+          currentScreenerOwnerUrl = ownerUrl;
+        }
+        const wsOwnerBtn = document.getElementById("btnCopyOwnerScreener");
+        if (wsOwnerBtn && (hasValidOwnerUrl || /^https?:\/\//i.test(currentScreenerOwnerUrl || ""))) {
+          wsOwnerBtn.style.display = "inline-flex";
+        }
         const wsBtn = document.getElementById("btnPromoteWorkspace");
         if (wsBtn) {
           wsBtn.disabled = true;
@@ -2274,7 +2342,7 @@ function appendToCurrentWorkspaceProfile() {
         }
       }
 
-      if (typeof onPromoteSuccess === "function") onPromoteSuccess();
+      if (typeof onPromoteSuccess === "function") onPromoteSuccess(promotedRes);
     };
 
     try {
@@ -2286,14 +2354,16 @@ function appendToCurrentWorkspaceProfile() {
       if (!res || !res.ok) {
         const errMsg = (res && res.error) ? res.error : "Promotion failed.";
         if (/already been promoted/i.test(errMsg)) {
-          syncLocalPromotedState();
+          syncLocalPromotedState(res);
         }
         throw new Error(errMsg);
       }
 
-      syncLocalPromotedState();
+      syncLocalPromotedState(res);
       if (typeof showToast === "function") {
-        showToast(`✅ ${res.name || cleanName} promoted to Audition Desk!`);
+        showToast(res.screenerOwnerUrl
+          ? `✅ ${res.name || cleanName} promoted! Owner Screener Link ready.`
+          : `✅ ${res.name || cleanName} promoted to Audition Desk!`);
       }
     } catch (err) {
       alert("⚠️ Promotion notice: " + err.message);
