@@ -2060,6 +2060,121 @@ if (res && res.ok) {
   // ==========================================
 
   let cachedCandidates = [];
+  let pipelineTotalCount = 0;
+  let pipelineNextOffset = 0;
+  let pipelineHasMore = false;
+  let isFetchingPipeline = false;
+  let pipelineFilterState = { search: "", stage: "ALL", tier: "ALL", sector: "ALL" };
+
+  function safeDomId(scoutId) {
+    return String(scoutId || "").replace(/[^A-Za-z0-9_-]/g, "_");
+  }
+
+  function findCandidateByScoutId(scoutId) {
+    const cleanId = String(scoutId || "").trim();
+    if (!cleanId || !Array.isArray(cachedCandidates)) return null;
+    return cachedCandidates.find(c => c && c.scoutId === cleanId) || null;
+  }
+
+  function getCandidateSector(c) {
+    if (!c) return "GENERAL";
+    let chronicle = c.eventChronicle;
+    if (typeof chronicle === "string") {
+      try { chronicle = JSON.parse(chronicle); } catch (e) { chronicle = []; }
+    }
+    if (Array.isArray(chronicle)) {
+      for (let i = chronicle.length - 1; i >= 0; i--) {
+        const dv = String(chronicle[i]?.directedVector || chronicle[i]?.directedSector || "").trim().toUpperCase();
+        if (dv && dv !== "AUTO_DETECT") return dv;
+      }
+    }
+    let vectors = c.detectedVectors;
+    if (typeof vectors === "string") {
+      try { vectors = JSON.parse(vectors); } catch (e) { vectors = []; }
+    }
+    if (Array.isArray(vectors) && vectors.length > 0) {
+      const joined = vectors.map(v => String(v || "").toUpperCase()).join(" ");
+      if (/PRODUCER|PRODUCTION|FINANCE|DISTRIBUTION/.test(joined)) return "PRODUCER";
+      if (/BRAND|LUXURY|MARKETING|FASHION|COMMERCIAL/.test(joined)) return "BRAND";
+      if (/CREW|CINEMATOGRAPH|DOP|EDITOR|SOUND|GAFFER/.test(joined)) return "CREW";
+      if (/ACTOR|ACTRESS|PERFORMING|TALENT|VOCAL|CINEMA/.test(joined)) return "TALENT";
+    }
+    return "GENERAL";
+  }
+
+  function onPipelineSearchInput(val) {
+    pipelineFilterState.search = String(val || "").trim().toLowerCase();
+    applyPipelineFilters();
+  }
+
+  function setPipelineFilter(kind, value, btnEl) {
+    pipelineFilterState[kind] = value;
+    const rowMap = { stage: "pfStageRow", tier: "pfTierRow", sector: "pfSectorRow" };
+    const rowEl = document.getElementById(rowMap[kind]);
+    if (rowEl) {
+      rowEl.querySelectorAll(".pf-pill").forEach(p => p.classList.remove("active"));
+    }
+    if (btnEl) btnEl.classList.add("active");
+    applyPipelineFilters();
+  }
+
+  function getFilteredCandidates() {
+    const q = pipelineFilterState.search;
+    const st = pipelineFilterState.stage;
+    const tr = pipelineFilterState.tier;
+    const sec = pipelineFilterState.sector;
+
+    return cachedCandidates.filter(c => {
+      if (!c || !c.scoutId) return false;
+      const stageVal = String(c.engagementStage || c.nurtureStatus || "DISCOVERED").trim().toUpperCase();
+      if (st !== "ALL" && stageVal !== st) return false;
+
+      const score = Number(c.potentialScore ?? c.affinityScore ?? 50);
+      const tierStr = String(c.entityTier || c.talentTier || "").toUpperCase();
+      const isPriority = score >= 80 || tierStr.includes("PRIORITY");
+      if (tr === "PRIORITY" && !isPriority) return false;
+      if (tr === "PROMISING" && isPriority) return false;
+
+      if (sec !== "ALL" && getCandidateSector(c) !== sec) return false;
+
+      if (q) {
+        let vecs = c.detectedVectors;
+        if (typeof vecs === "string") {
+          try { vecs = JSON.parse(vecs); } catch (e) { vecs = [vecs]; }
+        }
+        const haystack = [
+          c.scoutId, c.fullName, c.primaryHandle, c.contactEmail,
+          c.livingDossier || c.reconDossier, c.encounterContext,
+          Array.isArray(vecs) ? vecs.join(" ") : ""
+        ].join(" ").toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
+  function applyPipelineFilters() {
+    const filtered = getFilteredCandidates();
+    const total = Math.max(pipelineTotalCount, cachedCandidates.length);
+    const countEl = document.getElementById("pipelineCount");
+    if (countEl) countEl.innerText = total;
+
+    const labelEl = document.getElementById("pipelineScopeLabel");
+    if (labelEl) {
+      if (cachedCandidates.length === 0) {
+        labelEl.innerText = "Latest Scouted Candidates";
+      } else {
+        labelEl.innerText = `Showing ${filtered.length} matching (${cachedCandidates.length} loaded of ${total} total)`;
+      }
+    }
+
+    const loadMoreWrap = document.getElementById("pipelineLoadMoreWrap");
+    if (loadMoreWrap) {
+      loadMoreWrap.style.display = pipelineHasMore ? "block" : "none";
+    }
+
+    renderPipelineFeed(filtered);
+  }
 
   function switchView(mode) {
     const intakeView = document.getElementById("intakeView");
@@ -2081,45 +2196,95 @@ if (res && res.ok) {
     }
   }
 
-  async function fetchPipeline(forceRefresh = false) {
+  async function fetchPipeline(forceRefresh = false, appendMode = false) {
     const webAppUrl = (localStorage.getItem("wov_scout_url") || "").trim();
-    if (!webAppUrl) return;
+    if (!webAppUrl || isFetchingPipeline) return;
 
-    if (!forceRefresh && cachedCandidates.length > 0) {
-      renderPipelineFeed(cachedCandidates);
+    if (!forceRefresh && !appendMode && cachedCandidates.length > 0) {
+      applyPipelineFilters();
       return;
     }
 
     const container = document.getElementById("pipelineFeedContainer");
-    container.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--text-muted);">Fetching from cloud...</div>`;
+    const loadMoreBtn = document.getElementById("btnLoadMorePipeline");
+    const offsetToFetch = appendMode ? pipelineNextOffset : 0;
 
+    if (!appendMode && container) {
+      container.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--text-muted);">Fetching from cloud...</div>`;
+    }
+    if (appendMode && loadMoreBtn) {
+      loadMoreBtn.disabled = true;
+      loadMoreBtn.innerText = "⏳ Loading more...";
+    }
+
+    isFetchingPipeline = true;
     try {
-      const res = await postScoutApi({ action: "listRecentScouts", limit: 20 });
+      const res = await postScoutApi({ action: "listRecentScouts", limit: 20, offset: offsetToFetch });
       if (!res.ok) throw new Error(res.error || "Failed to load pipeline.");
 
-      cachedCandidates = res.candidates || [];
-      document.getElementById("pipelineCount").innerText = cachedCandidates.length;
-      renderPipelineFeed(cachedCandidates);
+      const incoming = Array.isArray(res.candidates) ? res.candidates : [];
+      if (!appendMode) {
+        cachedCandidates = incoming;
+      } else {
+        const seenIds = new Set(cachedCandidates.map(x => x && x.scoutId).filter(Boolean));
+        incoming.forEach(item => {
+          if (item && item.scoutId && !seenIds.has(item.scoutId)) {
+            seenIds.add(item.scoutId);
+            cachedCandidates.push(item);
+          }
+        });
+      }
+
+      pipelineTotalCount = (typeof res.totalCount === "number") ? res.totalCount : cachedCandidates.length;
+      pipelineNextOffset = (typeof res.nextOffset === "number") ? res.nextOffset : cachedCandidates.length;
+      pipelineHasMore = Boolean(res.hasMore);
+
+      applyPipelineFilters();
     } catch (err) {
-      container.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--red);">Error loading feed: ${err.message}</div>`;
+      if (!appendMode && container) {
+        container.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--red);">Error loading feed: ${err.message}</div>`;
+      } else {
+        alert("⚠️ Could not load more candidates: " + err.message);
+      }
+    } finally {
+      isFetchingPipeline = false;
+      if (loadMoreBtn) {
+        loadMoreBtn.disabled = false;
+        loadMoreBtn.innerText = "⬇️ Load More Candidates";
+      }
     }
+  }
+
+  function loadMorePipeline() {
+    if (!pipelineHasMore || isFetchingPipeline) return;
+    fetchPipeline(true, true);
   }
 
   function renderPipelineFeed(candidates) {
     const container = document.getElementById("pipelineFeedContainer");
     if (!candidates || candidates.length === 0) {
-      container.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-muted);">No candidates scouted yet. Use Field Intake to log your first contact.</div>`;
+      const hasMoreHint = pipelineHasMore
+        ? `<div style="margin-top:8px;font-size:0.8rem;">More older records exist in the database — click <b>Load More Candidates</b> below.</div>`
+        : "";
+      const emptyMsg = cachedCandidates.length > 0
+        ? `No loaded candidates match your current filter.${hasMoreHint}`
+        : `No candidates scouted yet. Use Field Intake to log your first contact.`;
+      container.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-muted);">${emptyMsg}</div>`;
       return;
     }
 
     let html = "";
-    candidates.forEach((c, idx) => {
-      const score = c.affinityScore || 50;
+    candidates.forEach(c => {
+      const score = Number(c.potentialScore ?? c.affinityScore ?? 50);
       const badgeClass = score >= 80 ? "badge-priority" : "badge-promising";
       const waText = encodeURIComponent(c.draftWhatsapp || "");
+      const safeIdAttr = escapeHtml(c.scoutId);
+      const domId = safeDomId(c.scoutId);
+      const isPromoted = String(c.engagementStage || c.nurtureStatus || "").trim().toUpperCase() === "PROMOTED";
+      const isArmed = Boolean(typeof deleteArmTimers !== "undefined" && deleteArmTimers[c.scoutId]);
 
       html += `
-        <div class="pipeline-card">
+        <div class="pipeline-card" data-scout-id="${safeIdAttr}">
           <div class="pipeline-header">
             <div>
               <h3 class="pipeline-name">${escapeHtml(c.fullName)}</h3>
@@ -2131,66 +2296,67 @@ if (res && res.ok) {
             <span class="badge ${badgeClass}">${score}% Match</span>
           </div>
 
-          <div class="pipeline-dossier">${escapeHtml(c.reconDossier || c.encounterContext || "No dossier recorded.")}</div>
+          <div class="pipeline-dossier">${escapeHtml(c.livingDossier || c.reconDossier || c.encounterContext || "No dossier recorded.")}</div>
 
           <div class="pipeline-actions">
-          <button class="btn-pill push" id="openBtn_${idx}" onclick="openProfileFromPipeline(${idx})">📂 Open Workspace</button>
-          ${c.draftWhatsapp ? `<a class="btn-pill wa" href="https://api.whatsapp.com/send?text=${waText}" target="_blank">💬 WhatsApp</a>` : ''}
-          <button class="btn-pill" onclick="copyCandidateLink(${idx})">🔗 Copy Link</button>
-          ${String(c.engagementStage || c.nurtureStatus || "").trim().toUpperCase() === "PROMOTED"
-            ? `<button class="btn-pill" id="promoteBtn_${idx}" disabled>✅ Promoted</button>`
-            : `<button class="btn-pill push" id="promoteBtn_${idx}" onclick="promoteCandidateByIndex(${idx})">⚡ Push to Audition Desk</button>`}
-          <button class="btn-pill push" id="ownerLinkBtn_${idx}" style="${/^https?:\/\//i.test(String(c.screenerOwnerUrl || "")) ? "" : "display:none;"}" onclick="copyOwnerScreenerByIndex(${idx})" title="Private Owner Link (includes ?cid= Owner Mode — send only to this candidate)">🔗 Owner Screener</button>
-          <button class="btn-pill danger" id="delBtn_${idx}" onclick="handleDoubleTapDelete(${idx})">🗑️ Wipe</button>
+            <button class="btn-pill push" id="openBtn_${domId}" data-scout-id="${safeIdAttr}" onclick="openProfileFromPipeline(this.dataset.scoutId)">📂 Open Workspace</button>
+            ${c.draftWhatsapp ? `<a class="btn-pill wa" href="https://api.whatsapp.com/send?text=${waText}" target="_blank" rel="noopener noreferrer">💬 WhatsApp</a>` : ''}
+            <button class="btn-pill" data-scout-id="${safeIdAttr}" onclick="copyCandidateLink(this.dataset.scoutId)">🔗 Copy Link</button>
+            ${isPromoted
+              ? `<button class="btn-pill" id="promoteBtn_${domId}" disabled>✅ Promoted</button>`
+              : `<button class="btn-pill push" id="promoteBtn_${domId}" data-scout-id="${safeIdAttr}" onclick="promoteCandidateById(this.dataset.scoutId)">⚡ Push to Audition Desk</button>`}
+            <button class="btn-pill push" id="ownerLinkBtn_${domId}" data-scout-id="${safeIdAttr}" style="${/^https?:\/\//i.test(String(c.screenerOwnerUrl || "")) ? "" : "display:none;"}" onclick="copyOwnerScreenerById(this.dataset.scoutId)" title="Private Owner Link (includes ?cid= Owner Mode — send only to this candidate)">🔗 Owner Screener</button>
+            <button class="btn-pill danger${isArmed ? " armed" : ""}" id="delBtn_${domId}" data-scout-id="${safeIdAttr}" onclick="handleDoubleTapDelete(this.dataset.scoutId)">${isArmed ? "⚠️ Confirm Wipe (4s)" : "🗑️ Wipe"}</button>
+          </div>
         </div>
-      </div>
-    `;
-  });
+      `;
+    });
 
-  container.innerHTML = html;
-}
-
-async function openProfileFromPipeline(idx) {
-  const c = cachedCandidates[idx];
-  if (!c || !c.scoutId) return;
-
-  const webAppUrl = (localStorage.getItem("wov_scout_url") || "").trim();
-  if (!webAppUrl) {
-    openSettings();
-    return;
+    container.innerHTML = html;
   }
 
-  const btn = document.getElementById(`openBtn_${idx}`);
-  if (btn) {
-    if (btn.disabled) return;
-    btn.disabled = true;
-    btn.innerText = "⏳ Opening...";
-  }
+  async function openProfileFromPipeline(scoutId) {
+    const c = findCandidateByScoutId(scoutId);
+    if (!c || !c.scoutId) return;
 
-  try {
-    const res = await postScoutApi({ action: "getScoutProfile", scoutId: c.scoutId });
-    if (!res || !res.ok) throw new Error(res?.error || "Failed to load profile.");
+    const webAppUrl = (localStorage.getItem("wov_scout_url") || "").trim();
+    if (!webAppUrl) {
+      openSettings();
+      return;
+    }
 
-    if (res.screenerOwnerUrl) {
-      c.screenerOwnerUrl = res.screenerOwnerUrl;
-      if (/^https?:\/\//i.test(String(res.screenerOwnerUrl))) {
-        const cardOwnerBtn = document.getElementById(`ownerLinkBtn_${idx}`);
-        if (cardOwnerBtn) cardOwnerBtn.style.display = "inline-flex";
+    const domId = safeDomId(c.scoutId);
+    const btn = document.getElementById(`openBtn_${domId}`);
+    if (btn) {
+      if (btn.disabled) return;
+      btn.disabled = true;
+      btn.innerText = "⏳ Opening...";
+    }
+
+    try {
+      const res = await postScoutApi({ action: "getScoutProfile", scoutId: c.scoutId });
+      if (!res || !res.ok) throw new Error(res?.error || "Failed to load profile.");
+
+      if (res.screenerOwnerUrl) {
+        c.screenerOwnerUrl = res.screenerOwnerUrl;
+        if (/^https?:\/\//i.test(String(res.screenerOwnerUrl))) {
+          const cardOwnerBtn = document.getElementById(`ownerLinkBtn_${domId}`);
+          if (cardOwnerBtn) cardOwnerBtn.style.display = "inline-flex";
+        }
+      }
+      if (res.engagementStage) c.engagementStage = res.engagementStage;
+
+      switchView("intake");
+      renderCandidateProfile(res, { preservePipelineCache: true, fromPipeline: true });
+    } catch (err) {
+      alert("⚠️ Could not open profile workspace: " + err.message);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = "📂 Open Workspace";
       }
     }
-    if (res.engagementStage) c.engagementStage = res.engagementStage;
-
-    switchView("intake");
-    renderCandidateProfile(res, { preservePipelineCache: true, fromPipeline: true });
-  } catch (err) {
-    alert("⚠️ Could not open profile workspace: " + err.message);
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerText = "📂 Open Workspace";
-    }
   }
-}
 
 function appendToCurrentWorkspaceProfile() {
   if (!currentScoutId) return;
@@ -2294,8 +2460,8 @@ function appendToCurrentWorkspaceProfile() {
   }
   
   // Index-safe handlers
-  async function copyCandidateLink(idx) {
-    const c = cachedCandidates[idx];
+  async function copyCandidateLink(scoutId) {
+    const c = findCandidateByScoutId(scoutId);
     if (!c || !c.gatewayUrl) {
       showToast("No link available for this candidate.");
       return;
