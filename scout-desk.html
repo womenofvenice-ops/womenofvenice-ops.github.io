@@ -2624,10 +2624,10 @@ function appendToCurrentWorkspaceProfile() {
     }
   }
 
-  function promoteCandidateByIndex(idx) {
-    const c = cachedCandidates[idx];
+  function promoteCandidateById(scoutId) {
+    const c = findCandidateByScoutId(scoutId);
     if (!c) return;
-    const btn = document.getElementById(`promoteBtn_${idx}`);
+    const btn = document.getElementById(`promoteBtn_${safeDomId(c.scoutId)}`);
     executePromoteCandidate_(c.scoutId, c.fullName, c.contactEmail, btn);
   }
 
@@ -2663,27 +2663,32 @@ function appendToCurrentWorkspaceProfile() {
   // ==========================================
   let deleteArmTimers = {};
 
-  async function handleDoubleTapDelete(idx) {
-    const btn = document.getElementById(`delBtn_${idx}`);
-    const candidate = cachedCandidates[idx];
-    if (!candidate || !btn) return;
+  async function handleDoubleTapDelete(scoutId) {
+    const candidate = findCandidateByScoutId(scoutId);
+    if (!candidate) return;
+    const domId = safeDomId(candidate.scoutId);
+    const btn = document.getElementById(`delBtn_${domId}`);
+    if (!btn) return;
 
     // STEP 1: First Tap -> ARM the button for 4 seconds
-    if (!deleteArmTimers[idx]) {
+    if (!deleteArmTimers[candidate.scoutId]) {
       btn.classList.add("armed");
       btn.innerText = "⚠️ Confirm Wipe (4s)";
 
-      deleteArmTimers[idx] = setTimeout(() => {
-        btn.classList.remove("armed");
-        btn.innerText = "🗑️ Wipe";
-        delete deleteArmTimers[idx];
+      deleteArmTimers[candidate.scoutId] = setTimeout(() => {
+        const liveBtn = document.getElementById(`delBtn_${domId}`);
+        if (liveBtn) {
+          liveBtn.classList.remove("armed");
+          liveBtn.innerText = "🗑️ Wipe";
+        }
+        delete deleteArmTimers[candidate.scoutId];
       }, 4000);
       return;
     }
 
     // STEP 2: Second Tap within 4 seconds -> EXECUTE PERMANENT WIPE
-    clearTimeout(deleteArmTimers[idx]);
-    delete deleteArmTimers[idx];
+    clearTimeout(deleteArmTimers[candidate.scoutId]);
+    delete deleteArmTimers[candidate.scoutId];
 
     btn.disabled = true;
     btn.innerText = "Wiping...";
@@ -2699,23 +2704,19 @@ function appendToCurrentWorkspaceProfile() {
 
     try {
       const data = await postScoutApi({
-  action: "deleteScoutRecord",
-  scoutId: candidate.scoutId
-});
+        action: "deleteScoutRecord",
+        scoutId: candidate.scoutId
+      });
 
-      // 🛡️ GAS Contract Check: Explicitly verify data.ok (prevents HTTP 200 false positives)
       if (data && data.ok === true) {
-        // 🛡️ Flush all active arm timers to prevent re-indexing collisions
-        Object.values(deleteArmTimers).forEach(clearTimeout);
-        deleteArmTimers = {};
-
-        // Remove candidate from local state & update UI
-        cachedCandidates.splice(idx, 1);
-        document.getElementById("pipelineCount").innerText = cachedCandidates.length;
-        renderPipelineFeed(cachedCandidates);
+        const removeIdx = cachedCandidates.findIndex(item => item && item.scoutId === candidate.scoutId);
+        if (removeIdx !== -1) cachedCandidates.splice(removeIdx, 1);
+        pipelineTotalCount = Math.max(0, pipelineTotalCount - 1);
+        pipelineNextOffset = Math.max(0, pipelineNextOffset - 1);
+        applyPipelineFilters();
         showToast(`Permanently wiped ${candidate.fullName} and vault media.`);
       } else {
-        throw new Error(data.error || "Server rejected deletion request.");
+        throw new Error((data && data.error) || "Server rejected deletion request.");
       }
     } catch (err) {
       alert("⚠️ Wipe failed: " + err.message);
