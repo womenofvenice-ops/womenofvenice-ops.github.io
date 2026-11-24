@@ -741,6 +741,51 @@
       cursor: default;
       pointer-events: none;
     }
+
+    /* Batch 5A: Pipeline Search, Filter Pills & Pagination */
+    .pipeline-controls {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+    }
+    .pipeline-filter-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .pf-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      margin-right: 4px;
+    }
+    .pf-pill {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .pf-pill:hover { border-color: rgba(197, 160, 89, 0.5); color: var(--text-main); }
+    .pf-pill.active {
+      background: rgba(197, 160, 89, 0.2);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+    .pipeline-load-more-wrap {
+      text-align: center;
+      margin-top: 16px;
+    }
   </style>
 </head>
 <body>
