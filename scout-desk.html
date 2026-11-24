@@ -2499,8 +2499,8 @@ function appendToCurrentWorkspaceProfile() {
     copyOwnerUrlToClipboard_(currentScreenerOwnerUrl, "🔗 Owner Screener Link copied! (Private ?cid=)");
   }
 
-  function copyOwnerScreenerByIndex(idx) {
-    const c = cachedCandidates[idx];
+  function copyOwnerScreenerById(scoutId) {
+    const c = findCandidateByScoutId(scoutId);
     if (!c) return;
     copyOwnerUrlToClipboard_(c.screenerOwnerUrl || "", `🔗 Owner Screener Link copied for ${c.fullName || "candidate"}!`);
   }
@@ -2540,6 +2540,7 @@ function appendToCurrentWorkspaceProfile() {
       const ownerUrl = String((promotedRes && promotedRes.screenerOwnerUrl) || "").trim();
       const hasValidOwnerUrl = /^https?:\/\//i.test(ownerUrl);
 
+      const cleanDomId = safeDomId(cleanId);
       if (Array.isArray(cachedCandidates)) {
         const matchIdx = cachedCandidates.findIndex(item => item && item.scoutId === cleanId);
         if (matchIdx !== -1) {
@@ -2547,16 +2548,18 @@ function appendToCurrentWorkspaceProfile() {
           cachedCandidates[matchIdx].nurtureStatus = "PROMOTED";
           if (hasValidOwnerUrl) {
             cachedCandidates[matchIdx].screenerOwnerUrl = ownerUrl;
-            const cardOwnerBtn = document.getElementById(`ownerLinkBtn_${matchIdx}`);
-            if (cardOwnerBtn) cardOwnerBtn.style.display = "inline-flex";
-          }
-          const cardBtn = document.getElementById(`promoteBtn_${matchIdx}`);
-          if (cardBtn) {
-            cardBtn.disabled = true;
-            cardBtn.classList.remove("push");
-            cardBtn.innerText = "✅ Promoted";
           }
         }
+      }
+      if (hasValidOwnerUrl) {
+        const cardOwnerBtn = document.getElementById(`ownerLinkBtn_${cleanDomId}`);
+        if (cardOwnerBtn) cardOwnerBtn.style.display = "inline-flex";
+      }
+      const cardBtn = document.getElementById(`promoteBtn_${cleanDomId}`);
+      if (cardBtn) {
+        cardBtn.disabled = true;
+        cardBtn.classList.remove("push");
+        cardBtn.innerText = "✅ Promoted";
       }
 
       const activeWsId = (typeof currentScoutId !== "undefined" && currentScoutId)
