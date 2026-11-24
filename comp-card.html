@@ -421,7 +421,7 @@
       <span>Official Casting Comp Card</span>
     </div>
     <div class="toolbar-actions">
-      <button class="btn-action btn-secondary" onclick="document.getElementById('hiddenPhotoInput').click()">
+      <button class="btn-action btn-secondary" id="btnUploadHeadshot" style="display:none;" onclick="document.getElementById('hiddenPhotoInput').click()">
         📷 Upload / Swap Headshot
       </button>
       <button class="btn-action btn-secondary" onclick="openEditModal()">
@@ -448,7 +448,7 @@
         <div class="comp-studio-mark">Women of Venice · Casting Studio</div>
         <div class="comp-submark">Biometric Telemetry &amp; Actor Representation Deck</div>
       </div>
-      <div class="comp-cert-pill" id="certIdEl">WOV-2026-ARCHIVE</div>
+      <div class="comp-cert-pill" id="certIdEl">WOV-2026-PENDING</div>
     </div>
 
     <!-- Main Grid: Left Column (Photo + Specs) | Right Column (Radar + Comps) -->
@@ -456,9 +456,10 @@
       
       <!-- Left Column -->
       <div class="comp-left-col">
-        <!-- Clickable Photo Box (In-Place Upload) -->
-        <div class="comp-photo-box" onclick="document.getElementById('hiddenPhotoInput').click()" title="Click to upload or swap headshot">
-<img id="headshotImg" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 500' fill='%23E2E8F0'><rect width='400' height='500' fill='%23EDE8DF'/><circle cx='200' cy='180' r='80' fill='%23D1C7B7'/><path d='M80,450 C80,300 320,300 320,450 Z' fill='%23D1C7B7'/></svg>" alt="Primary Headshot" style="transition: opacity 0.2s ease;">          <div class="comp-photo-hover-hint no-print">
+        <!-- Photo Box (Upload gated to verified Owner Mode only) -->
+        <div class="comp-photo-box" id="compPhotoBox" style="cursor:default;" title="Performer Headshot">
+          <img id="headshotImg" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 500' fill='%23E2E8F0'><rect width='400' height='500' fill='%23EDE8DF'/><circle cx='200' cy='180' r='80' fill='%23D1C7B7'/><path d='M80,450 C80,300 320,300 320,450 Z' fill='%23D1C7B7'/></svg>" alt="Primary Headshot" style="transition: opacity 0.2s ease;">
+          <div class="comp-photo-hover-hint no-print" id="headshotHoverHint" style="display:none;">
             <span style="font-size:24px;margin-bottom:4px;">📷</span>
             <span>Click to Upload / Swap Headshot</span>
             <span style="font-size:9.5px;opacity:0.8;margin-top:2px;">(Auto-saved to profile)</span>
@@ -481,8 +482,8 @@
       <!-- Right Column -->
       <div class="comp-right-col">
         <div class="comp-name-block">
-          <h1 id="talentName">Elena B.</h1>
-          <div class="comp-archetype" id="talentArchetype">Grounded Dramatic Lead</div>
+          <h1 id="talentName">Loading Profile…</h1>
+          <div class="comp-archetype" id="talentArchetype">Studio Casting Profile</div>
         </div>
 
         <!-- Prominent 240px SVG Spider Radar -->
@@ -498,17 +499,17 @@
               <line x1="150" y1="30" x2="150" y2="270" stroke="rgba(28,43,44,0.12)" stroke-dasharray="3,3"/>
               <line x1="30" y1="150" x2="270" y2="150" stroke="rgba(28,43,44,0.12)" stroke-dasharray="3,3"/>
               
-              <polygon id="radarPolygon" points="150,44 248,150 150,259 43,150" fill="rgba(168,73,46,0.22)" stroke="#A8492E" stroke-width="2.5"/>
+              <polygon id="radarPolygon" points="150,150 150,150 150,150 150,150" fill="rgba(168,73,46,0.22)" stroke="#A8492E" stroke-width="2.5"/>
               
-              <circle id="nodeP" cx="150" cy="44" r="4.5" fill="#A8492E"/>
-              <circle id="nodeV" cx="248" cy="150" r="4.5" fill="#A8492E"/>
-              <circle id="nodeS" cx="150" cy="259" r="4.5" fill="#A8492E"/>
-              <circle id="nodeF" cx="43" cy="150" r="4.5" fill="#A8492E"/>
+              <circle id="nodeP" cx="150" cy="150" r="4.5" fill="#A8492E"/>
+              <circle id="nodeV" cx="150" cy="150" r="4.5" fill="#A8492E"/>
+              <circle id="nodeS" cx="150" cy="150" r="4.5" fill="#A8492E"/>
+              <circle id="nodeF" cx="150" cy="150" r="4.5" fill="#A8492E"/>
               
-              <text id="lblP" x="150" y="11" text-anchor="middle" font-size="13.5" font-weight="800" fill="#1C2B2C">Stillness (88)</text>
-              <text id="lblV" x="286" y="154" text-anchor="start" font-size="13.5" font-weight="800" fill="#1C2B2C">Vocal (82)</text>
-              <text id="lblS" x="150" y="295" text-anchor="middle" font-size="13.5" font-weight="800" fill="#1C2B2C">Subtext (91)</text>
-              <text id="lblF" x="14" y="154" text-anchor="end" font-size="13.5" font-weight="800" fill="#1C2B2C">Fit (89)</text>
+              <text id="lblP" x="150" y="11" text-anchor="middle" font-size="13.5" font-weight="800" fill="#1C2B2C">Stillness (—)</text>
+              <text id="lblV" x="286" y="154" text-anchor="start" font-size="13.5" font-weight="800" fill="#1C2B2C">Vocal (—)</text>
+              <text id="lblS" x="150" y="295" text-anchor="middle" font-size="13.5" font-weight="800" fill="#1C2B2C">Subtext (—)</text>
+              <text id="lblF" x="14" y="154" text-anchor="end" font-size="13.5" font-weight="800" fill="#1C2B2C">Fit (—)</text>
             </svg>
           </div>
         </div>
@@ -516,14 +517,14 @@
         <!-- Casting Comps -->
         <div class="comps-container">
           <div style="font-weight:800;font-size:9.5px;text-transform:uppercase;color:var(--red);margin-bottom:2px;">Casting Lane &amp; Comps</div>
-          <div id="compsActors"><b>Actors:</b> Vicky Krieps, Paula Beer, Renate Reinsve</div>
-          <div id="compsDirector" style="color:var(--text-light);margin-top:2px;"><b>Director Lane:</b> A24 / Cannes Arthouse (Joachim Trier, Charlotte Wells)</div>
+          <div id="compsActors"><b>Actors:</b> Pending Stage 1 screen test analysis</div>
+          <div id="compsDirector" style="color:var(--text-light);margin-top:2px;"><b>Director Lane:</b> Women of Venice Studio Roster</div>
         </div>
 
         <!-- Directorial Superpower -->
         <div class="presence-box">
           <div style="font-weight:800;font-size:9.5px;text-transform:uppercase;color:#7C3AED;margin-bottom:2px;">Directorial Superpower</div>
-          <span id="superpowerText">"Demonstrates deep dramatic interiority and camera stillness. Eyes sustain emotional tension across silence with zero performative mask."</span>
+          <span id="superpowerText">Directorial craft assessment pending Stage 1 screen test analysis.</span>
         </div>
 
       </div>
@@ -603,7 +604,7 @@
     function closeEditModal() { document.getElementById("editModal").style.display = "none"; }
     
     function saveSpecs() {
-      const talentName = document.getElementById("talentName").innerText.trim();
+      const talentName = window._compResolvedName || document.getElementById("talentName").innerText.trim();
       const specs = {
         age: document.getElementById("inAge").value,
         height: document.getElementById("inHeight").value,
@@ -656,26 +657,32 @@ async function handleHeadshotUpload(input) {
   const urlParams = new URLSearchParams(window.location.search);
   const nameEl = document.getElementById("talentName");
   const talentName = String(
+    window._compResolvedName ||
     (nameEl ? (nameEl.value || nameEl.innerText) : "") ||
-    (typeof targetName !== "undefined" ? targetName : "") ||
     urlParams.get("name") || urlParams.get("talent") ||
     ""
   ).replace(/[\r\n\t]+/g, " ").trim();
 
-  // 🛡️ Resolve Candidate UUID to guarantee Column A primary key match in CRM
+  const normLookupKey = talentName ? talentName.toLowerCase().replace(/\s+/g, "_") : "";
+  let storedCid = "";
+  try { storedCid = (normLookupKey && localStorage.getItem("wov_cid_" + normLookupKey)) || ""; } catch (eCid) {}
+
+  // 🛡️ Resolve Owner Proof (cid / id / candidateId / session_id / token)
   const candidateId = String(
     urlParams.get("cid") || 
     urlParams.get("id") || 
-    (typeof activeCid !== "undefined" ? activeCid : "") ||
+    window._compOwnerToken ||
+    storedCid ||
+    urlParams.get("session_id") || 
+    urlParams.get("token") || 
     ""
   ).trim();
 
-  if (!talentName && !candidateId) {
-    alert("⚠️ Unable to identify performer record. Please reload your vault link.");
+  if (!candidateId) {
+    alert("⚠️ Owner vault token (?cid=) is required to upload or swap your headshot.");
     input.value = "";
     return;
   }
-
   const headshotImg = document.getElementById("headshotImg");
 
   // 2. Client-Side Image Compression (Max 1200x1600 @ 0.85 Quality = ~400-600 KB)
@@ -735,6 +742,7 @@ async function handleHeadshotUpload(input) {
           headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
+        if (!res.ok) throw new Error("HTTP " + res.status);
         const data = await res.json();
 
         if (data && data.ok && data.imageUrl) {
@@ -742,7 +750,10 @@ async function handleHeadshotUpload(input) {
             headshotImg.src = data.imageUrl; // Permanent Google Drive CDN URL
             headshotImg.style.opacity = "1";
           }
-          try { localStorage.setItem("wov_cached_headshot_" + talentName, data.imageUrl); } catch(e) {}
+          const cacheName = String(data.talentName || talentName || "").trim();
+          if (cacheName) {
+            try { localStorage.setItem("wov_cached_headshot_" + cacheName, data.imageUrl); } catch(e) {}
+          }
           alert("✓ Headshot permanently saved to studio ledger and Google Drive!");
         } else {
           throw new Error((data && data.error) || "Cloud upload failed");
