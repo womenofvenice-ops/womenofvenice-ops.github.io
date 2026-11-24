@@ -775,42 +775,146 @@ async function handleHeadshotUpload(input) {
   reader.readAsDataURL(file);
 }
 
+    function applySavedSpecsAndModal_(nameKey) {
+      if (!nameKey) return;
+      try {
+        const saved = localStorage.getItem("wov_specs_" + nameKey);
+        if (!saved) return;
+        const s = JSON.parse(saved);
+        const map = [
+          ["specAge", "inAge", s.age],
+          ["specHeight", "inHeight", s.height],
+          ["specEyes", "inEyes", s.eyes],
+          ["specHair", "inHair", s.hair],
+          ["specLang", "inLang", s.lang],
+          ["specRep", "inRep", s.rep]
+        ];
+        map.forEach(([specId, inputId, val]) => {
+          if (!val) return;
+          const spEl = document.getElementById(specId);
+          const inEl = document.getElementById(inputId);
+          if (spEl) spEl.innerText = val;
+          if (inEl) inEl.value = val;
+        });
+      } catch (e) {}
+    }
+
+    function setCompQrUrl_(performerName) {
+      const qrEl = document.getElementById("qrImg");
+      if (!qrEl || !performerName) return;
+      const screenerHost = ["womenofvenice", "com"].join(".");
+      const screenerUrl = "https://" + screenerHost + "/screener.html?name=" + encodeURIComponent(performerName);
+      const encodedUrl = encodeURIComponent(screenerUrl);
+      const qrHost = ["api", "qrserver", "com"].join(".");
+      qrEl.src = "https://" + qrHost + "/v1/create-qr-code/?size=150x150&data=" + encodedUrl;
+      qrEl.style.display = "block";
+      qrEl.onerror = function() {
+        const fallbackHost = ["quickchart", "io"].join(".");
+        this.onerror = null;
+        this.src = "https://" + fallbackHost + "/qr?size=150&text=" + encodedUrl;
+      };
+    }
+
     function renderCompCard(data) {
-      if (data.marketArchetype) document.getElementById("talentArchetype").innerText = data.marketArchetype;
+      window._compCardRendered = true;
+      const resolvedName = String(data.name || (data.talent && data.talent.name) || "").replace(/[\r\n\t]+/g, " ").trim();
+      if (resolvedName) {
+        window._compResolvedName = resolvedName;
+        const nameEl = document.getElementById("talentName");
+        if (nameEl) nameEl.innerText = resolvedName;
+        document.title = resolvedName + " · Casting Comp Card (Z-Card)";
+        applySavedSpecsAndModal_(resolvedName);
+        setCompQrUrl_(resolvedName);
 
-      const comps = data.comps || {};
-      if (comps.actorComps) document.getElementById("compsActors").innerHTML = "<b>Actors:</b> " + esc(comps.actorComps);
-      if (comps.directorFit) document.getElementById("compsDirector").innerHTML = "<b>Director Lane:</b> " + esc(comps.directorFit);
-
-      const takes = data.takes || [];
-      const latest = takes[takes.length - 1] || {};
-      const dNotes = latest.directorNotes || {};
-      if (dNotes.superpower) {
-        document.getElementById("superpowerText").innerText = `"${dNotes.superpower}"`;
+        const certHash = Math.abs(resolvedName.split("").reduce((acc, ch) => (acc << 5) - acc + ch.charCodeAt(0), 0)).toString(16).toUpperCase().padStart(8, "0");
+        const certEl = document.getElementById("certIdEl");
+        if (certEl) certEl.innerText = "WOV-2026-" + certHash;
       }
 
-      // Render 4-Axis Spider Radar
+      if (data.candidateId) {
+        window._compOwnerToken = String(data.candidateId).trim();
+      }
+
+      // Gate headshot upload controls strictly to verified Owner Mode
+      const isOwnerMode = Boolean(data.isOwner === true);
+      const btnUpload = document.getElementById("btnUploadHeadshot");
+      const photoBox = document.getElementById("compPhotoBox");
+      const hoverHint = document.getElementById("headshotHoverHint");
+      if (btnUpload) btnUpload.style.display = isOwnerMode ? "inline-flex" : "none";
+      if (hoverHint) hoverHint.style.display = isOwnerMode ? "flex" : "none";
+      if (photoBox) {
+        photoBox.style.cursor = isOwnerMode ? "pointer" : "default";
+        photoBox.onclick = isOwnerMode ? function() { document.getElementById("hiddenPhotoInput").click(); } : null;
+        photoBox.title = isOwnerMode ? "Click to upload or swap headshot" : "Performer Headshot";
+      }
+
+      const takes = Array.isArray(data.takes) ? data.takes : [];
+      const isZeroTake = Boolean(data.status === "ready_for_recording" || data.readyForRecording || takes.length === 0);
+
+      document.getElementById("talentArchetype").innerText =
+        data.marketArchetype || (isZeroTake ? "Awaiting Initial Screen Test (Take #1)" : "Studio Casting Profile");
+
+      const comps = data.comps || {};
+      document.getElementById("compsActors").innerHTML = comps.actorComps
+        ? ("<b>Actors:</b> " + esc(comps.actorComps))
+        : "<b>Actors:</b> Pending Stage 1 screen test analysis";
+      document.getElementById("compsDirector").innerHTML = comps.directorFit
+        ? ("<b>Director Lane:</b> " + esc(comps.directorFit))
+        : "<b>Director Lane:</b> Women of Venice Studio Roster";
+
+      const latest = takes[takes.length - 1] || {};
+      const dNotes = latest.directorNotes || {};
+      const superpowerEl = document.getElementById("superpowerText");
+      if (superpowerEl) {
+        if (dNotes.superpower) {
+          superpowerEl.innerText = `"${dNotes.superpower}"`;
+        } else if (data.publicSuperpower) {
+          superpowerEl.innerText = `"${data.publicSuperpower}"`;
+        } else if (data.agencyEndorsement) {
+          superpowerEl.innerText = data.agencyEndorsement;
+        } else if (isZeroTake) {
+          superpowerEl.innerText = "Stage 1 screen test pending — directorial superpower unlocks upon Take #1 analysis.";
+        } else {
+          superpowerEl.innerText = "Studio-certified craft telemetry on file. Unlock full dossier for directorial notes.";
+        }
+      }
+
+      // Render 4-Axis Spider Radar (pending zero-state for 0-take profiles)
       const r = data.latestRadar || {};
-      const p = safeScore(r.presenceScore != null ? r.presenceScore : 88);
-      const v = safeScore(r.vocalScore != null ? r.vocalScore : 82);
-      const s = safeScore(r.subtextScore != null ? r.subtextScore : 91);
-      const f = safeScore(r.formatFitScore != null ? r.formatFitScore : 89);
+      const hasScores = !isZeroTake && (Number(r.presenceScore) > 0 || Number(r.vocalScore) > 0 || Number(r.subtextScore) > 0 || Number(r.formatFitScore) > 0);
 
-      const yP = 150 - (p / 100 * 120);
-      const xV = 150 + (v / 100 * 120);
-      const yS = 150 + (s / 100 * 120);
-      const xF = 150 - (f / 100 * 120);
+      if (!hasScores) {
+        document.getElementById("radarPolygon").setAttribute("points", "150,150 150,150 150,150 150,150");
+        document.getElementById("nodeP").setAttribute("cy", 150);
+        document.getElementById("nodeV").setAttribute("cx", 150);
+        document.getElementById("nodeS").setAttribute("cy", 150);
+        document.getElementById("nodeF").setAttribute("cx", 150);
+        document.getElementById("lblP").textContent = "Stillness (—)";
+        document.getElementById("lblV").textContent = "Vocal (—)";
+        document.getElementById("lblS").textContent = "Subtext (—)";
+        document.getElementById("lblF").textContent = "Fit (—)";
+      } else {
+        const p = safeScore(r.presenceScore);
+        const v = safeScore(r.vocalScore);
+        const s = safeScore(r.subtextScore);
+        const f = safeScore(r.formatFitScore);
 
-      document.getElementById("radarPolygon").setAttribute("points", `150,${yP} ${xV},150 150,${yS} ${xF},150`);
-      document.getElementById("nodeP").setAttribute("cy", yP);
-      document.getElementById("nodeV").setAttribute("cx", xV);
-      document.getElementById("nodeS").setAttribute("cy", yS);
-      document.getElementById("nodeF").setAttribute("cx", xF);
+        const yP = 150 - (p / 100 * 120);
+        const xV = 150 + (v / 100 * 120);
+        const yS = 150 + (s / 100 * 120);
+        const xF = 150 - (f / 100 * 120);
 
-      document.getElementById("lblP").textContent = `Stillness (${p})`;
-      document.getElementById("lblV").textContent = `Vocal (${v})`;
-      document.getElementById("lblS").textContent = `Subtext (${s})`;
-      document.getElementById("lblF").textContent = `Fit (${f})`;
+        document.getElementById("radarPolygon").setAttribute("points", `150,${yP} ${xV},150 150,${yS} ${xF},150`);
+        document.getElementById("nodeP").setAttribute("cy", yP);
+        document.getElementById("nodeV").setAttribute("cx", xV);
+        document.getElementById("nodeS").setAttribute("cy", yS);
+        document.getElementById("nodeF").setAttribute("cx", xF);
+
+        document.getElementById("lblP").textContent = `Stillness (${p})`;
+        document.getElementById("lblV").textContent = `Vocal (${v})`;
+        document.getElementById("lblS").textContent = `Subtext (${s})`;
+        document.getElementById("lblF").textContent = `Fit (${f})`;
+      }
     }
 
     // =========================================================================
@@ -819,22 +923,17 @@ async function handleHeadshotUpload(input) {
     // =========================================================================
     window.addEventListener("DOMContentLoaded", function() {
       const urlParams = new URLSearchParams(window.location.search);
-      const targetName = String(
-        urlParams.get("name") || 
-        urlParams.get("talent") || 
-        urlParams.get("id") || 
-        urlParams.get("cid") || 
-        ""
-      ).replace(/[\r\n\t]+/g, " ").trim();
+      const rawNameParam = String(urlParams.get("name") || urlParams.get("talent") || "").replace(/[\r\n\t]+/g, " ").trim();
+      const rawCidParam = String(urlParams.get("cid") || urlParams.get("id") || "").trim();
+      const rawSessionParam = String(urlParams.get("session_id") || urlParams.get("token") || "").trim();
+      const targetLookup = rawNameParam || rawCidParam;
 
-      // 🛡️ Defect 1 Fix: Self-contained HTML escaping (Zero ReferenceErrors)
       const safeEscape = (typeof esc === "function") 
         ? esc 
-        : s => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      const safeDisplayName = safeEscape(targetName || "Performer");
+        : s => String(s || "").replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[m]);
+      const safeDisplayName = safeEscape(rawNameParam || "this performer");
 
-      // Guard: Require explicit performer parameter
-      if (!targetName) {
+      if (!targetLookup) {
         document.body.innerHTML = `
           <div style="text-align:center;padding:100px 20px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#FAF8F5;background:#080C0E;min-height:100vh;">
             <div style="font-size:36px;margin-bottom:12px;">⚠️</div>
@@ -847,55 +946,31 @@ async function handleHeadshotUpload(input) {
         return;
       }
 
-      // 🛡️ Defect 2 Fix: Null-safe screen title update
-      const nameHeader = document.getElementById("talentName");
-      if (nameHeader) nameHeader.innerText = targetName;
-      document.title = targetName + " · Casting Comp Card (Z-Card)";
-      
-      // 🛡️ Instant 0ms Photo Restore (Eliminates network wait flicker on F5)
-      try {
-        const cachedPhoto = localStorage.getItem("wov_cached_headshot_" + targetName);
-        const headshotEl = document.getElementById("headshotImg");
-        if (cachedPhoto && cachedPhoto.indexOf("http") === 0 && headshotEl) {
-          headshotEl.src = cachedPhoto;
-        }
-      } catch(e) {}
+      // Only pre-fill name/title/QR from rawNameParam (never display raw UUID when loaded via ?cid= alone)
+      if (rawNameParam) {
+        const nameHeader = document.getElementById("talentName");
+        if (nameHeader) nameHeader.innerText = rawNameParam;
+        document.title = rawNameParam + " · Casting Comp Card (Z-Card)";
+        applySavedSpecsAndModal_(rawNameParam);
+        setCompQrUrl_(rawNameParam);
 
-      // Restore custom saved specs if performer edited them locally
-      try {
-        const saved = localStorage.getItem("wov_specs_" + targetName);
-        if (saved) {
-          const s = JSON.parse(saved);
-          if (s.age && document.getElementById("specAge")) document.getElementById("specAge").innerText = s.age;
-          if (s.height && document.getElementById("specHeight")) document.getElementById("specHeight").innerText = s.height;
-          if (s.eyes && document.getElementById("specEyes")) document.getElementById("specEyes").innerText = s.eyes;
-          if (s.hair && document.getElementById("specHair")) document.getElementById("specHair").innerText = s.hair;
-          if (s.lang && document.getElementById("specLang")) document.getElementById("specLang").innerText = s.lang;
-          if (s.rep && document.getElementById("specRep")) document.getElementById("specRep").innerText = s.rep;
-        }
-      } catch(e) {}
-
-      // 🛡️ High-Availability QR Generator (Tokenized Hosts · Zero-Drop Failover)
-      const qrEl = document.getElementById("qrImg");
-      if (qrEl) {
-        const screenerHost = ["womenofvenice", "com"].join(".");
-        const screenerUrl = "https://" + screenerHost + "/screener.html?name=" + encodeURIComponent(targetName);
-        const encodedUrl = encodeURIComponent(screenerUrl);
-
-        // Provider 1: QRServer CDN
-        const qrHost = ["api", "qrserver", "com"].join(".");
-        qrEl.src = "https://" + qrHost + "/v1/create-qr-code/?size=150x150&data=" + encodedUrl;
-        qrEl.style.display = "block"; // 🛡️ Ensures element is visible
-
-        // Provider 2: Automatic Failover to QuickChart if Provider 1 is blocked by client adblockers
-        qrEl.onerror = function() {
-          const fallbackHost = ["quickchart", "io"].join(".");
-          this.onerror = null; // Prevents recursive loop
-          this.src = "https://" + fallbackHost + "/qr?size=150&text=" + encodedUrl;
-        };
+        try {
+          const cachedPhoto = localStorage.getItem("wov_cached_headshot_" + rawNameParam);
+          const headshotEl = document.getElementById("headshotImg");
+          if (cachedPhoto && cachedPhoto.indexOf("http") === 0 && headshotEl) {
+            headshotEl.src = cachedPhoto;
+          }
+        } catch(e) {}
       }
 
-      // 🛡️ Defect 3 Fix: Zero-ReferenceError Endpoint Resolution
+      // Resolve owner cid from URL or local browser owner vault (only grants Owner Mode on performer's own device)
+      let activeOwnerCid = rawCidParam;
+      if (!activeOwnerCid && rawNameParam) {
+        try {
+          activeOwnerCid = localStorage.getItem("wov_cid_" + rawNameParam.toLowerCase().replace(/\s+/g, "_")) || "";
+        } catch (eCid) {}
+      }
+
       const targetExec = (typeof EXEC !== "undefined" && EXEC) 
         ? EXEC 
         : ((typeof BACKEND_URL !== "undefined" && BACKEND_URL) ? BACKEND_URL : (window.EXEC || window.BACKEND_URL || ""));
@@ -905,23 +980,40 @@ async function handleHeadshotUpload(input) {
         return;
       }
 
-      const fetchUrl = targetExec + "?action=screener&name=" + encodeURIComponent(targetName);
+      const fetchParams = new URLSearchParams();
+      fetchParams.set("action", "screener");
+      if (rawNameParam) {
+        fetchParams.set("name", rawNameParam);
+      } else {
+        fetchParams.set("id", rawCidParam);
+      }
+      if (activeOwnerCid) fetchParams.set("cid", activeOwnerCid);
+      if (rawSessionParam) fetchParams.set("session_id", rawSessionParam);
 
-      fetch(fetchUrl)
-        .then(res => res.json())
+      fetch(targetExec + "?" + fetchParams.toString())
+        .then(res => {
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          return res.json();
+        })
         .then(data => {
           if (data && (data.ok || data.status === "ok" || (data.talent && data.talent.name))) {
             renderCompCard(data);
 
-            // 🛡️ Step 4: Display Permanent Cloud Headshot from Google Drive CDN
+            const resolvedKey = window._compResolvedName || rawNameParam;
             const cloudPhoto = data.headshot_image_url || data.photoUrl || data.photo || (data.talent && data.talent.photo);
             const headshotEl = document.getElementById("headshotImg");
             if (cloudPhoto && cloudPhoto.indexOf("http") === 0 && headshotEl) {
               headshotEl.src = cloudPhoto;
-              try { localStorage.setItem("wov_cached_headshot_" + targetName, cloudPhoto); } catch(e) {}
+              if (resolvedKey) {
+                try { localStorage.setItem("wov_cached_headshot_" + resolvedKey, cloudPhoto); } catch(e) {}
+              }
+            } else if (resolvedKey && !rawNameParam) {
+              try {
+                const cachedPhoto = localStorage.getItem("wov_cached_headshot_" + resolvedKey);
+                if (cachedPhoto && cachedPhoto.indexOf("http") === 0 && headshotEl) headshotEl.src = cachedPhoto;
+              } catch (e) {}
             }
           } else {
-            // 🛡️ Step 3: Clean 404 Guard replaces mock fallbacks
             document.body.innerHTML = `
               <div style="text-align:center;padding:100px 20px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#FAF8F5;background:#080C0E;min-height:100vh;">
                 <div style="font-size:36px;margin-bottom:12px;">🔒</div>
@@ -935,6 +1027,10 @@ async function handleHeadshotUpload(input) {
         })
         .catch(err => {
           console.warn("Database connection notice:", err);
+          if (!window._compCardRendered) {
+            const archEl = document.getElementById("talentArchetype");
+            if (archEl) archEl.innerText = "Unable to connect to studio ledger — please reload.";
+          }
         });
     });
     
