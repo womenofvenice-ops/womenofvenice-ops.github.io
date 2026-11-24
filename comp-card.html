@@ -670,7 +670,7 @@ async function handleHeadshotUpload(input) {
   // 🛡️ Resolve Owner Proof (cid / id / candidateId / session_id / token)
   const candidateId = String(
     urlParams.get("cid") || 
-    urlParams.get("id") || 
+    urlParams.get("id") || urlParams.get("candidate") || 
     window._compOwnerToken ||
     storedCid ||
     urlParams.get("session_id") || 
@@ -924,7 +924,7 @@ async function handleHeadshotUpload(input) {
     window.addEventListener("DOMContentLoaded", function() {
       const urlParams = new URLSearchParams(window.location.search);
       const rawNameParam = String(urlParams.get("name") || urlParams.get("talent") || "").replace(/[\r\n\t]+/g, " ").trim();
-      const rawCidParam = String(urlParams.get("cid") || urlParams.get("id") || "").trim();
+      const rawCidParam = String(urlParams.get("cid") || urlParams.get("id") || urlParams.get("candidate") || "").trim();
       const rawSessionParam = String(urlParams.get("session_id") || urlParams.get("token") || "").trim();
       const targetLookup = rawNameParam || rawCidParam;
 
