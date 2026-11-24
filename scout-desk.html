@@ -997,12 +997,45 @@
 
 <!-- VIEW B: PIPELINE FEED -->
 <div id="pipelineView" style="display: none;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-    <span style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Latest Scouted Candidates</span>
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+    <span id="pipelineScopeLabel" style="font-size: 0.82rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Latest Scouted Candidates</span>
     <button class="btn-pill" onclick="fetchPipeline(true)">🔄 Refresh</button>
   </div>
+
+  <div class="pipeline-controls">
+    <input type="text" id="pipelineSearchInput" placeholder="Search loaded profiles by name, @handle, email, dossier, or vector..." oninput="onPipelineSearchInput(this.value)" style="margin-bottom: 0;">
+    <div class="pipeline-filter-row" id="pfStageRow">
+      <span class="pf-label">Stage:</span>
+      <button type="button" class="pf-pill active" onclick="setPipelineFilter('stage','ALL',this)">All</button>
+      <button type="button" class="pf-pill" onclick="setPipelineFilter('stage','DISCOVERED',this)">Discovered</button>
+      <button type="button" class="pf-pill" onclick="setPipelineFilter('stage','CALIBRATED',this)">Calibrated</button>
+      <button type="button" class="pf-pill" onclick="setPipelineFilter('stage','CONTACTED',this)">Contacted</button>
+      <button type="button" class="pf-pill" onclick="setPipelineFilter('stage','RESPONDED',this)">Responded</button>
+      <button type="button" class="pf-pill" onclick="setPipelineFilter('stage','PROMOTED',this)">Promoted</button>
+      <button type="button" class="pf-pill" onclick="setPipelineFilter('stage','ARCHIVED',this)">Archived</button>
+    </div>
+    <div class="pipeline-filter-row" id="pfTierRow">
+      <span class="pf-label">Tier:</span>
+      <button type="button" class="pf-pill active" onclick="setPipelineFilter('tier','ALL',this)">All</button>
+      <button type="button" class="pf-pill" onclick="setPipelineFilter('tier','PRIORITY',this)">Priority (80+)</button>
+      <button type="button" class="pf-pill" onclick="setPipelineFilter('tier','PROMISING',this)">Promising / Other</button>
+    </div>
+    <div class="pipeline-filter-row" id="pfSectorRow">
+      <span class="pf-label">Sector:</span>
+      <button type="button" class="pf-pill active" onclick="setPipelineFilter('sector','ALL',this)">All</button>
+      <button type="button" class="pf-pill" onclick="setPipelineFilter('sector','TALENT',this)">Talent</button>
+      <button type="button" class="pf-pill" onclick="setPipelineFilter('sector','PRODUCER',this)">Producer</button>
+      <button type="button" class="pf-pill" onclick="setPipelineFilter('sector','BRAND',this)">Brand</button>
+      <button type="button" class="pf-pill" onclick="setPipelineFilter('sector','CREW',this)">Crew</button>
+      <button type="button" class="pf-pill" onclick="setPipelineFilter('sector','GENERAL',this)">General</button>
+    </div>
+  </div>
+
   <div id="pipelineFeedContainer">
     <div style="text-align: center; padding: 40px 0; color: var(--text-muted);">Loading pipeline...</div>
+  </div>
+  <div class="pipeline-load-more-wrap" id="pipelineLoadMoreWrap" style="display: none;">
+    <button type="button" class="btn-action highlight" id="btnLoadMorePipeline" onclick="loadMorePipeline()">⬇️ Load More Candidates</button>
   </div>
 </div>
 
@@ -1758,9 +1791,12 @@
   if (typeof activeDrafts !== "undefined") activeDrafts = data.drafts || {};
 
   // 🛡️ Only invalidate pipeline cache after writes, NOT when opening from Pipeline
-  if (!options.preservePipelineCache && typeof cachedCandidates !== "undefined" && Array.isArray(cachedCandidates)) {
-    cachedCandidates.length = 0;
-  }
+    if (!options.preservePipelineCache && typeof cachedCandidates !== "undefined" && Array.isArray(cachedCandidates)) {
+      cachedCandidates.length = 0;
+      if (typeof pipelineTotalCount !== "undefined") pipelineTotalCount = 0;
+      if (typeof pipelineNextOffset !== "undefined") pipelineNextOffset = 0;
+      if (typeof pipelineHasMore !== "undefined") pipelineHasMore = false;
+    }
 
   // 🛡️ Safe inline fallback for HTML escaping
   const safeEscape = (typeof escapeHtml === "function")
