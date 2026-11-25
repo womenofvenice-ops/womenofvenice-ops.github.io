@@ -826,9 +826,12 @@
         <input type="text" id="profileSearchInput" placeholder="Search profile by name, handle, or email..." oninput="handleProfileSearch(this.value)" autocomplete="off" style="margin-bottom: 0;">
         <div id="autocompleteDropdown" class="autocomplete-dropdown" style="display: none;"></div>
       </div>
-      <div id="selectedProfileBadge" class="selected-profile-badge" style="display: none;">
-        <span>Target: <strong id="selectedProfileName"></strong> <code id="selectedProfileId" style="opacity: 0.8; font-size: 0.72rem;"></code></span>
-        <button type="button" onclick="clearSelectedProfile()" class="btn-clear-target">✕ Change</button>
+      <div id="selectedProfileBadge" class="selected-profile-badge" style="display: none; gap: 8px; flex-wrap: wrap;">
+        <span>⚠️ Appending to: <strong id="selectedProfileName"></strong> <code id="selectedProfileId" style="opacity: 0.8; font-size: 0.72rem;"></code></span>
+        <span style="display: inline-flex; gap: 10px; align-items: center;">
+          <button type="button" onclick="setIntakeMode('NEW')" class="btn-clear-target" style="color: var(--gold, #f6e4b8);">✨ New Contact</button>
+          <button type="button" onclick="clearSelectedProfile()" class="btn-clear-target">✕ Change</button>
+        </span>
       </div>
     </div>
 
@@ -1052,7 +1055,7 @@
     <input type="text" id="webAppUrl" placeholder="https://script.google.com/macros/s/.../exec">
 
     <label for="scoutAccessKey">Scout Access Key (Passcode)</label>
-    <input type="password" id="scoutAccessKey" autocomplete="off" placeholder="Optional until SCOUT_ACCESS_KEY is set on backend">
+    <input type="password" id="scoutAccessKey" autocomplete="off" placeholder="Required — must match SCOUT_ACCESS_KEY in Script Properties">
 
     <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">
       Saved locally in your browser. Pointing directly to your <code>WOV_SCOUT_SATELLITE</code> <code>/exec</code> deployment.
@@ -1525,8 +1528,13 @@
   let activeMediaStream = null;
   let activeAudioObjectUrl = null;
   let isAudioBusy = false; // Prevents race conditions during permission or encoding
+  let audioMaxTimer = null;
 
   function clearAudioAttachmentUI() {
+    if (audioMaxTimer) {
+      clearTimeout(audioMaxTimer);
+      audioMaxTimer = null;
+    }
     const micBtn = document.getElementById("micBtn");
     if (micBtn) {
       micBtn.disabled = false;
@@ -1566,6 +1574,7 @@
 
     // 1. If currently recording, STOP and finalize
     if (mediaRecorder && mediaRecorder.state === "recording") {
+      if (audioMaxTimer) { clearTimeout(audioMaxTimer); audioMaxTimer = null; }
       isAudioBusy = true;
       micBtn.classList.remove("recording");
       micBtn.innerText = "⏳ Encoding Audio...";
@@ -1645,14 +1654,22 @@
 
         const recordedBlob = new Blob(audioChunks, { type: resolvedMime });
 
-        // Zero-byte guard (user tapped stop instantly)
-        if (!audioChunks.length || recordedBlob.size === 0) {
-          isAudioBusy = false;
-          clearAudioAttachmentUI();
-          if (analyzeBtn) analyzeBtn.disabled = false;
-          if (statusEl) statusEl.innerText = "Recording too short — try again";
-          return;
-        }
+        // Zero-byte & 8 MB payload guard
+      if (!audioChunks.length || recordedBlob.size === 0) {
+        isAudioBusy = false;
+        clearAudioAttachmentUI();
+        if (analyzeBtn) analyzeBtn.disabled = false;
+        if (statusEl) statusEl.innerText = "Recording too short — try again";
+        return;
+      }
+      if (recordedBlob.size > 8 * 1024 * 1024) {
+        isAudioBusy = false;
+        clearAudioAttachmentUI();
+        if (analyzeBtn) analyzeBtn.disabled = false;
+        if (statusEl) statusEl.innerText = "Recording too large — keep under 60s";
+        alert("Voice memo exceeds the 8 MB limit. Please record a shorter note (under 60 seconds).");
+        return;
+      }
 
         // Clean MIME for backend payload (strips parameter suffixes like ;codecs=...)
         mediaMimeType = resolvedMime.split(";")[0].trim();
@@ -1690,11 +1707,18 @@
       };
 
       mediaRecorder.start();
-      isAudioBusy = false;
-      micBtn.disabled = false;
-      micBtn.classList.add("recording");
-      micBtn.innerText = "⏹️ Stop Recording...";
-      if (statusEl) statusEl.innerText = "Recording voice memo...";
+    if (audioMaxTimer) clearTimeout(audioMaxTimer);
+    audioMaxTimer = setTimeout(() => {
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        if (typeof showToast === "function") showToast("⏱️ 60s voice note limit reached — finalizing.");
+        toggleAudioRecording();
+      }
+    }, 60000);
+    isAudioBusy = false;
+    micBtn.disabled = false;
+    micBtn.classList.add("recording");
+    micBtn.innerText = "⏹️ Stop Recording...";
+    if (statusEl) statusEl.innerText = "Recording voice memo (max 60s)...";
     } catch (err) {
       if (activeMediaStream) {
         activeMediaStream.getTracks().forEach(t => t.stop());
@@ -1759,7 +1783,10 @@
     try {
       // CORS SAFELISTED DISPATCH: text/plain prevents OPTIONS preflight drops in GAS
       const res = await postScoutApi(payload);
-      if (!res.ok) throw new Error(res.error || "Failed to process candidate.");
+      if (!res || !res.ok) throw new Error((res && res.error) || "Failed to process candidate.");
+
+      const notesEl = document.getElementById("fieldNotes");
+      if (notesEl) notesEl.value = "";
 
       renderCandidateProfile(res);
     } catch (err) {
@@ -1871,6 +1898,11 @@
     }
     if (editStageEl) {
       const st = String(data.engagementStage || "").trim().toUpperCase();
+      const promotedOpt = editStageEl.querySelector('option[value="PROMOTED"]');
+      if (promotedOpt) {
+        promotedOpt.disabled = (st !== "PROMOTED");
+        promotedOpt.innerText = (st === "PROMOTED") ? "PROMOTED" : "PROMOTED (Use ⚡ Push button)";
+      }
       editStageEl.value = ["DISCOVERED", "CALIBRATED", "CONTACTED", "RESPONDED", "PROMOTED", "ARCHIVED"].includes(st) ? st : "";
     }
     const promoWsBtn = document.getElementById("btnPromoteWorkspace");
@@ -2025,12 +2057,16 @@
 
   async function copyCurrentDraft() {
     const text = document.getElementById("draftContent")?.value || "";
+    if (!text) {
+      showToast("Draft is empty.");
+      return;
+    }
     try {
       if (!navigator.clipboard) throw new Error("Clipboard unavailable");
       await navigator.clipboard.writeText(text);
       showToast("Copied draft to clipboard!");
     } catch (err) {
-      showToast("Copy failed — please select and copy manually.");
+      window.prompt("Copy draft message:", text);
     }
   }
 
@@ -2039,19 +2075,73 @@
     const webAppUrl = (localStorage.getItem("wov_scout_url") || "").trim();
     if (!webAppUrl || !currentScoutId) return;
 
+    const stageSelect = document.getElementById("editStage");
+    const currentStage = String(stageSelect?.value || "").trim().toUpperCase();
+    if (currentStage === "PROMOTED" && !confirm("This candidate is already PROMOTED. Change Scout Desk stage back to CONTACTED?")) {
+      return;
+    }
+
+    const btn = document.querySelector('[onclick*="markCandidateContacted"]');
+    if (btn && btn.disabled) return;
+    const origText = btn ? btn.innerText : "✅ Mark Contacted";
+    if (btn) {
+      btn.disabled = true;
+      btn.innerText = "⏳ Updating...";
+    }
+
     try {
       const res = await postScoutApi({
-  action: "updateNurtureStatus",
-  scoutId: currentScoutId,
-  newStatus: "CONTACTED"
-});
-if (res && res.ok) {
-  showToast("Updated database status to CONTACTED.");
-} else {
-  throw new Error((res && res.error) || "Failed to update status.");
-}
+        action: "updateNurtureStatus",
+        scoutId: currentScoutId,
+        newStatus: "CONTACTED"
+      });
+      if (!res || !res.ok) {
+        throw new Error((res && res.error) || "Failed to update status.");
+      }
+
+      if (stageSelect) stageSelect.value = "CONTACTED";
+      const promotedOpt = stageSelect?.querySelector('option[value="PROMOTED"]');
+      if (promotedOpt) {
+        promotedOpt.disabled = true;
+        promotedOpt.innerText = "PROMOTED (Use ⚡ Push button)";
+      }
+
+      const metaEl = document.getElementById("resMeta");
+      if (metaEl) {
+        const h = (document.getElementById("editHandle")?.value || "").trim();
+        const e = (document.getElementById("editEmail")?.value || "").trim();
+        const p = (document.getElementById("editPhone")?.value || "").trim();
+        metaEl.innerText = [h, e, p, "CONTACTED"].filter(Boolean).join(" · ") || "CONTACTED";
+      }
+
+      if (typeof currentScreenerOwnerUrl !== "undefined") currentScreenerOwnerUrl = "";
+      const wsOwnerBtn = document.getElementById("btnCopyOwnerScreener");
+      if (wsOwnerBtn) wsOwnerBtn.style.display = "none";
+      const wsPromoBtn = document.getElementById("btnPromoteWorkspace");
+      if (wsPromoBtn) {
+        wsPromoBtn.disabled = false;
+        wsPromoBtn.classList.add("push");
+        wsPromoBtn.innerText = "⚡ Push to Audition Desk";
+      }
+
+      const cached = (typeof findCandidateByScoutId === "function") ? findCandidateByScoutId(currentScoutId) : null;
+      if (cached) {
+        cached.engagementStage = "CONTACTED";
+        cached.nurtureStatus = "CONTACTED";
+        cached.screenerOwnerUrl = "";
+      }
+      if (typeof applyPipelineFilters === "function" && Array.isArray(cachedCandidates) && cachedCandidates.length > 0) {
+        applyPipelineFilters();
+      }
+
+      showToast("Updated database status to CONTACTED.");
     } catch (e) {
       showToast("Error updating status: " + e.message);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = origText;
+      }
     }
   }
 
@@ -2083,11 +2173,11 @@ if (res && res.ok) {
       try { chronicle = JSON.parse(chronicle); } catch (e) { chronicle = []; }
     }
     if (Array.isArray(chronicle)) {
-      for (let i = chronicle.length - 1; i >= 0; i--) {
-        const dv = String(chronicle[i]?.directedVector || chronicle[i]?.directedSector || "").trim().toUpperCase();
-        if (dv && dv !== "AUTO_DETECT") return dv;
+        for (let i = chronicle.length - 1; i >= 0; i--) {
+          const dv = String(chronicle[i]?.directedVector || chronicle[i]?.directedSector || "").trim().toUpperCase();
+          if (dv && dv !== "AUTO_DETECT" && dv !== "GENERAL") return dv;
+        }
       }
-    }
     let vectors = c.detectedVectors;
     if (typeof vectors === "string") {
       try { vectors = JSON.parse(vectors); } catch (e) { vectors = []; }
@@ -2242,8 +2332,8 @@ if (res && res.ok) {
       applyPipelineFilters();
     } catch (err) {
       if (!appendMode && container) {
-        container.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--red);">Error loading feed: ${err.message}</div>`;
-      } else {
+          container.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--red);">Error loading feed: ${escapeHtml(err.message || err)}</div>`;
+        } else {
         alert("⚠️ Could not load more candidates: " + err.message);
       }
     } finally {
@@ -2423,19 +2513,27 @@ function appendToCurrentWorkspaceProfile() {
       const res = await postScoutApi(payload);
       if (!res || !res.ok) throw new Error(res?.error || "Failed to update contact details.");
 
-      // Sync Pipeline cache in-place so Back to Pipeline reflects updates immediately
+      const isStillPromoted = String(res.engagementStage || "").trim().toUpperCase() === "PROMOTED";
+      const nextOwnerUrl = isStillPromoted ? String(res.screenerOwnerUrl || "").trim() : "";
+      if (typeof currentScreenerOwnerUrl !== "undefined") {
+        currentScreenerOwnerUrl = nextOwnerUrl;
+      }
+
+      // Sync Pipeline cache & live filtered cards in-place
       if (Array.isArray(cachedCandidates)) {
         const idx = cachedCandidates.findIndex(c => c && c.scoutId === activeScoutId);
         if (idx !== -1) {
           cachedCandidates[idx].fullName = res.name || name;
           cachedCandidates[idx].primaryHandle = res.handle ?? handle;
           cachedCandidates[idx].contactEmail = res.email ?? email;
-          if (res.engagementStage) cachedCandidates[idx].engagementStage = res.engagementStage;
-          if (typeof res.screenerOwnerUrl === "string") {
-            cachedCandidates[idx].screenerOwnerUrl = res.screenerOwnerUrl.trim();
-          } else if (res.engagementStage && String(res.engagementStage).toUpperCase() !== "PROMOTED") {
-            cachedCandidates[idx].screenerOwnerUrl = "";
+          if (res.engagementStage) {
+            cachedCandidates[idx].engagementStage = res.engagementStage;
+            cachedCandidates[idx].nurtureStatus = res.engagementStage;
           }
+          cachedCandidates[idx].screenerOwnerUrl = nextOwnerUrl;
+        }
+        if (typeof applyPipelineFilters === "function" && cachedCandidates.length > 0) {
+          applyPipelineFilters();
         }
       }
 
@@ -2471,7 +2569,7 @@ function appendToCurrentWorkspaceProfile() {
       await navigator.clipboard.writeText(c.gatewayUrl);
       showToast("Link copied to clipboard!");
     } catch (err) {
-      showToast("Copy failed — clipboard permission denied.");
+      window.prompt("Copy candidate gateway link:", c.gatewayUrl);
     }
   }
 
@@ -2519,7 +2617,7 @@ function appendToCurrentWorkspaceProfile() {
       alert("Please set the candidate's real full name via Edit Contact & Stage before promoting.");
       return;
     }
-    if (!cleanEmail || cleanEmail.indexOf("@") === -1 || /^unknown@|@(example\.(com|org|net)|test\.com)$/i.test(cleanEmail)) {
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail) || /^unknown@|@(example\.(com|org|net)|test\.com)$/i.test(cleanEmail)) {
       alert(`Cannot promote ${cleanName} yet: a real, valid contact email is required (use Edit Contact & Stage).`);
       return;
     }
@@ -2745,9 +2843,7 @@ async function submitCalibration() {
     return;
   }
 
-  // 🛡️ Resolves from localStorage with safe fallback to global script constants
-  const webAppUrl = (localStorage.getItem("wov_scout_url") || "").trim() 
-    || (typeof EXEC !== "undefined" ? EXEC : (typeof BACKEND_URL !== "undefined" ? BACKEND_URL : ""));
+  const webAppUrl = (localStorage.getItem("wov_scout_url") || "").trim();
   
   const activeScoutId = (typeof currentScoutId !== "undefined" && currentScoutId)
     ? currentScoutId
