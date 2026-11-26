@@ -510,12 +510,12 @@
     const refParam = String(params.get("ref") || "").trim();
     const stripeSessionId = String(params.get("session_id") || params.get("token") || "").trim();
 
-    if (!targetName && !urlExplicitId && (params.get("pro") || stripeSessionId)) {
+    if (!targetName && !urlExplicitId && !/^gw_/i.test(refParam) && (params.get("pro") || stripeSessionId)) {
       targetName = String(localStorage.getItem("wov_screener_talent") || "").trim();
     }
 
-    // 🛡️ Immediate Recovery Guard: Candidate context missing on Stripe return (intercepts before line 68)
-    if (stripeSessionId && !targetName) {
+    // 🛡️ Immediate Recovery Guard: Candidate context missing on Stripe return (allows ?cid= or ?id= without &name=)
+    if (stripeSessionId && !targetName && !urlExplicitId) {
       const appEl = getAppEl();
       if (appEl) {
         appEl.innerHTML = 
@@ -574,6 +574,16 @@
     const container = getAppEl();
 
     if (!targetName && !urlExplicitId) {
+      if (/^gw_/i.test(refParam)) {
+        container.innerHTML =
+          '<div style="max-width:480px;margin:80px auto;background:#FFF;border-radius:16px;padding:40px 24px;text-align:center;font-family:\'Inter\',sans-serif;border:1.5px solid #E2E8F0;box-shadow:0 10px 40px rgba(0,0,0,0.06);">' +
+            '<div style="font-size:36px;margin-bottom:12px;">🎬</div>' +
+            '<h2 style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#1C2B2C;margin-bottom:8px;">Studio Invitation Pending Activation</h2>' +
+            '<p style="font-size:13.5px;color:#64748B;line-height:1.55;margin-bottom:20px;">This invitation token is logged in the Women of Venice discovery desk and is awaiting Audition Desk activation. Please use your personal invitation link with your name or contact the studio desk.</p>' +
+            '<a href="mailto:' + STUDIO_INQUIRY_EMAIL + '?subject=Studio%20Invitation%20Status%20—%20' + encodeURIComponent(refParam) + '" style="display:inline-block;padding:10px 24px;background:var(--red,#A8492E);color:#FFF;border-radius:99px;text-decoration:none;font-size:13px;font-weight:700;">Contact Studio Desk ↗</a>' +
+          '</div>';
+        return;
+      }
       container.innerHTML = 
         '<div style="text-align:center;padding:60px 0;"><h2>⚠️ Missing Talent Parameter</h2><p style="color:var(--inkS);margin-top:8px;">Add ?name=TalentName or ?cid=UUID to the URL to view a casting deck.</p></div>';
       return;
@@ -615,10 +625,12 @@
     const urlExplicitId = cleanToken(urlParams.get("id") || urlParams.get("cid"));
 
     // 🛡️ 1. Candidate Identity: URL -> local storage fallback (Guarded against context poisoning)
+    const liveRefToken = cleanToken(urlParams.get("ref"));
+    const isGatewayInvite = /^gw_/i.test(liveRefToken);
     const rawTarget = cleanToken(
       urlParams.get("name") || 
       urlParams.get("talent") || 
-      (!urlExplicitId ? (function() { try { return localStorage.getItem("wov_screener_talent"); } catch(e) { return ""; } })() : "")
+      (!urlExplicitId && !isGatewayInvite ? (function() { try { return localStorage.getItem("wov_screener_talent"); } catch(e) { return ""; } })() : "")
     ) || (!urlExplicitId ? "Candidate" : "");
 
     const normKey = (rawTarget && rawTarget !== "Candidate") ? rawTarget.toLowerCase().replace(/\s+/g, "_") : "";
@@ -663,7 +675,7 @@
           pollAttempts++;
           if (pollAttempts <= maxPolls) {
             // 🛡️ Updates the loading state ONLY. Leaves deckContent intact!
-            const statusBox = document.getElementById("pollingStatus") || document.getElementById("loadingState");
+            const statusBox = document.getElementById("pollingStatus") || document.getElementById("loadingState") || getAppEl();
             if (statusBox) {
               statusBox.innerHTML = 
                 '<div style="max-width:520px;margin:80px auto;background:#FFF;border-radius:16px;padding:40px 24px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.06);border:1.5px solid #E2E8F0;font-family:\'Inter\',sans-serif;">' +
@@ -695,18 +707,29 @@
           return;
         }
 
-        // 3. Fallback: Not Found / Timed Out
+        // 3. Fallback: Not Found / Timed Out (Option A clean slate for unpromoted ?ref=gw_ invites)
         const errMsg = (data && (data.error || data.message)) ? (data.error || data.message) : "No audition dossier available for this profile.";
-        const loadEl = document.getElementById("loadingState");
+        const loadEl = document.getElementById("loadingState") || getAppEl();
         if (loadEl) {
           loadEl.style.display = "block";
-          loadEl.innerHTML = 
-            '<div style="max-width:480px;margin:80px auto;background:#FFF;border-radius:16px;padding:40px 24px;text-align:center;font-family:\'Inter\',sans-serif;border:1.5px solid #E2E8F0;box-shadow:0 10px 40px rgba(0,0,0,0.06);">' +
-              '<div style="font-size:36px;margin-bottom:12px;">⏳</div>' +
-              '<h2 style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#1C2B2C;margin-bottom:8px;">Session In Studio Queue</h2>' +
-              '<p style="font-size:13px;color:#64748B;line-height:1.5;margin-bottom:20px;">' + safeEsc(errMsg) + '</p>' +
-              '<a href="index.html#casting-studio" style="display:inline-block;padding:10px 24px;background:var(--red,#A8492E);color:#FFF;border-radius:99px;text-decoration:none;font-size:13px;font-weight:700;">← Return to Studio Lab</a>' +
-            '</div>';
+          if (isGatewayInvite) {
+            const inviteName = (rawTarget && rawTarget !== "Candidate") ? rawTarget : "this profile";
+            loadEl.innerHTML =
+              '<div style="max-width:480px;margin:80px auto;background:#FFF;border-radius:16px;padding:40px 24px;text-align:center;font-family:\'Inter\',sans-serif;border:1.5px solid #E2E8F0;box-shadow:0 10px 40px rgba(0,0,0,0.06);">' +
+                '<div style="font-size:36px;margin-bottom:12px;">🎬</div>' +
+                '<h2 style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#1C2B2C;margin-bottom:8px;">Studio Invitation Pending Activation</h2>' +
+                '<p style="font-size:13px;color:#64748B;line-height:1.55;margin-bottom:20px;">The invitation for <b>' + safeEsc(inviteName) + '</b> is queued for Audition Desk activation by Director Claudio. Please check back once your screener link is activated.</p>' +
+                '<a href="mailto:' + STUDIO_INQUIRY_EMAIL + '?subject=Studio%20Invitation%20Status%20—%20' + encodeURIComponent(inviteName) + '" style="display:inline-block;padding:10px 24px;background:var(--red,#A8492E);color:#FFF;border-radius:99px;text-decoration:none;font-size:13px;font-weight:700;">Contact Studio Desk ↗</a>' +
+              '</div>';
+          } else {
+            loadEl.innerHTML = 
+              '<div style="max-width:480px;margin:80px auto;background:#FFF;border-radius:16px;padding:40px 24px;text-align:center;font-family:\'Inter\',sans-serif;border:1.5px solid #E2E8F0;box-shadow:0 10px 40px rgba(0,0,0,0.06);">' +
+                '<div style="font-size:36px;margin-bottom:12px;">⏳</div>' +
+                '<h2 style="font-family:\'Playfair Display\',Georgia,serif;font-size:22px;color:#1C2B2C;margin-bottom:8px;">Session In Studio Queue</h2>' +
+                '<p style="font-size:13px;color:#64748B;line-height:1.5;margin-bottom:20px;">' + safeEsc(errMsg) + '</p>' +
+                '<a href="index.html#casting-studio" style="display:inline-block;padding:10px 24px;background:var(--red,#A8492E);color:#FFF;border-radius:99px;text-decoration:none;font-size:13px;font-weight:700;">← Return to Studio Lab</a>' +
+              '</div>';
+          }
         }
       })
       .catch(err => {
@@ -714,7 +737,7 @@
         if (pollAttempts <= maxPolls) {
           setTimeout(fetchLiveScreener, 5000);
         } else {
-          const loadEl = document.getElementById("loadingState");
+          const loadEl = document.getElementById("loadingState") || getAppEl();
           if (loadEl) {
             loadEl.style.display = "block";
             loadEl.innerHTML = 
@@ -1510,7 +1533,10 @@ if (isPro && talentObj) {
         actorNotes: actorNotes
       })
     })
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    })
     .then(data => {
       if (data && data.ok && data.submitted) {
         if (statusEl) {
@@ -2033,6 +2059,19 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
     const modal = document.getElementById("wovB2BModal");
     if (!modal) return;
 
+    const form = modal.querySelector("form");
+    if (form) form.reset();
+    const statusEl = document.getElementById("b2bStatusMsg");
+    if (statusEl) {
+      statusEl.innerText = "";
+      statusEl.style.display = "none";
+    }
+    const btn = document.getElementById("b2bSubmitBtn");
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = "<span>🚀 Dispatch Brief to Studio Desk ↗</span>";
+    }
+
     const state = window._screenerState || {};
     const urlParams = new URLSearchParams(window.location.search);
     const talentName = state.rawTalentName || urlParams.get("name") || "Talent";
@@ -2079,8 +2118,10 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
       message: document.getElementById("b2bMessage") ? document.getElementById("b2bMessage").value.trim() : ""
     };
 
-    btn.disabled = true;
-    btn.innerHTML = "<span>⏳ Dispatching to Studio Desk...</span>";
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = "<span>⏳ Dispatching to Studio Desk...</span>";
+    }
 
     const targetExec = (typeof EXEC !== "undefined")
       ? EXEC
@@ -2091,28 +2132,33 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(payload)
     })
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    })
     .then(data => {
-      if (data.ok) {
+      if (data && data.ok) {
         if (statusEl) {
           statusEl.style.color = "#166534";
           statusEl.innerText = "✓ Inquiry registered. Studio desk will respond within 4 business hours.";
           statusEl.style.display = "block";
         }
-        btn.innerHTML = "<span>✓ Brief Dispatched</span>";
+        if (btn) btn.innerHTML = "<span>✓ Brief Dispatched</span>";
         setTimeout(wovCloseB2BModal, 2400);
       } else {
-        throw new Error(data.error || "Unable to submit brief.");
+        throw new Error((data && data.error) || "Unable to submit brief.");
       }
     })
     .catch(err => {
       if (statusEl) {
         statusEl.style.color = "#E24E42";
-        statusEl.innerText = "⚠️ Submission error: " + err.message;
+        statusEl.innerText = "⚠️ Submission error: " + (err && err.message ? err.message : err);
         statusEl.style.display = "block";
       }
-      btn.disabled = false;
-      btn.innerHTML = "<span>🚀 Dispatch Ingestion to Studio Desk</span> <span>↗</span>";
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = "<span>🚀 Dispatch Brief to Studio Desk ↗</span>";
+      }
     });
   };
   
@@ -2918,24 +2964,47 @@ function getDemoProfile_(key) {
     const ctx = canvas.getContext("2d");
     const t = window._currentTalent || {};
     const d = t.directabilityDelta || null;
+    const m = (d && d.metrics) || {};
     const radar = t.latestRadar || {};
 
-    const storyParamsOpen = new URLSearchParams(window.location.search);
-    const talentName = String(t.name || t.talent || storyParamsOpen.get("name") || storyParamsOpen.get("talent") || "Talent").trim();
+    const urlParams = new URLSearchParams(window.location.search);
+    const talentName = String(
+      t.name || t.talent ||
+      (window._screenerState && window._screenerState.rawTalentName) ||
+      urlParams.get("name") || urlParams.get("talent") || "Talent"
+    ).trim();
     const archetype = String(t.marketArchetype || "Feature Cinema Lead").trim();
 
     const hasDelta = Boolean(d && (t.hasTake2 || (t.takes && t.takes.length > 1)));
-    const heroBadge = hasDelta 
-      ? (d.deltaDisplay || "+" + (d.deltaPercent || 5.3) + "%") + " MULTI-TAKE DELTA"
+    const deltaPctRaw = d ? (d.deltaPercent != null ? d.deltaPercent : (d.overall_delta_pct != null ? d.overall_delta_pct : null)) : null;
+    const deltaBadgeStr = d && d.deltaDisplay
+      ? d.deltaDisplay
+      : (deltaPctRaw != null ? ((deltaPctRaw >= 0 ? "+" : "") + deltaPctRaw + "%") : "");
+    const heroBadge = hasDelta
+      ? (deltaBadgeStr ? (deltaBadgeStr + " MULTI-TAKE DELTA") : "MULTI-TAKE VERIFIED")
       : "VERIFIED AUDITION TELEMETRY";
-    const rating = hasDelta ? (d.rating || "Tier-1 Exceptional Adaptation") : "Studio Certified Directorial Calibration";
+    const rating = hasDelta
+      ? ((d && (d.rating || d.take2_advisory_rating)) || "Director Approved / Highly Directable")
+      : "Studio Certified Directorial Calibration";
 
-    const subtext = hasDelta ? ((d.take2 && d.take2.subtext) || 92) : (radar.subtextScore || 91);
-    const stillness = hasDelta ? ((d.take2 && d.take2.stillness) || 91) : (radar.presenceScore || 88);
+    const subtextVal = (d && d.take2 && d.take2.subtext != null)
+      ? (d.take2.subtext + "/100")
+      : (hasDelta && m.subtext_lift != null
+        ? ("+" + m.subtext_lift + "%")
+        : (radar.subtextScore != null ? (Math.round(radar.subtextScore) + "/100") : "—"));
+    const stillnessVal = (d && d.take2 && d.take2.stillness != null)
+      ? (d.take2.stillness + "/100")
+      : (hasDelta && m.stillness_lift != null
+        ? ("+" + m.stillness_lift + "%")
+        : (radar.presenceScore != null ? (Math.round(radar.presenceScore) + "/100") : "—"));
     const card3Label = hasDelta ? "Framing Control" : "Vocal Resonance";
-    const card3Val = hasDelta ? (d.framingImprovement || "+12%") : String(radar.vocalScore || 82) + "/100";
+    const card3Val = hasDelta
+      ? (d.framingImprovement || (m.framing_compliance != null ? ("+" + m.framing_compliance + "%") : "Verified"))
+      : (radar.vocalScore != null ? (Math.round(radar.vocalScore) + "/100") : "—");
     const card4Label = hasDelta ? "Adaptation Index" : "Casting Match";
-    const card4Val = hasDelta ? "Tier-1" : String(radar.formatFitScore || 89) + "/100";
+    const card4Val = hasDelta
+      ? "Tier-1"
+      : (radar.formatFitScore != null ? (Math.round(radar.formatFitScore) + "/100") : "—");
 
     // 1. Dark Arthouse Background Gradient
     const bgGrad = ctx.createLinearGradient(0, 0, 1080, 1920);
@@ -2998,8 +3067,8 @@ function getDemoProfile_(key) {
       ctx.fillText(score, x + (w / 2), y + 140);
     };
 
-    drawCard(140, 750, 380, 200, "Subtext Depth", String(subtext) + "/100");
-    drawCard(560, 750, 380, 200, "Camera Stillness", String(stillness) + "/100");
+    drawCard(140, 750, 380, 200, (hasDelta && m.subtext_lift != null && !(d && d.take2)) ? "Subtext Lift" : "Subtext Depth", subtextVal);
+    drawCard(560, 750, 380, 200, (hasDelta && m.stillness_lift != null && !(d && d.take2)) ? "Stillness Lift" : "Camera Stillness", stillnessVal);
     drawCard(140, 990, 380, 200, card3Label, card3Val);
     drawCard(560, 990, 380, 200, card4Label, card4Val);
 
@@ -3013,44 +3082,32 @@ function getDemoProfile_(key) {
     ctx.fillText("Directorial adaptation certified under Director Claudio.", 540, 1340);
     ctx.fillText("Verified multi-take film reel active in studio repository.", 540, 1380);
 
-    // 8. Studio Seal Footer with Scannable Vector QR Code
+    // 8. Studio Seal Footer with Strictly Public Vector QR Code (NEVER leaks cid/id)
     ctx.fillStyle = "rgba(168, 73, 46, 0.15)";
     window.wovDrawSafeRoundRect(ctx, 140, 1470, 800, 230, 24);
     ctx.strokeStyle = "rgba(168, 73, 46, 0.4)";
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // 🛡️ 100% Dynamic Identity Resolution (Zero hardcoded names)
-    const urlParams = new URLSearchParams(window.location.search);
-    const resolvedTalent = urlParams.get("name") || 
-                           urlParams.get("talent") || 
-                           (window._currentTalent && (window._currentTalent.name || window._currentTalent.talent)) || 
-                           (window._screenerState && window._screenerState.rawTalentName) || 
-                           "";
-    const cid = urlParams.get("cid") || urlParams.get("id") || urlParams.get("ref") || "";
-
-    // Build query string dynamically based on actual candidate data
+    const resolvedTalent = (talentName && talentName !== "Talent") ? talentName : "";
+    const rawRef = String(urlParams.get("ref") || "").trim();
+    const gwRef = /^gw_[a-z0-9_-]+$/i.test(rawRef) ? rawRef : "";
     const queryParts = [];
     if (resolvedTalent) queryParts.push("name=" + encodeURIComponent(resolvedTalent));
-    if (cid) queryParts.push("ref=" + encodeURIComponent(cid));
+    if (gwRef) queryParts.push("ref=" + encodeURIComponent(gwRef));
 
     let refUrl = "https://womenofvenice.com/screener.html" + (queryParts.length ? "?" + queryParts.join("&") : "");
-    if (refUrl.length > 134) {
-      const publicNameUrl = resolvedTalent
-        ? ("https://womenofvenice.com/screener.html?name=" + encodeURIComponent(resolvedTalent))
-        : "";
-      if (publicNameUrl && publicNameUrl.length <= 134) {
-        refUrl = publicNameUrl;
-      } else if (cid) {
-        refUrl = "https://womenofvenice.com/screener.html?cid=" + encodeURIComponent(cid);
-      }
+    if (refUrl.length > 134 && resolvedTalent) {
+      refUrl = "https://womenofvenice.com/screener.html?name=" + encodeURIComponent(resolvedTalent);
     }
-    // Draw high-contrast vector QR code badge on left side of seal box
+
     if (typeof window.wovDrawAuthenticQR === "function") {
       window.wovDrawAuthenticQR(ctx, refUrl, 175, 1495, 180);
     }
 
-    // Studio seal & candidate ledger typography on right side of seal box
+    const certBasis = resolvedTalent || "WOV";
+    const publicCertHash = Math.abs(certBasis.split("").reduce((acc, ch) => (acc << 5) - acc + ch.charCodeAt(0), 0)).toString(16).toUpperCase().padStart(8, "0");
+
     ctx.textAlign = "left";
     ctx.fillStyle = "#F6E4B8";
     ctx.font = "800 24px 'Inter', sans-serif";
@@ -3062,11 +3119,11 @@ function getDemoProfile_(key) {
 
     ctx.fillStyle = "#94A3B8";
     ctx.font = "600 16px 'Inter', sans-serif";
-    ctx.fillText("Scan QR to inspect directability ledger", 390, 1625);
+    ctx.fillText("Scan QR to inspect public screening reel", 390, 1625);
 
     ctx.fillStyle = "#A8492E";
     ctx.font = "700 14px 'SF Mono', monospace";
-    ctx.fillText("LEDGER ID: " + (cid ? cid.substring(0, 18).toUpperCase() : "VERIFIED"), 390, 1665);
+    ctx.fillText("CERT ID: WOV-2026-" + publicCertHash, 390, 1665);
 
     ctx.textAlign = "center"; // restore alignment for watermark
 
@@ -3083,17 +3140,16 @@ function getDemoProfile_(key) {
 
     const canvas = document.getElementById("wovStoryCanvas");
     const t = window._currentTalent || {};
-    const d = t.directabilityDelta || (t.takes && t.takes[1] && t.takes[1].progression ? { overall_delta_pct: 14 } : null);
-    const storyParamsShare = new URLSearchParams(window.location.search);
-    const talentName = String(t.name || t.talent || storyParamsShare.get("name") || storyParamsShare.get("talent") || "Talent").trim();
-    const candidateId = new URLSearchParams(window.location.search).get("cid") || new URLSearchParams(window.location.search).get("id") || "";
+    const d = t.directabilityDelta || null;
+    const storyParamsOpen = new URLSearchParams(window.location.search);
+    const talentName = String(t.name || t.talent || storyParamsOpen.get("name") || storyParamsOpen.get("talent") || "Talent").trim();
 
-    // 🛡️ Use hardened WovViralEngine if available, fallback to legacy wovDrawStoryCard
+    // 🛡️ Never pass private cid/id into public Story export engines
     if (window.WovViralEngine && typeof window.WovViralEngine.renderEditorialSlate === "function") {
       window.WovViralEngine.renderEditorialSlate(canvas, {
         talentName: talentName,
-        candidateId: candidateId,
-        delta: d || { overall_delta_pct: 14 }
+        candidateId: "",
+        delta: d
       });
     } else if (document.fonts && document.fonts.ready) {
       document.fonts.ready.then(window.wovDrawStoryCard);
