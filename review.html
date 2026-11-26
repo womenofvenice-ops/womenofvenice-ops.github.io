@@ -96,7 +96,12 @@
   var searchQuery = "";
   var currentTalent = null;
 
-  function esc(s){ return String(s||"").replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function esc(s){ return String(s||"").replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function formatDateLabel(raw){
+    if(!raw) return "";
+    var dt = new Date(raw);
+    return isNaN(dt.getTime()) ? "" : dt.toLocaleDateString();
+  }
   function badgeClass(s){ 
     s = (s || "").toLowerCase(); 
     if(s.indexOf("shortlist") >= 0 || s.indexOf("approved") >= 0) return "b-approved"; 
@@ -213,12 +218,20 @@
 
   function filterButtons(){
     return '<div class="filterrow">' +
-      '<button class="'+(filter==="await"?"on":"")+'" onclick="wovFilter(\'await\')">Needs review</button>' +
-      '<button class="'+(filter==="approved"?"on":"")+'" onclick="wovFilter(\'approved\')">Shortlisted / Approved</button>' +
-      '<button class="'+(filter==="all"?"on":"")+'" onclick="wovFilter(\'all\')">All</button>' +
+      '<button type="button" data-filter="await" class="'+(filter==="await"?"on":"")+'" onclick="wovFilter(\'await\')">Needs review</button>' +
+      '<button type="button" data-filter="approved" class="'+(filter==="approved"?"on":"")+'" onclick="wovFilter(\'approved\')">Shortlisted / Approved</button>' +
+      '<button type="button" data-filter="all" class="'+(filter==="all"?"on":"")+'" onclick="wovFilter(\'all\')">All</button>' +
       '</div>';
   }
-  window.wovFilter = function(f){ filter=f; renderList(); };
+  window.wovFilter = function(f){
+    filter = f;
+    var btns = document.querySelectorAll("#topBar .filterrow button[data-filter]");
+    btns.forEach(function(b){
+      if (b.getAttribute("data-filter") === f) b.classList.add("on");
+      else b.classList.remove("on");
+    });
+    renderList();
+  };
   window.wovSearch = function(v){ searchQuery=v; renderList(); };
   
   // 1-Tap Search Clear (✕)
@@ -228,14 +241,7 @@
     if(box) box.value = "";
     renderList();
   };
-
-  function updateCharCount(){
-    var box = document.getElementById("storybox");
-    var cc = document.getElementById("charcount");
-    if(box && cc) cc.textContent = box.value.length + " chars";
-  }
-  window.updateCC = updateCharCount;
-
+  
   function renderList(){
     if(!KEY){ renderUnlock(); return; }
 
@@ -272,7 +278,7 @@
     
     var html = '<div class="list">';
     filtered.forEach(function(t){
-      var d = t.latestTake.date ? new Date(t.latestTake.date).toLocaleDateString() : "";
+      var d = formatDateLabel(t.latestTake.date);
       var dos = t.latestTake.dossier || {};
       if (typeof dos === "string") { try { dos = JSON.parse(dos); } catch(e){ dos = {}; } }
       var arch = (dos.castingDossier && dos.castingDossier.marketArchetype) ? dos.castingDossier.marketArchetype : (t.targetFormat || "");
@@ -362,6 +368,7 @@
   
     // CONTAINER 1: 📊 PERFORMANCE TELEMETRY RADAR (HARDENED & ACCESSIBLE)
         function safeScore(val) {
+          if (val === null || val === undefined || String(val).trim() === "") return null;
           var n = Number(val);
           return (!isNaN(n) && n >= 0 && n <= 100) ? Math.round(n) : null;
         }
@@ -374,34 +381,36 @@
           var sScore = safeScore(radar.subtextScore);
           var fScore = safeScore(radar.formatFitScore);
 
-          radarHtml = 
-            '<div class="section-lbl">📊 Performance Telemetry (1-100)</div>' +
-            '<div class="dossier-box">' +
-              (pScore !== null ? 
-                '<div class="meter-row">' +
-                  '<div class="meter-label">👁️ Camera Stillness & Presence</div>' +
-                  '<div class="meter-bar" role="progressbar" aria-valuenow="'+pScore+'" aria-valuemin="0" aria-valuemax="100"><div class="meter-fill" style="width:'+pScore+'%;"></div></div>' +
-                  '<div class="meter-val">'+pScore+'</div>' +
-                '</div>' : '') +
-              (vScore !== null ? 
-                '<div class="meter-row">' +
-                  '<div class="meter-label">🎙️ Vocal Resonance & Control</div>' +
-                  '<div class="meter-bar" role="progressbar" aria-valuenow="'+vScore+'" aria-valuemin="0" aria-valuemax="100"><div class="meter-fill" style="width:'+vScore+'%;"></div></div>' +
-                  '<div class="meter-val">'+vScore+'</div>' +
-                '</div>' : '') +
-              (sScore !== null ? 
-                '<div class="meter-row">' +
-                  '<div class="meter-label">🎭 Subtext & Emotional Truth</div>' +
-                  '<div class="meter-bar" role="progressbar" aria-valuenow="'+sScore+'" aria-valuemin="0" aria-valuemax="100"><div class="meter-fill" style="width:'+sScore+'%;"></div></div>' +
-                  '<div class="meter-val">'+sScore+'</div>' +
-                '</div>' : '') +
-              (fScore !== null ? 
-                '<div class="meter-row">' +
-                  '<div class="meter-label">🎯 Target Format Alignment</div>' +
-                  '<div class="meter-bar" role="progressbar" aria-valuenow="'+fScore+'" aria-valuemin="0" aria-valuemax="100"><div class="meter-fill" style="width:'+fScore+'%;"></div></div>' +
-                  '<div class="meter-val">'+fScore+'</div>' +
-                '</div>' : '') +
-            '</div>';
+          if (pScore !== null || vScore !== null || sScore !== null || fScore !== null) {
+            radarHtml = 
+              '<div class="section-lbl">📊 Performance Telemetry (1-100)</div>' +
+              '<div class="dossier-box">' +
+                (pScore !== null ? 
+                  '<div class="meter-row">' +
+                    '<div class="meter-label">👁️ Camera Stillness & Presence</div>' +
+                    '<div class="meter-bar" role="progressbar" aria-valuenow="'+pScore+'" aria-valuemin="0" aria-valuemax="100"><div class="meter-fill" style="width:'+pScore+'%;"></div></div>' +
+                    '<div class="meter-val">'+pScore+'</div>' +
+                  '</div>' : '') +
+                (vScore !== null ? 
+                  '<div class="meter-row">' +
+                    '<div class="meter-label">🎙️ Vocal Resonance & Control</div>' +
+                    '<div class="meter-bar" role="progressbar" aria-valuenow="'+vScore+'" aria-valuemin="0" aria-valuemax="100"><div class="meter-fill" style="width:'+vScore+'%;"></div></div>' +
+                    '<div class="meter-val">'+vScore+'</div>' +
+                  '</div>' : '') +
+                (sScore !== null ? 
+                  '<div class="meter-row">' +
+                    '<div class="meter-label">🎭 Subtext & Emotional Truth</div>' +
+                    '<div class="meter-bar" role="progressbar" aria-valuenow="'+sScore+'" aria-valuemin="0" aria-valuemax="100"><div class="meter-fill" style="width:'+sScore+'%;"></div></div>' +
+                    '<div class="meter-val">'+sScore+'</div>' +
+                  '</div>' : '') +
+                (fScore !== null ? 
+                  '<div class="meter-row">' +
+                    '<div class="meter-label">🎯 Target Format Alignment</div>' +
+                    '<div class="meter-bar" role="progressbar" aria-valuenow="'+fScore+'" aria-valuemin="0" aria-valuemax="100"><div class="meter-fill" style="width:'+fScore+'%;"></div></div>' +
+                    '<div class="meter-val">'+fScore+'</div>' +
+                  '</div>' : '') +
+              '</div>';
+          }
         }
 
         // CONTAINER 2: 🎯 FORMAT-SPECIFIC AMBITION DIAGNOSTIC
@@ -432,7 +441,7 @@
           '<div style="margin-top:20px;padding:16px;background:#F9F6F0;border-radius:14px;border:1.5px solid rgba(28,43,44,.1);">' +
             '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
               '<div style="font-weight:700;font-size:16px;color:#A8492E;">🎬 Take #' + takeNum + '</div>' +
-              '<div style="font-size:12px;color:var(--inkS);">' + new Date(takeItem.date).toLocaleDateString() + '</div>' +
+              '<div style="font-size:12px;color:var(--inkS);">' + esc(formatDateLabel(takeItem.date)) + '</div>' +
             '</div>' +
             
             (fId ? (function() {
@@ -466,7 +475,7 @@
                 '<div id="' + domId + '" style="font-size:14px;line-height:1.5;margin-bottom:10px;">' + esc(dos.talentFeedback) + '</div>' +
                 '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
                   '<button type="button" class="small" data-dom="' + domId + '" onclick="wovCopyFeedbackText(this.dataset.dom)">📋 Copy Feedback</button>' +
-                  (candEmail ? '<button type="button" class="small" data-name="' + esc(candName) + '" data-take="' + safeTakeNum + '" data-dom="' + domId + '" data-email="' + esc(candEmail) + '" data-vid="' + esc(vidUrl) + '" data-hub="' + esc(hubUrl) + '" style="background:#A8492E;color:#fff;font-weight:700;" onclick="wovEmailCritique(this.dataset.name, Number(this.dataset.take), this.dataset.dom, this.dataset.email, this.dataset.vid, this.dataset.hub)">✉️ Email Directing Note to ' + esc(firstName) + '</button>' : '') +
+                  (candEmail ? '<button type="button" class="small" data-name="' + esc(candName) + '" data-take="' + safeTakeNum + '" data-dom="' + domId + '" data-email="' + esc(candEmail) + '" data-vid="' + esc(vidUrl) + '" data-hub="' + esc(hubUrl) + '" style="background:#A8492E;color:#fff;font-weight:700;" onclick="wovEmailCritique(this.dataset.name, Number(this.dataset.take), this.dataset.dom, this.dataset.email, this.dataset.vid, this.dataset.hub, this)">✉️ Email Directing Note to ' + esc(firstName) + '</button>' : '') +
                   (vidUrl ? '<a href="' + esc(vidUrl) + '" target="_blank" rel="noopener noreferrer" class="small" style="display:inline-block;padding:6px 12px;background:#1C2B2C;color:#fff;text-decoration:none;border-radius:6px;font-size:12px;font-weight:700;">🎬 Watch Video</a>' : '') +
                   (hubUrl ? '<a href="' + esc(hubUrl) + '" target="_blank" rel="noopener noreferrer" class="small" style="display:inline-block;padding:6px 12px;background:#FAF5FF;color:#7E22CE;border:1px solid #D8B4FE;text-decoration:none;border-radius:6px;font-size:12px;font-weight:700;">📁 Talent Locker</a>' : '') +
                 '</div>' +
@@ -554,10 +563,6 @@
       storySectionHtml +
       '<button type="button" class="danger" data-talent="'+esc(t.baseName)+'" style="margin-top:24px;" onclick="wovDeleteTalentAll(this.dataset.talent, this)">🗑 Delete this talent profile</button>' +
       '<div class="status" id="savemsg"></div>';
-
-    if (document.getElementById("storybox")) {
-      updateCharCount();
-    }
   }
 
   window.wovCopyPublicScreener = async function(url) {
@@ -606,6 +611,7 @@
     
     try{
       var r = await fetch(EXEC + "?action=audioFile&id=" + encodeURIComponent(fileId) + "&key=" + encodeURIComponent(KEY));
+      if(!r.ok) throw new Error("HTTP " + r.status);
       var data = await r.json();
       if(data.error){ 
         if(box) box.textContent = "⚠️ " + data.error; 
@@ -640,27 +646,9 @@
     }
   };
 
-  // Narrative Story Controls
-  window.wovCopyStory = async function(){
-    var box = document.getElementById("storybox");
-    if(!box) return;
-    try{ await navigator.clipboard.writeText(box.value); }
-    catch(e){ box.select(); try{ document.execCommand("copy"); }catch(e2){} }
-    var msg = document.getElementById("savemsg"); if(msg) msg.textContent = "Story copied ✓";
-  };
-
-  window.wovResetStory = function(){
-    var box = document.getElementById("storybox");
-    if(box && currentTalent && currentTalent.latestTake){
-      box.value = currentTalent.latestTake.draft || "";
-      updateCharCount();
-    }
-  };
-
   window.wovSaveTalentStatus = async function(status){
     if(!currentTalent || !currentTalent.latestTake) return;
-    var box = document.getElementById("storybox");
-    var text = box ? box.value : (currentTalent.latestTake.draft || "");
+    var text = currentTalent.latestTake.draft || "";
     var eb = document.getElementById("editbtn"), ab = document.getElementById("approvebtn");
     if(eb) eb.disabled = true; if(ab) ab.disabled = true;
     var msg = document.getElementById("savemsg");
@@ -788,7 +776,10 @@
   function loadAll(){
     if(!KEY){ renderUnlock(); return; }
     fetch(EXEC + "?action=storiesList&key=" + encodeURIComponent(KEY) + "&_t=" + Date.now())
-      .then(function(r){ return r.json(); })
+      .then(function(r){
+        if(!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
       .then(function(data){ 
         if(data && data.error){
           app.innerHTML = '<div class="auth-box"><div style="color:var(--red);font-weight:700;margin-bottom:8px">⚠️ ' + esc(data.error) + '</div><button onclick="wovResetAuth()">Re-enter Key</button></div>';
@@ -806,7 +797,7 @@
         renderList(); 
       })
       .catch(function(e){ 
-        app.innerHTML = "<div class='status'>Could not load: "+e+"</div>"; 
+        app.innerHTML = "<div class='status'>Could not load: " + esc(e && e.message ? e.message : e) + "</div>"; 
       });
   }
 
@@ -817,9 +808,11 @@
  * Sends critique email via standard fetch to Apps Script Web App (EXEC).
  * Universal endpoint resolution + authentication key binding + video delivery link.
  */
-function wovEmailCritique(talentName, takeNum, domIdOrFid, candidateEmail, videoUrl, hubFolderUrl) {
+function wovEmailCritique(talentName, takeNum, domIdOrFid, candidateEmail, videoUrl, hubFolderUrl, btnEl) {
+  if (btnEl && btnEl.disabled) return;
+
   var feedbackEl = document.getElementById(domIdOrFid) || document.getElementById("feedback_text_" + domIdOrFid);
-  var feedbackText = feedbackEl ? feedbackEl.innerText : "";
+  var feedbackText = feedbackEl ? (feedbackEl.innerText || feedbackEl.textContent || "").trim() : "";
   
   if (!feedbackText) {
     alert("No feedback text available to send.");
@@ -828,6 +821,12 @@ function wovEmailCritique(talentName, takeNum, domIdOrFid, candidateEmail, video
   
   if (!confirm("Send this directing note directly to " + candidateEmail + "?")) {
     return;
+  }
+
+  var origLabel = btnEl ? btnEl.textContent : "";
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.textContent = "⏳ Sending…";
   }
 
   var apiUrl = (typeof EXEC !== "undefined" && EXEC) || 
@@ -852,7 +851,10 @@ function wovEmailCritique(talentName, takeNum, domIdOrFid, candidateEmail, video
     headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify(payload)
   })
-  .then(function(res) { return res.json(); })
+  .then(function(res) {
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  })
   .then(function(data) {
     if (data && data.ok) {
       alert("✅ " + data.message);
@@ -861,7 +863,13 @@ function wovEmailCritique(talentName, takeNum, domIdOrFid, candidateEmail, video
     }
   })
   .catch(function(err) {
-    alert("Network error sending email: " + err);
+    alert("Network error sending email: " + (err && err.message ? err.message : err));
+  })
+  .finally(function() {
+    if (btnEl) {
+      btnEl.disabled = false;
+      btnEl.textContent = origLabel;
+    }
   });
 }
   
