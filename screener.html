@@ -493,8 +493,9 @@
   }
 
   function safeScore(val) {
+    if (val === null || val === undefined || String(val).trim() === "") return null;
     const n = Number(val);
-    return (!isNaN(n) && n > 0 && n <= 100) ? Math.round(n) : null;
+    return (!isNaN(n) && n >= 0 && n <= 100) ? Math.round(n) : null;
   }
 
   function getAppEl() {
@@ -947,33 +948,39 @@ if (isPro && talentObj) {
     // 🎬 1. Multi-Take Selector (Neutralized to prevent duplicate rows)
     let takeSelectorHtml = "";
 
-    // 📈 2. Directability Delta Benchmark Scorecard (XSS-Escaped & Defensively Guarded)
+    // 📈 2. Directability Delta Benchmark Scorecard (Supports d.take1/take2 & Code.gs submitTake2 d.metrics)
     let deltaCardHtml = "";
     if (talent.directabilityDelta) {
       const d = talent.directabilityDelta;
-      const sub1 = esc((d.take1 && d.take1.subtext) || 88);
-      const sub2 = esc((d.take2 && d.take2.subtext) || 94);
-      const still1 = esc((d.take1 && d.take1.stillness) || 85);
-      const still2 = esc((d.take2 && d.take2.stillness) || 91);
-      const deltaPctVal = d.deltaPercent != null ? d.deltaPercent : (d.overall_delta_pct != null ? d.overall_delta_pct : 5.3);
-      const deltaText = esc(d.deltaDisplay || ("+" + deltaPctVal + "%"));
-      const framingText = esc(d.framingImprovement || ((d.metrics && d.metrics.framing_compliance != null) ? ("+" + d.metrics.framing_compliance + "%") : "+12%"));
-      const ratingText = esc(d.rating || d.take2_advisory_rating || "Tier-1 Exceptional Adaptation");
+      const m = d.metrics || {};
+      const hasPaired = Boolean(d.take1 && d.take2 && d.take1.subtext != null && d.take2.subtext != null);
+      const subLabel = hasPaired ? "Subtext Depth" : "Subtext Lift";
+      const subValueHtml = hasPaired
+        ? `${esc(d.take1.subtext)} ➔ <span style="color:#166534;">${esc(d.take2.subtext)}</span>`
+        : (m.subtext_lift != null ? `<span style="color:#166534;">+${esc(m.subtext_lift)}%</span>` : "—");
+      const stillLabel = hasPaired ? "Stillness Index" : "Stillness Lift";
+      const stillValueHtml = (d.take1 && d.take2 && d.take1.stillness != null && d.take2.stillness != null)
+        ? `${esc(d.take1.stillness)} ➔ <span style="color:#166534;">${esc(d.take2.stillness)}</span>`
+        : (m.stillness_lift != null ? `<span style="color:#166534;">+${esc(m.stillness_lift)}%</span>` : "—");
+      const deltaPctVal = d.deltaPercent != null ? d.deltaPercent : (d.overall_delta_pct != null ? d.overall_delta_pct : null);
+      const deltaText = esc(d.deltaDisplay || (deltaPctVal != null ? ((deltaPctVal >= 0 ? "+" : "") + deltaPctVal + "% Adaptation") : "Verified Adaptation"));
+      const framingText = esc(d.framingImprovement || (m.framing_compliance != null ? ("+" + m.framing_compliance + "%") : "—"));
+      const ratingText = esc(d.rating || d.take2_advisory_rating || "Director Approved / Highly Directable");
 
       deltaCardHtml = 
         `<div class="delta-card" style="background:#FFF;border:1.5px solid #E2E8F0;border-radius:12px;padding:18px 20px;margin:16px 0;box-shadow:0 4px 20px rgba(0,0,0,0.04);">` +
           `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">` +
             `<div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#A8492E;">Empirical Directability Delta</div>` +
-            `<div style="font-size:12px;font-weight:800;background:#DCFCE7;color:#166534;padding:3px 8px;border-radius:99px;">${deltaText} Adaptation</div>` +
+            `<div style="font-size:12px;font-weight:800;background:#DCFCE7;color:#166534;padding:3px 8px;border-radius:99px;">${deltaText}</div>` +
           `</div>` +
           `<div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;text-align:center;">` +
             `<div style="background:#F8FAFC;padding:10px;border-radius:8px;">` +
-              `<div style="font-size:10px;color:#64748B;text-transform:uppercase;font-weight:700;">Subtext Depth</div>` +
-              `<div style="font-size:15px;font-weight:800;color:#1C2B2C;margin-top:2px;">${sub1} ➔ <span style="color:#166534;">${sub2}</span></div>` +
+              `<div style="font-size:10px;color:#64748B;text-transform:uppercase;font-weight:700;">${subLabel}</div>` +
+              `<div style="font-size:15px;font-weight:800;color:#1C2B2C;margin-top:2px;">${subValueHtml}</div>` +
             `</div>` +
             `<div style="background:#F8FAFC;padding:10px;border-radius:8px;">` +
-              `<div style="font-size:10px;color:#64748B;text-transform:uppercase;font-weight:700;">Stillness Index</div>` +
-              `<div style="font-size:15px;font-weight:800;color:#1C2B2C;margin-top:2px;">${still1} ➔ <span style="color:#166534;">${still2}</span></div>` +
+              `<div style="font-size:10px;color:#64748B;text-transform:uppercase;font-weight:700;">${stillLabel}</div>` +
+              `<div style="font-size:15px;font-weight:800;color:#1C2B2C;margin-top:2px;">${stillValueHtml}</div>` +
             `</div>` +
             `<div style="background:#F8FAFC;padding:10px;border-radius:8px;">` +
               `<div style="font-size:10px;color:#64748B;text-transform:uppercase;font-weight:700;">Framing Control</div>` +
@@ -1009,7 +1016,10 @@ if (isPro && talentObj) {
       if (score >= 68) return "Average Hook Velocity (Moderate Friction)";
       return "High Front-End Drop-Off Risk";
     }
-    const hookContext = isCreator && pScore ? ` · ${getHookTier(pScore)}` : "";
+    const hookContext = (isCreator && pScore != null) ? ` · ${getHookTier(pScore)}` : "";
+    if (window._screenerState) {
+      window._screenerState.getHookTier = getHookTier;
+    }
 
     // 6. DYNAMIC CONVERSION PAYWALL CARD (Suppressed until Take #1 is audited)
     let paywallHtml = "";
@@ -1151,7 +1161,9 @@ if (isPro && talentObj) {
     const lbl2 = isCreator ? "🎙️ Acoustic Punch & Pacing" : "🎙️ Vocal Resonance & Control";
     const lbl3 = isCreator ? "🤝 Parasocial Intimacy" : "🎭 Subtext & Emotional Depth";
     const lbl4 = isCreator ? "📈 Algorithmic Virality & Loop" : "🎯 Format Fit & Casting Match";
-
+if (window._screenerState) {
+      window._screenerState.radarLabels = { lbl1, lbl2, lbl3, lbl4 };
+    }
     const compsTitle = isCreator ? "🔥 Digital Creator Comps:" : "🎭 Director & Actor Comps:";
     const compsSub = isCreator ? "Target Brand & Platform Lane:" : "Director Lane:";
 
@@ -1231,7 +1243,7 @@ if (isPro && talentObj) {
       <div class="telemetry-card" style="text-align:center;padding:28px 18px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
           <div class="section-title" style="margin-bottom:0;">${radarTitle}</div>
-          ${isCreator && hookContext ? `<span style="font-size:11px;font-weight:700;color:var(--red);background:rgba(168,73,46,0.08);padding:3px 10px;border-radius:99px;">${hookContext}</span>` : ''}
+          <span id="radarHookContext" style="font-size:11px;font-weight:700;color:var(--red);background:rgba(168,73,46,0.08);padding:3px 10px;border-radius:99px;${isCreator && hookContext ? '' : 'display:none;'}">${esc(hookContext)}</span>
         </div>
 
         <div style="position:relative;max-width:340px;margin:10px auto 0;">
@@ -1247,29 +1259,29 @@ if (isPro && talentObj) {
             <line x1="150" y1="30" x2="150" y2="270" stroke="rgba(28,43,44,0.12)" stroke-dasharray="3,3"/>
             <line x1="30" y1="150" x2="270" y2="150" stroke="rgba(28,43,44,0.12)" stroke-dasharray="3,3"/>
 
-            <!-- Dynamic Telemetry Shape (Clamped 0–100) -->
+            <!-- Dynamic Telemetry Shape (Clamped 0–100; 0 preserved) -->
             <polygon id="radarPolygon" 
               points="
-                150,${150 - (Math.min(100, Math.max(0, pScore || 50))/100 * 120)} 
-                ${150 + (Math.min(100, Math.max(0, vScore || 50))/100 * 120)},150 
-                150,${150 + (Math.min(100, Math.max(0, sScore || 50))/100 * 120)} 
-                ${150 - (Math.min(100, Math.max(0, fScore || 50))/100 * 120)},150" 
+                150,${150 - (Math.min(100, Math.max(0, pScore != null ? pScore : 50))/100 * 120)} 
+                ${150 + (Math.min(100, Math.max(0, vScore != null ? vScore : 50))/100 * 120)},150 
+                150,${150 + (Math.min(100, Math.max(0, sScore != null ? sScore : 50))/100 * 120)} 
+                ${150 - (Math.min(100, Math.max(0, fScore != null ? fScore : 50))/100 * 120)},150" 
               fill="rgba(168, 73, 46, 0.22)" 
               stroke="var(--red, #A8492E)" 
               stroke-width="2.5"
             />
 
             <!-- Vertex Nodes -->
-            <circle cx="150" cy="${150 - (Math.min(100, Math.max(0, pScore || 50))/100 * 120)}" r="4.5" fill="var(--red, #A8492E)"/>
-            <circle cx="${150 + (Math.min(100, Math.max(0, vScore || 50))/100 * 120)}" cy="150" r="4.5" fill="var(--red, #A8492E)"/>
-            <circle cx="150" cy="${150 + (Math.min(100, Math.max(0, sScore || 50))/100 * 120)}" r="4.5" fill="var(--red, #A8492E)"/>
-            <circle cx="${150 - (Math.min(100, Math.max(0, fScore || 50))/100 * 120)}" cy="150" r="4.5" fill="var(--red, #A8492E)"/>
+            <circle id="radarNodeP" cx="150" cy="${150 - (Math.min(100, Math.max(0, pScore != null ? pScore : 50))/100 * 120)}" r="4.5" fill="var(--red, #A8492E)"/>
+            <circle id="radarNodeV" cx="${150 + (Math.min(100, Math.max(0, vScore != null ? vScore : 50))/100 * 120)}" cy="150" r="4.5" fill="var(--red, #A8492E)"/>
+            <circle id="radarNodeS" cx="150" cy="${150 + (Math.min(100, Math.max(0, sScore != null ? sScore : 50))/100 * 120)}" r="4.5" fill="var(--red, #A8492E)"/>
+            <circle id="radarNodeF" cx="${150 - (Math.min(100, Math.max(0, fScore != null ? fScore : 50))/100 * 120)}" cy="150" r="4.5" fill="var(--red, #A8492E)"/>
 
             <!-- Corner Labels with Scores -->
-            <text x="150" y="14" text-anchor="middle" font-family="'Inter',sans-serif" font-size="10.5" font-weight="700" fill="var(--ink,#1C2B2C)">${lbl1} (${pScore || '—'})</text>
-            <text x="282" y="154" text-anchor="start" font-family="'Inter',sans-serif" font-size="10.5" font-weight="700" fill="var(--ink,#1C2B2C)">${lbl2} (${vScore || '—'})</text>
-            <text x="150" y="290" text-anchor="middle" font-family="'Inter',sans-serif" font-size="10.5" font-weight="700" fill="var(--ink,#1C2B2C)">${lbl3} (${sScore || '—'})</text>
-            <text x="18" y="154" text-anchor="end" font-family="'Inter',sans-serif" font-size="10.5" font-weight="700" fill="var(--ink,#1C2B2C)">${lbl4} (${fScore || '—'})</text>
+            <text id="radarLblP" x="150" y="14" text-anchor="middle" font-family="'Inter',sans-serif" font-size="10.5" font-weight="700" fill="var(--ink,#1C2B2C)">${lbl1} (${pScore != null ? pScore : '—'})</text>
+            <text id="radarLblV" x="282" y="154" text-anchor="start" font-family="'Inter',sans-serif" font-size="10.5" font-weight="700" fill="var(--ink,#1C2B2C)">${lbl2} (${vScore != null ? vScore : '—'})</text>
+            <text id="radarLblS" x="150" y="290" text-anchor="middle" font-family="'Inter',sans-serif" font-size="10.5" font-weight="700" fill="var(--ink,#1C2B2C)">${lbl3} (${sScore != null ? sScore : '—'})</text>
+            <text id="radarLblF" x="18" y="154" text-anchor="end" font-family="'Inter',sans-serif" font-size="10.5" font-weight="700" fill="var(--ink,#1C2B2C)">${lbl4} (${fScore != null ? fScore : '—'})</text>
           </svg>
         </div>
       </div>
@@ -1420,7 +1432,8 @@ if (isPro && talentObj) {
           keysToStore.add(data.candidateId.toLowerCase().replace(/\s+/g, "_"));
         }
 
-        const verifiedName = data.candidate || (rawTarget.indexOf("-") === -1 ? rawTarget : "Talent");
+        const isUuidTarget = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(rawTarget);
+        const verifiedName = data.candidate || (!isUuidTarget ? rawTarget : "Talent");
         const candidateId = data.candidateId || urlP.get("cid") || urlP.get("id") || "";
 
         try {
@@ -1723,6 +1736,11 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
           <div style="font-size:11px;font-weight:700;color:var(--inkS, #64748B);text-transform:uppercase;margin-bottom:4px;">Raw Asset Buyout (+25%)</div>
           <div style="font-size:17px;font-weight:800;color:var(--ink, #1C2B2C);" id="rateRawVal">+€190</div>
         </div>
+<div style="background:#FAF8F5;border:1px solid var(--border, #E2E8F0);border-radius:8px;padding:12px 10px;text-align:center;">
+          <div style="font-size:11px;font-weight:700;color:var(--inkS, #64748B);text-transform:uppercase;margin-bottom:4px;">30d Exclusivity (+35%)</div>
+          <div style="font-size:17px;font-weight:800;color:var(--ink, #1C2B2C);" id="rateExclusivityVal">+€260</div>
+        </div>
+        
         <div style="background:rgba(168,73,46,0.06);border:1.5px solid var(--red, #A8492E);border-radius:8px;padding:12px 10px;text-align:center;">
           <div style="font-size:11px;font-weight:800;color:var(--red, #A8492E);text-transform:uppercase;margin-bottom:4px;">Total Package Anchor</div>
           <div style="font-size:18px;font-weight:800;color:var(--red, #A8492E);" id="rateTotalVal">€1,240</div>
@@ -1942,6 +1960,47 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
     if (dynamicContainer && typeof buildTakeContentHtml === "function") {
       dynamicContainer.innerHTML = buildTakeContentHtml(targetTake, state.isCreator, idx, takes.length);
     }
+   // 4. Sync Spider Radar & Creator Hook Context to Selected Take
+    const activeRadar = targetTake.radar || (state.talent && state.talent.latestRadar) || null;
+    const radarPoly = document.getElementById("radarPolygon");
+    if (activeRadar && radarPoly) {
+      const rp = safeScore(activeRadar.presenceScore);
+      const rv = safeScore(activeRadar.vocalScore);
+      const rs = safeScore(activeRadar.subtextScore);
+      const rf = safeScore(activeRadar.formatFitScore);
+
+      const yP = 150 - (Math.min(100, Math.max(0, rp != null ? rp : 50)) / 100 * 120);
+      const xV = 150 + (Math.min(100, Math.max(0, rv != null ? rv : 50)) / 100 * 120);
+      const yS = 150 + (Math.min(100, Math.max(0, rs != null ? rs : 50)) / 100 * 120);
+      const xF = 150 - (Math.min(100, Math.max(0, rf != null ? rf : 50)) / 100 * 120);
+
+      radarPoly.setAttribute("points", `150,${yP} ${xV},150 150,${yS} ${xF},150`);
+      const nodeP = document.getElementById("radarNodeP"); if (nodeP) nodeP.setAttribute("cy", yP);
+      const nodeV = document.getElementById("radarNodeV"); if (nodeV) nodeV.setAttribute("cx", xV);
+      const nodeS = document.getElementById("radarNodeS"); if (nodeS) nodeS.setAttribute("cy", yS);
+      const nodeF = document.getElementById("radarNodeF"); if (nodeF) nodeF.setAttribute("cx", xF);
+
+      const lbls = state.radarLabels || {
+        lbl1: state.isCreator ? "⚡ 3-Second Hook Velocity" : "👁️ Camera Stillness & Presence",
+        lbl2: state.isCreator ? "🎙️ Acoustic Punch & Pacing" : "🎙️ Vocal Resonance & Control",
+        lbl3: state.isCreator ? "🤝 Parasocial Intimacy" : "🎭 Subtext & Emotional Depth",
+        lbl4: state.isCreator ? "📈 Algorithmic Virality & Loop" : "🎯 Format Fit & Casting Match"
+      };
+      const lblP = document.getElementById("radarLblP"); if (lblP) lblP.textContent = `${lbls.lbl1} (${rp != null ? rp : '—'})`;
+      const lblV = document.getElementById("radarLblV"); if (lblV) lblV.textContent = `${lbls.lbl2} (${rv != null ? rv : '—'})`;
+      const lblS = document.getElementById("radarLblS"); if (lblS) lblS.textContent = `${lbls.lbl3} (${rs != null ? rs : '—'})`;
+      const lblF = document.getElementById("radarLblF"); if (lblF) lblF.textContent = `${lbls.lbl4} (${rf != null ? rf : '—'})`;
+
+      const hookEl = document.getElementById("radarHookContext");
+      if (hookEl) {
+        if (state.isCreator && rp != null && typeof state.getHookTier === "function") {
+          hookEl.textContent = ` · ${state.getHookTier(rp)}`;
+          hookEl.style.display = "inline-block";
+        } else {
+          hookEl.style.display = "none";
+        }
+      }
+    }
   };
 
   // 📝 SUB-RENDERER: Generates synchronized critique and assessment for the active take
@@ -2058,7 +2117,10 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
   window.wovOpenB2BModal = function() {
     const modal = document.getElementById("wovB2BModal");
     if (!modal) return;
-
+if (window._wovB2bCloseTimer) {
+      clearTimeout(window._wovB2bCloseTimer);
+      window._wovB2bCloseTimer = null;
+    }
     const form = modal.querySelector("form");
     if (form) form.reset();
     const statusEl = document.getElementById("b2bStatusMsg");
@@ -2089,6 +2151,10 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
 
   window.wovCloseB2BModal = function() {
     const modal = document.getElementById("wovB2BModal");
+    if (window._wovB2bCloseTimer) {
+      clearTimeout(window._wovB2bCloseTimer);
+      window._wovB2bCloseTimer = null;
+    }
     if (modal) modal.style.display = "none";
   };
 
@@ -2144,7 +2210,8 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
           statusEl.style.display = "block";
         }
         if (btn) btn.innerHTML = "<span>✓ Brief Dispatched</span>";
-        setTimeout(wovCloseB2BModal, 2400);
+        if (window._wovB2bCloseTimer) clearTimeout(window._wovB2bCloseTimer);
+        window._wovB2bCloseTimer = setTimeout(wovCloseB2BModal, 2400);
       } else {
         throw new Error((data && data.error) || "Unable to submit brief.");
       }
@@ -2394,6 +2461,8 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
     if (reelEl) reelEl.textContent = "€" + reelRate;
     if (adsEl) adsEl.textContent = "+€" + adsRate;
     if (rawEl) rawEl.textContent = "+€" + rawRate;
+const exclEl = document.getElementById("rateExclusivityVal");
+    if (exclEl) exclEl.textContent = "+€" + exclusivityRate;    
     if (totalEl) totalEl.textContent = "€" + totalPackage;
 
     // 🔗 Always share public Industry/Brand link (never expose private Owner Mode cid to brands)
@@ -2434,13 +2503,20 @@ function renderBrandPitchGeneratorHtml(talent, isPro, isCreator, rawTalentName, 
 window.wovCopyPitchScript = function() {
   const preview = document.getElementById("pitchScriptPreview");
   if (!preview) return;
-  navigator.clipboard.writeText(preview.innerText).then(function() {
+  const pitchText = preview.innerText || preview.textContent || "";
+  if (!navigator.clipboard || typeof navigator.clipboard.writeText !== "function") {
+    window.prompt("Copy sponsorship pitch:", pitchText);
+    return;
+  }
+  navigator.clipboard.writeText(pitchText).then(function() {
     const btn = document.getElementById("copyPitchBtn");
     if (btn) {
       const orig = btn.innerHTML;
       btn.innerHTML = "<span>✓ Copied to Clipboard!</span>";
       setTimeout(function() { btn.innerHTML = orig; }, 2000);
     }
+  }).catch(function() {
+    window.prompt("Copy sponsorship pitch:", pitchText);
   });
 };
 
@@ -3180,13 +3256,11 @@ function getDemoProfile_(key) {
     const t = window._currentTalent || {};
     const storyParamsShare = new URLSearchParams(window.location.search);
     const talentName = String(t.name || t.talent || storyParamsShare.get("name") || storyParamsShare.get("talent") || "Talent").trim();
-    const candidateId = new URLSearchParams(window.location.search).get("cid") || new URLSearchParams(window.location.search).get("id") || "";
-
-    // 🛡️ Fast-path WebKit gesture-safe share via WovViralEngine
+    // 🛡️ Never forward private cid/id into public Story exports
     if (window.WovViralEngine && typeof window.WovViralEngine.shareOrDownloadSlate === "function") {
       window.WovViralEngine.shareOrDownloadSlate(canvas, {
         talentName: talentName,
-        candidateId: candidateId
+        candidateId: ""
       });
     } else {
       // Legacy fallback
