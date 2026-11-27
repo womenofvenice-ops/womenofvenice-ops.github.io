@@ -359,28 +359,28 @@
         <!-- Theatrical Specs -->
         <div class="spec-card">
           <div class="spec-header">Theatrical &amp; Union Accreditation</div>
-          <div class="spec-row"><span class="spec-label">Union Affiliation</span><span class="spec-val" id="specUnion">Spotlight · Equity UK</span></div>
-          <div class="spec-row"><span class="spec-label">Passport / Base</span><span class="spec-val" id="specLocation">Venice / Rome (EU)</span></div>
-          <div class="spec-row"><span class="spec-label">Native Languages</span><span class="spec-val" id="specLanguages">Italian (Native), English</span></div>
-          <div class="spec-row"><span class="spec-label">Playing Age</span><span class="spec-val" id="specPlayingAge">22 – 30</span></div>
+          <div class="spec-row"><span class="spec-label">Union Affiliation</span><span class="spec-val" id="specUnion">—</span></div>
+          <div class="spec-row"><span class="spec-label">Passport / Base</span><span class="spec-val" id="specLocation">—</span></div>
+          <div class="spec-row"><span class="spec-label">Native Languages</span><span class="spec-val" id="specLanguages">—</span></div>
+          <div class="spec-row"><span class="spec-label">Playing Age</span><span class="spec-val" id="specPlayingAge">—</span></div>
         </div>
 
         <!-- Directability Telemetry Breakdown -->
         <div class="spec-card">
           <div class="spec-header">Craft Telemetry Breakdown</div>
-          <div class="spec-row"><span class="spec-label">Physical Stillness</span><span class="spec-val" id="scoreStillness">+16%</span></div>
-          <div class="spec-row"><span class="spec-label">Subtext Velocity</span><span class="spec-val" id="scoreSubtext">+12%</span></div>
-          <div class="spec-row"><span class="spec-label">Camera Axis Control</span><span class="spec-val" id="scoreFraming">+14%</span></div>
-          <div class="spec-row"><span class="spec-label">Overall Delta</span><span class="spec-val" id="scoreOverall" style="color:var(--emerald);">+11%</span></div>
+          <div class="spec-row"><span class="spec-label">Physical Stillness</span><span class="spec-val" id="scoreStillness">Pending</span></div>
+          <div class="spec-row"><span class="spec-label">Subtext Velocity</span><span class="spec-val" id="scoreSubtext">Pending</span></div>
+          <div class="spec-row"><span class="spec-label">Camera Axis Control</span><span class="spec-val" id="scoreFraming">Pending</span></div>
+          <div class="spec-row"><span class="spec-label">Overall Delta</span><span class="spec-val" id="scoreOverall" style="color:var(--emerald);">Pending</span></div>
         </div>
 
         <!-- Commercial Rate Rider -->
         <div class="spec-card">
           <div class="spec-header">Commercial &amp; Brand Rider</div>
-          <div class="spec-row"><span class="spec-label">Half-Day Shoot</span><span class="spec-val">€500</span></div>
-          <div class="spec-row"><span class="spec-label">Full-Day Rate</span><span class="spec-val">€1,000</span></div>
-          <div class="spec-row"><span class="spec-label">30-Day Buyout</span><span class="spec-val">+40% (Quoted on scope)</span></div>
-          <div class="spec-row"><span class="spec-label">Booking Fee</span><span class="spec-val" style="color:var(--sand);">10% Agency Escrow</span></div>
+          <div class="spec-row"><span class="spec-label">Half-Day Shoot</span><span class="spec-val" id="riderHalfDay">€500</span></div>
+          <div class="spec-row"><span class="spec-label">Full-Day Rate</span><span class="spec-val" id="riderFullDay">€1,000</span></div>
+          <div class="spec-row"><span class="spec-label">30-Day Buyout</span><span class="spec-val" id="riderBuyout">+40% (Quoted on scope)</span></div>
+          <div class="spec-row"><span class="spec-label">Booking Fee</span><span class="spec-val" id="riderTerms" style="color:var(--sand);">10% Agency Escrow</span></div>
         </div>
       </section>
     </div>
@@ -431,15 +431,31 @@
       return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
-    // Resolves embed players safely (YouTube, Drive, Vimeo, or direct streams)
+    // Resolves embed players safely (Drive /preview, Vimeo, YouTube, or direct MP4/WebM/MOV)
     function resolveVideoHtml(url) {
-      if (!url) return '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748B;font-size:13px;">🔒 Video Restricted to Private Casting Sessions</div>';
-      
-      const isNative = /\.(mp4|webm|mov)(\?.*)?$/i.test(url) || url.includes('cloudflarestream.com');
-      if (isNative) {
-        return `<video src="${url}" controls playsinline style="width:100%;height:100%;object-fit:cover;background:#000;"></video>`;
+      const raw = String(url || '').trim();
+      if (!raw || raw.toUpperCase() === 'CONFIDENTIAL_STUDIO_ARCHIVE' || !/^https?:\/\//i.test(raw)) {
+        return '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94A3B8;font-size:13px;padding:20px;text-align:center;">🔒 Video Restricted to Private Casting Sessions</div>';
       }
-      return `<iframe src="${url}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen style="width:100%;height:100%;border:none;"></iframe>`;
+
+      let embedUrl = raw;
+      const driveMatch = raw.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i) || raw.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/i);
+      if (driveMatch && driveMatch[1]) {
+        embedUrl = `https://drive.google.com/file/d/${encodeURIComponent(driveMatch[1])}/preview`;
+      } else if (/youtube\.com\/watch\?v=/i.test(raw) || /youtu\.be\//i.test(raw)) {
+        const ytMatch = raw.match(/[?&]v=([a-zA-Z0-9_-]+)/) || raw.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
+        if (ytMatch && ytMatch[1]) embedUrl = `https://www.youtube.com/embed/${encodeURIComponent(ytMatch[1])}`;
+      } else if (/vimeo\.com\/(\d+)/i.test(raw) && !/player\.vimeo\.com/i.test(raw)) {
+        const vmMatch = raw.match(/vimeo\.com\/(\d+)/i);
+        if (vmMatch && vmMatch[1]) embedUrl = `https://player.vimeo.com/video/${encodeURIComponent(vmMatch[1])}`;
+      }
+
+      const safeUrl = escapeHtml(embedUrl);
+      const isNative = /\.(mp4|webm|mov)(\?.*)?$/i.test(embedUrl);
+      if (isNative) {
+        return `<video src="${safeUrl}" controls playsinline style="width:100%;height:100%;object-fit:cover;background:#000;"></video>`;
+      }
+      return `<iframe src="${safeUrl}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen style="width:100%;height:100%;border:none;"></iframe>`;
     }
 
     async function loadEpk() {
@@ -448,47 +464,96 @@
 
       try {
         const res = await fetch(`${BACKEND_URL}?action=getEpkData&name=${encodeURIComponent(talentParam)}`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
         const json = await res.json();
 
         if (json && json.ok && json.talent) {
           _epkData = json.talent;
           renderEpkUI();
         } else {
-          document.getElementById('epkLoading').innerHTML = `<div style="color:#F87171;">⚠️ ${json.error || 'Performer dossier unavailable.'}</div>`;
+          const errMsg = escapeHtml((json && json.error) || 'Performer dossier unavailable.');
+          document.getElementById('epkLoading').innerHTML = `<div style="color:#F87171;">⚠️ ${errMsg}</div>`;
         }
       } catch (err) {
         document.getElementById('epkLoading').innerHTML = '<div style="color:#F87171;">📡 Network error connecting to studio desk.</div>';
       }
     }
-
     function renderEpkUI() {
-      const t = _epkData;
-      document.getElementById('talentName').innerText = t.name;
-      document.getElementById('talentArchetype').innerText = t.archetype;
-      document.getElementById('compCardLink').href = t.links.compCardUrl;
+      const t = _epkData || {};
+      document.getElementById('talentName').innerText = t.name || 'Studio Performer';
+      document.getElementById('talentArchetype').innerText = t.archetype || ((t.specs && t.specs.representationTrack) || 'Studio Roster');
 
-      // Directability Telemetry
+      const compCardUrl = (t.links && t.links.compCardUrl) ? String(t.links.compCardUrl).trim() : '';
+      const compCardEl = document.getElementById('compCardLink');
+      if (compCardEl) {
+        if (/^https?:\/\//i.test(compCardUrl) || /^comp-card\.html/i.test(compCardUrl)) {
+          compCardEl.href = compCardUrl;
+          compCardEl.style.display = 'inline-flex';
+        } else {
+          compCardEl.style.display = 'none';
+        }
+      }
+
+      // Directability Telemetry (0-safe, never fabricates +16%/+12%/+14%/+11%)
       const vd = t.verifiedDirectability || {};
-      document.getElementById('deltaValue').innerText = vd.deltaDisplay || `+${vd.overallDeltaPct}%`;
-      document.getElementById('advisoryRating').innerText = `"${vd.advisoryRating}"`;
-      document.getElementById('coachingNote').innerText = vd.coachingNote;
+      const vids = t.videos || {};
+      const hasTake2 = Boolean(vids.hasTake2 && vids.take2Url);
+      const hasCalibratedDelta = (vd.hasTake2 !== undefined) ? Boolean(vd.hasTake2) : hasTake2;
+
+      const fmtPct = (val) => {
+        if (val === null || val === undefined || String(val).trim() === '') return '—';
+        const n = Number(val);
+        if (isNaN(n)) return String(val);
+        return (n >= 0 ? '+' : '') + n + '%';
+      };
+
+      document.getElementById('deltaValue').innerText = vd.deltaDisplay || (vd.overallDeltaPct != null ? fmtPct(vd.overallDeltaPct) : 'Pending Take #2');
+      document.getElementById('advisoryRating').innerText = vd.advisoryRating ? `"${vd.advisoryRating}"` : '"Pending Take #2 Calibration"';
+      document.getElementById('coachingNote').innerText = vd.coachingNote || 'Multi-take directability delta populates once a redirected retake is audited.';
+
+      const deltaCalloutEl = document.getElementById('deltaCallout');
+      if (deltaCalloutEl) {
+        deltaCalloutEl.style.display = (hasCalibratedDelta || vd.deltaDisplay) ? 'inline-flex' : 'none';
+      }
 
       const m = vd.metrics || {};
-      document.getElementById('scoreStillness').innerText = `+${m.stillness_lift || 16}%`;
-      document.getElementById('scoreSubtext').innerText = `+${m.subtext_lift || 12}%`;
-      document.getElementById('scoreFraming').innerText = `+${m.framing_compliance || 14}%`;
-      document.getElementById('scoreOverall').innerText = `+${vd.overallDeltaPct || 11}%`;
+      document.getElementById('scoreStillness').innerText = hasCalibratedDelta ? fmtPct(m.stillness_lift ?? null) : 'Pending';
+      document.getElementById('scoreSubtext').innerText = hasCalibratedDelta ? fmtPct(m.subtext_lift ?? null) : 'Pending';
+      document.getElementById('scoreFraming').innerText = hasCalibratedDelta ? fmtPct(m.framing_compliance ?? null) : 'Pending';
+      document.getElementById('scoreOverall').innerText = hasCalibratedDelta ? fmtPct(vd.overallDeltaPct ?? null) : 'Pending';
+
+      // Theatrical Specs & Commercial Rate Rider
+      const specs = t.specs || {};
+      document.getElementById('specUnion').innerText = specs.unionStatus || '—';
+      document.getElementById('specLocation').innerText = specs.baseLocation || '—';
+      document.getElementById('specLanguages').innerText = specs.nativeLanguages || '—';
+      document.getElementById('specPlayingAge').innerText = specs.playingAge || '—';
+
+      const rider = t.commercialRateRider || {};
+      const cur = rider.currency || '€';
+      const fmtMoney = (v) => {
+        if (v === null || v === undefined || String(v).trim() === '') return 'Quoted on scope';
+        const s = String(v).trim();
+        return /^\d+(\.\d+)?$/.test(s) ? (cur + Number(s).toLocaleString('en-US')) : s;
+      };
+      const rHalf = document.getElementById('riderHalfDay'); if (rHalf) rHalf.innerText = fmtMoney(rider.halfDayRate);
+      const rFull = document.getElementById('riderFullDay'); if (rFull) rFull.innerText = fmtMoney(rider.fullDayRate);
+      const rBuy = document.getElementById('riderBuyout'); if (rBuy) rBuy.innerText = rider.exclusivity || 'Quoted on scope';
+      const rTerms = document.getElementById('riderTerms'); if (rTerms) rTerms.innerText = rider.bookingTerms || '10% Agency Escrow';
 
       // Videos Setup
-      const hasTake2 = Boolean(t.videos && t.videos.hasTake2 && t.videos.take2Url);
       _activeTake = hasTake2 ? 2 : 1;
-      
       const btnT1 = document.getElementById('btnTake1');
       const btnT2 = document.getElementById('btnTake2');
 
       if (!hasTake2) {
         btnT2.style.display = 'none';
+        btnT2.classList.remove('active');
         btnT1.classList.add('active');
+      } else {
+        btnT2.style.display = 'inline-block';
+        btnT2.classList.add('active');
+        btnT1.classList.remove('active');
       }
 
       mountActiveVideo();
@@ -501,22 +566,49 @@
     }
 
     function mountActiveVideo() {
-      const url = _activeTake === 2 ? _epkData.videos.take2Url : _epkData.videos.take1Url;
+      const vids = (_epkData && _epkData.videos) || {};
+      const url = _activeTake === 2 ? vids.take2Url : vids.take1Url;
       document.getElementById('videoContainer').innerHTML = resolveVideoHtml(url);
     }
 
     // Modal Operations
     const modal = document.getElementById('bookingModal');
+    const closeBookingModal = () => {
+      if (window._epkBookingCloseTimer) {
+        clearTimeout(window._epkBookingCloseTimer);
+        window._epkBookingCloseTimer = null;
+      }
+      if (modal) modal.style.display = 'none';
+    };
+
     document.getElementById('openHoldModalBtn').onclick = () => {
-      document.getElementById('modalTitle').innerText = `Check Availability: ${_epkData.name}`;
+      if (!_epkData) return;
+      if (window._epkBookingCloseTimer) {
+        clearTimeout(window._epkBookingCloseTimer);
+        window._epkBookingCloseTimer = null;
+      }
+      const form = document.getElementById('bookingForm');
+      if (form) form.reset();
+      const alertBox = document.getElementById('bookingStatusAlert');
+      if (alertBox) {
+        alertBox.innerText = '';
+        alertBox.style.display = 'none';
+      }
+      const btn = document.getElementById('inqSubmitBtn');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = "🚀 Dispatch Availability Inquiry ↗";
+      }
+      document.getElementById('modalTitle').innerText = `Check Availability: ${_epkData.name || 'Performer'}`;
       modal.style.display = 'flex';
     };
-    document.getElementById('modalCloseBtn').onclick = () => { modal.style.display = 'none'; };
-    modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+    document.getElementById('modalCloseBtn').onclick = closeBookingModal;
+    modal.onclick = (e) => { if (e.target === modal) closeBookingModal(); };
 
     // Form submission dispatches directly to Phase 2C B2B pipeline
     document.getElementById('bookingForm').onsubmit = async (e) => {
       e.preventDefault();
+      if (!_epkData) return;
       const btn = document.getElementById('inqSubmitBtn');
       const alertBox = document.getElementById('bookingStatusAlert');
 
@@ -538,28 +630,34 @@
           headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
 
-        if (data.ok) {
+        if (data && data.ok) {
           alertBox.style.background = "#DCFCE7";
           alertBox.style.color = "#166534";
           alertBox.innerText = `✓ Inquiry Logged. Reference: ${data.dealId || 'ACTIVE'}`;
           alertBox.style.display = 'block';
           btn.innerText = "✓ Dispatched";
-          setTimeout(() => { modal.style.display = 'none'; btn.disabled = false; btn.innerText = "🚀 Dispatch Availability Inquiry ↗"; }, 2400);
+          if (window._epkBookingCloseTimer) clearTimeout(window._epkBookingCloseTimer);
+          window._epkBookingCloseTimer = setTimeout(() => {
+            closeBookingModal();
+            btn.disabled = false;
+            btn.innerText = "🚀 Dispatch Availability Inquiry ↗";
+          }, 2400);
         } else {
-          throw new Error(data.error || "Submission failed.");
+          throw new Error((data && data.error) || "Submission failed.");
         }
       } catch (err) {
         alertBox.style.background = "#FEE2E2";
         alertBox.style.color = "#991B1B";
-        alertBox.innerText = `⚠️ Error: ${err.message}`;
+        alertBox.innerText = `⚠️ Error: ${err && err.message ? err.message : err}`;
         alertBox.style.display = 'block';
         btn.disabled = false;
         btn.innerText = "🚀 Dispatch Availability Inquiry ↗";
       }
     };
-
+    
     window.onload = loadEpk;
   </script>
 </body>
