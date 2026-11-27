@@ -5,8 +5,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
-  <!-- ⚡ High-Priority LCP Hero Preload (Loads in parallel with HTML) -->
-  <link rel="preload" as="image" href="https://lh3.googleusercontent.com/d/1WNSE5fCdmDwR-ijDCSS6gasdEU9jZm-T=w1200" fetchpriority="high">
+  <!-- ⚡ High-Priority LCP Hero Preload (Matches #heroImage) -->
+  <link rel="preload" as="image" href="https://lh3.googleusercontent.com/d/1ZYZS-I40xE8j1uqJLr1LDETRV7DQuMux=w1400" fetchpriority="high">
   <title>Women of Venice — Portraits & Stories</title>
   <link rel="preconnect" href="https://lh3.googleusercontent.com">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1274,7 +1274,7 @@ Venice's historic architecture, distinctive light and atmospheric spaces for por
     <div style="font-weight: 600; margin-bottom: 12px; display: flex; justify-content: center; gap: 18px; flex-wrap: wrap;">
       <a href="#atelier" style="color: var(--text, #FAF8F5); text-decoration: none;">The Studio</a> ·
       <a href="roster.html" style="color: var(--red, #A8492E); font-weight: 700; text-decoration: none;">Talent Roster ↗</a> ·
-      <a href="studio.html" style="color: var(--text, #FAF8F5); text-decoration: none;">Get Assessed ↗</a> ·
+      <a href="studio.html" style="color: var(--text, #FAF8F5); text-decoration: none;">Get Assessed ↗</a>
      
     </div>
     <div style="font-size: 11px; color: var(--text-light, #94A3B8); opacity: 0.8; margin-top: 14px;">
@@ -1284,31 +1284,12 @@ Venice's historic architecture, distinctive light and atmospheric spaces for por
 </div>
 <script>
   
-  // 🔍 TEMPORARY MOBILE APP DIAGNOSTIC LOGGER
-    window.onerror = function(msg, url, line) {
-      var errBox = document.getElementById("mobileErrBox");
-      if (!errBox) {
-        errBox = document.createElement("div");
-        errBox.id = "mobileErrBox";
-        errBox.style.cssText = "position:fixed;top:0;left:0;width:100%;background:#EF4444;color:#FFF;padding:12px;font-size:12px;z-index:999999;font-family:monospace;word-break:break-all;";
-        document.body.appendChild(errBox);
-      }
-      errBox.innerText = "🚨 APP ERROR (Line " + line + "): " + msg;
-    };
-
-(function(){
-  // 🔍 60-Second On-Screen Error Logger for Mobile Chrome/Edge
-  window.onerror = function(msg, url, line) {
-    var errBox = document.getElementById("mobileErrBox");
-    if (!errBox) {
-      errBox = document.createElement("div");
-      errBox.id = "mobileErrBox";
-      errBox.style.cssText = "position:fixed;top:0;left:0;width:100%;background:#EF4444;color:#FFF;padding:12px;font-size:12px;z-index:999999;font-family:monospace;word-break:break-all;";
-      document.body.appendChild(errBox);
-    }
-    errBox.innerText = "🚨 APP ERROR (Line " + line + "): " + msg;
-  };
-  
+  (function(){
+  function esc(s) {
+    return String(s || "").replace(/[&<>"']/g, function(c) {
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }  
   var EXEC = "https://script.google.com/macros/s/AKfycbw1sia4uM2Xfc3_xP4umiZAPC77_XAyS4R86_oRgV1HHfM1CNRdRCG31SuCqJwFMc8/exec";
 
   var hamburger = document.getElementById('hamburger');
@@ -1336,14 +1317,26 @@ Venice's historic architecture, distinctive light and atmospheric spaces for por
         lang: "en"
       };
       fetch(EXEC, {
-        method: "POST", mode: "no-cors",
+        method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({ action: "webcontact", record: record })
-      }).then(function(){
+      }).then(function(res){
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.text();
+      }).then(function(text){
+        var raw = String(text || '').trim();
+        var parsed = null;
+        try { parsed = JSON.parse(raw); } catch(eP) {}
+        if (parsed) {
+          if (parsed.ok === false || parsed.error) throw new Error(parsed.error || 'Submission rejected');
+          if (parsed.ok !== true && parsed.status !== 'ok') throw new Error('Unexpected server response');
+        } else if (raw !== 'webcontact') {
+          throw new Error('Unexpected server response');
+        }
         formOverlay.classList.add('show');
         contactForm.reset();
-      }).catch(function(){
-        alert('Network error. Please check your connection.');
+      }).catch(function(err){
+        alert('Could not send message: ' + (err && err.message ? err.message : 'Please check your connection.'));
       }).finally(function(){
         submitBtn.textContent = originalText; submitBtn.disabled = false;
       });
@@ -1507,9 +1500,11 @@ Venice's historic architecture, distinctive light and atmospheric spaces for por
     var selected = stories.slice(0, 4);
     var html = '';
     selected.forEach(function(f) {
-      html += '<div class="featured-item" data-id="' + f.id + '">' +
-        '<img src="' + getFullUrl(f.id) + '" alt="' + (f.location || formatName(f.model)) + '" loading="lazy">' +
-        '<div class="info"><h3>' + (f.location || formatName(f.model)) + '</h3><p>"' + truncate(f.cinematicTone || f.story, 160) + '"</p></div></div>';
+      var titleTxt = esc(f.location || formatName(f.model));
+      var descTxt = esc(truncate(f.cinematicTone || f.story, 160));
+      html += '<div class="featured-item" data-id="' + esc(f.id) + '">' +
+        '<img src="' + esc(getFullUrl(f.id)) + '" referrerpolicy="no-referrer" alt="' + titleTxt + '" loading="lazy">' +
+        '<div class="info"><h3>' + titleTxt + '</h3><p>"' + descTxt + '"</p></div></div>';
     });
     featuredGrid.innerHTML = html;
 
@@ -1608,9 +1603,9 @@ function setHeroImage(files) {
     var descText = f.cinematicTone || f.story || "";
     
     lbCap.innerHTML = 
-      '<div style="font-family:\'Inter\',monospace;font-size:11px;font-weight:800;color:var(--peach);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">' + lightTag + '</div>' +
-      '<div class="t">' + locTitle + '</div>' +
-      (descText ? '<div class="s">"' + descText + '"</div>' : '');
+      '<div style="font-family:\'Inter\',monospace;font-size:11px;font-weight:800;color:var(--peach);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">' + esc(lightTag) + '</div>' +
+      '<div class="t">' + esc(locTitle) + '</div>' +
+      (descText ? '<div class="s">"' + esc(descText) + '"</div>' : '');
       
     lbCount.textContent = (idx + 1) + ' / ' + lightboxFiles.length;
     resetLbTimer();
@@ -1787,7 +1782,10 @@ function setHeroImage(files) {
       document.title = "Screen Acting Telemetry & Directorial Audits · Women of Venice";
       if (unveilHeadline) unveilHeadline.textContent = "Directorial Intelligence for Screen Actresses.";
       if (heroSub) heroSub.textContent = "Arthouse Monologues, Silence Discipline & A4 Comp Cards · Venezia";
-      if (labBtn) labBtn.textContent = "🎬 Inspect Cinema Telemetry Lab";
+      if (labBtn) {
+        labBtn.textContent = "🎬 Inspect Cinema Telemetry Lab";
+        labBtn.href = "#casting-studio";
+      }
       if (trackSelect) trackSelect.value = "cinema";
       if (cardElena) {
         cardElena.style.borderColor = "#D4AF37";
@@ -1799,7 +1797,10 @@ function setHeroImage(files) {
       document.title = "Creator Retention Audits & Brand Rate Cards · Women of Venice";
       if (unveilHeadline) unveilHeadline.textContent = "Algorithmic Retention & Rate Justification.";
       if (heroSub) heroSub.textContent = "0–3s Hook Velocity, Brand Media Kits & Sponsorship Rates · Venezia";
-      if (labBtn) labBtn.textContent = "⚡ Inspect Creator Monetization Lab";
+      if (labBtn) {
+        labBtn.textContent = "⚡ Inspect Creator Monetization Lab";
+        labBtn.href = "#casting-studio";
+      }
       if (trackSelect) trackSelect.value = "creator";
       if (cardMarta) {
         cardMarta.style.borderColor = "var(--peach, #E09A73)";
