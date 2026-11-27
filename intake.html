@@ -102,29 +102,24 @@
   var hasDrawn = false;
 
   function initCanvas() {
+    if (hasDrawn && canvas.width > 0) return;
     var rect = canvas.getBoundingClientRect();
-    if (rect.width > 0) {
-      var saved = hasDrawn ? canvas.toDataURL() : null;
-      canvas.width = rect.width;
+    var targetW = Math.round(rect.width);
+    if (targetW > 0 && (canvas.width !== targetW || canvas.height !== 120)) {
+      canvas.width = targetW;
       canvas.height = 120;
       ctx.lineWidth = 2.5;
       ctx.strokeStyle = "#58A6FF";
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-
-      if (saved) {
-        var img = new Image();
-        img.onload = function(){ ctx.drawImage(img, 0, 0); };
-        img.src = saved;
-      }
     }
   }
 
-  // Multi-tier initialization (guarantees canvas never loads at 0px)
-  window.addEventListener("load", initCanvas);
+  // Multi-tier initialization (only while blank; never wipes an active signature)
+  window.addEventListener("load", function() { if (!hasDrawn) initCanvas(); });
   window.addEventListener("resize", function() { if (!hasDrawn) initCanvas(); });
-  setTimeout(initCanvas, 100);
-  setTimeout(initCanvas, 400);
+  setTimeout(function() { if (!hasDrawn) initCanvas(); }, 100);
+  setTimeout(function() { if (!hasDrawn) initCanvas(); }, 400);
 
   function getPos(e) {
     var rect = canvas.getBoundingClientRect();
@@ -143,7 +138,7 @@
   }
 
   function startDraw(e) {
-    if (canvas.width === 0 || canvas.width !== Math.round(canvas.getBoundingClientRect().width)) {
+    if (canvas.width === 0) {
       initCanvas();
     }
     drawing = true;
@@ -186,6 +181,12 @@
   document.getElementById("intakeForm").onsubmit = async function(e){
     e.preventDefault();
 
+    var consentEl = document.getElementById("consentCheck");
+    if(!consentEl || !consentEl.checked){
+      alert("Please check the consent permission box before proceeding.");
+      return;
+    }
+
     if(!hasDrawn){
       alert("Please provide a quick signature before proceeding.");
       return;
@@ -194,6 +195,7 @@
     var btn = document.getElementById("subBtn");
     var stat = document.getElementById("statusMsg");
     btn.disabled = true;
+    stat.style.color = "#58A6FF";
     stat.textContent = "Locking candidate & emailing copy...";
 
     var candidateName = document.getElementById("name").value.trim();
@@ -206,6 +208,7 @@
     // 2. Build payload cleanly:
     var payload = {
       action: "talentIntake",
+      consentAccepted: true,
       name: candidateName,
       instagram: document.getElementById("instagram").value.trim(),
       email: document.getElementById("email").value.trim(),
@@ -216,13 +219,21 @@
     };
 
     try {
-      await fetch(EXEC, {
+      var res = await fetch(EXEC, {
         method: "POST",
-        mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload)
       });
-      
+      if (!res.ok) throw new Error("HTTP " + res.status);
+
+      var raw = await res.text();
+      var parsed = null;
+      try { parsed = JSON.parse(raw); } catch(eJson) {}
+      if (!parsed || (!parsed.ok && parsed.status !== "ok") || parsed.error) {
+        throw new Error((parsed && parsed.error) || "Consent submission was not confirmed by studio server.");
+      }
+
+      stat.style.color = "#3FB950";
       stat.textContent = "✓ Consent locked & emailed to " + payload.email;
       btn.textContent = "✓ Submitted";
       btn.style.background = "#1F6FEB";
@@ -234,12 +245,14 @@
         btn.textContent = "Lock & Start 60s Audition";
         btn.style.background = "#238636";
         btn.disabled = false;
+        stat.style.color = "#58A6FF";
         stat.textContent = "";
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }, 1500);
 
     } catch(err) {
-      stat.textContent = "⚠️ Error: " + err;
+      stat.style.color = "#F85149";
+      stat.textContent = "⚠️ Error: " + (err && err.message ? err.message : err);
       btn.disabled = false;
     }
   };
