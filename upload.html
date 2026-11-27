@@ -363,7 +363,13 @@
         banner.style.display = "block";
       }
     }
-
+if (formatEl) {
+      formatEl.addEventListener("change", function() {
+        const bTrack = document.getElementById("bannerTargetTrack");
+        if (bTrack) bTrack.textContent = formatEl.value;
+      });
+    }
+    
     // 5. Director's Notes Auto-Fill (From Screener Take 2 Bridge)
     const savedNotes = safeStorage("wov_take_notes") || params.get("notes") || "";
     if (savedNotes && document.getElementById("notes")) {
@@ -462,7 +468,8 @@
         const elapsedSec = (new Date().getTime() - startTime) / 1000;
         currentPercent = Math.min(92, Math.round((elapsedSec / estimatedSec) * 100));
 
-        const simLoadedMb = Math.min(totalMb, ((currentPercent / 100) * totalMb).toFixed(1));
+        const totalMbNum = Number(totalMb) || 0;
+        const simLoadedMb = Math.min(totalMbNum, (currentPercent / 100) * totalMbNum).toFixed(1);
         progressFill.style.width = currentPercent + "%";
         percentLabel.innerText = "Streaming: " + currentPercent + "%";
         bytesLabel.innerText = simLoadedMb + " MB / " + totalMb + " MB";
