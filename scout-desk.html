@@ -786,6 +786,26 @@
       text-align: center;
       margin-top: 16px;
     }
+
+    /* Batch 5C-3: Offline Capture Queue Banner */
+    .offline-queue-banner {
+      background: rgba(243, 156, 18, 0.12);
+      border: 1px solid rgba(243, 156, 18, 0.45);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .offline-queue-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
   </style>
 </head>
 <body>
@@ -807,6 +827,19 @@
 
   <!-- VIEW A: INTAKE & SINGLE DOSSIER -->
   <div id="intakeView">
+
+    <!-- 📡 OFFLINE CAPTURE QUEUE BANNER (Hidden when empty) -->
+    <div id="offlineQueueBanner" class="offline-queue-banner" style="display: none;">
+      <div>
+        <strong id="offlineQueueTitle" style="color: var(--amber);">📡 1 Pending Offline Capture</strong>
+        <div id="offlineQueueSub" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Saved locally on this device when connection dropped.</div>
+      </div>
+      <div class="offline-queue-actions">
+        <button type="button" class="btn-pill push" id="btnRetryOfflineQueue" onclick="retryOfflineQueue()">🔄 Retry Pending Upload</button>
+        <button type="button" class="btn-pill danger" id="btnClearOfflineQueue" onclick="clearOfflineQueue()">🗑️ Discard</button>
+      </div>
+    </div>
+    
     <!-- STEP 1: FIELD INTAKE -->
     <div class="card">
     <div class="card-title">
@@ -1066,7 +1099,30 @@
     </div>
   </div>
 </div>
-
+<!-- 🔗 PIPELINE DUPLICATE MERGE MODAL -->
+<div id="mergeModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; padding: 16px;" onclick="if (event.target === this) closeMergeModal()">
+  <div class="modal-card">
+    <div class="card-title">
+      <span>🔗 Merge Duplicate Profile</span>
+      <button type="button" onclick="closeMergeModal()" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;">✕</button>
+    </div>
+    <div style="font-size: 0.85rem; margin-bottom: 12px; color: var(--text-muted);">
+      Keeping Primary: <strong id="mergePrimaryName" style="color: var(--gold);"></strong> <code id="mergePrimaryId" style="font-size: 0.75rem;"></code>
+    </div>
+    <label for="mergeDuplicateSelect">Select Duplicate Record to Absorb &amp; Delete</label>
+    <select id="mergeDuplicateSelect" style="width:100%;background:var(--bg-surface-elevated);border:1px solid var(--border);border-radius:8px;color:var(--text-main);padding:11px;font-size:0.9rem;margin-bottom:12px;outline:none;"></select>
+    <label for="mergeManualId">Or Enter Duplicate Scout ID (if not loaded yet)</label>
+    <input type="text" id="mergeManualId" placeholder="SCT_XXXXXXXX" autocomplete="off" style="margin-bottom: 12px;">
+    <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.45;">
+      Combines chronicles, vectors, probes, images, and Drive files into Primary, then permanently deletes the duplicate row.
+    </div>
+    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+      <button type="button" class="btn-action" onclick="closeMergeModal()">Cancel</button>
+      <button type="button" class="btn-action highlight" id="btnConfirmMerge" onclick="executeProfileMerge()">🔗 Confirm Merge</button>
+    </div>
+  </div>
+</div>
+  
 <div id="toast">Message copied to clipboard!</div>
 
 <script>
@@ -1409,7 +1465,13 @@
     const keyInput = document.getElementById("scoutAccessKey");
     if (urlInput) urlInput.value = savedUrl;
     if (keyInput) keyInput.value = savedKey;
-
+    if (typeof refreshOfflineQueueBanner === "function") {
+      refreshOfflineQueueBanner();
+    }
+    window.addEventListener("online", function() {
+      if (typeof refreshOfflineQueueBanner === "function") refreshOfflineQueueBanner();
+    });
+    
     if (!savedUrl) {
       openSettings();
       showToast("⚙️ Please configure your Scout Web App /exec URL to sync pipeline.");
@@ -1493,9 +1555,27 @@
     if (!file) return;
 
     const reader = new FileReader();
+    reader.onerror = function() {
+      mediaAssetBase64 = null;
+      mediaMimeType = "image/jpeg";
+      clearPhotoAttachmentUI();
+      const statusEl = document.getElementById("captureStatus");
+      if (statusEl) statusEl.innerText = "Photo read failed — please retry";
+      alert("Could not read the selected image file.");
+    };
+
     reader.onload = function(e) {
       const img = new Image();
+      img.onerror = function() {
+        mediaAssetBase64 = null;
+        mediaMimeType = "image/jpeg";
+        clearPhotoAttachmentUI();
+        const statusEl = document.getElementById("captureStatus");
+        if (statusEl) statusEl.innerText = "Unsupported image format";
+        alert("Could not decode image. Please select a JPEG, PNG, or WebP photo.");
+      };
       img.onload = function() {
+        
         // Downscale to max 1280px maintaining aspect ratio
         const maxDim = 1280;
         let w = img.width, h = img.height;
@@ -1787,10 +1867,28 @@
 
       const notesEl = document.getElementById("fieldNotes");
       if (notesEl) notesEl.value = "";
+      if (intakeMode === "APPEND") setIntakeMode("NEW");
 
       renderCandidateProfile(res);
     } catch (err) {
-      alert("Submission notice: " + err.message);
+      if (typeof isOfflineTransportError_ === "function" && isOfflineTransportError_(err)) {
+        const queuedOk = await savePendingCaptureToIdb_(payload, selectedAppendName || notes.slice(0, 40) || "Media Capture");
+        if (queuedOk) {
+          const notesEl = document.getElementById("fieldNotes");
+          if (notesEl) notesEl.value = "";
+          if (intakeMode === "APPEND") setIntakeMode("NEW");
+          mediaAssetBase64 = null;
+          mediaMimeType = "image/jpeg";
+          if (typeof clearPhotoAttachmentUI === "function") clearPhotoAttachmentUI();
+          if (typeof clearAudioAttachmentUI === "function") clearAudioAttachmentUI();
+          const statusEl = document.getElementById("captureStatus");
+          if (statusEl) statusEl.innerText = "Saved offline — tap Retry when back on 4G";
+          await refreshOfflineQueueBanner();
+          if (typeof showToast === "function") showToast("📡 Offline — capture saved locally for retry.");
+          return;
+        }
+      }
+      alert("Submission notice: " + (err && err.message ? err.message : err));
     } finally {
       btn.disabled = false;
       btn.innerText = "⚡ Initiate Directorial Due Diligence";
@@ -2396,6 +2494,7 @@
               ? `<button class="btn-pill" id="promoteBtn_${domId}" disabled>✅ Promoted</button>`
               : `<button class="btn-pill push" id="promoteBtn_${domId}" data-scout-id="${safeIdAttr}" onclick="promoteCandidateById(this.dataset.scoutId)">⚡ Push to Audition Desk</button>`}
             <button class="btn-pill push" id="ownerLinkBtn_${domId}" data-scout-id="${safeIdAttr}" style="${/^https?:\/\//i.test(String(c.screenerOwnerUrl || "")) ? "" : "display:none;"}" onclick="copyOwnerScreenerById(this.dataset.scoutId)" title="Private Owner Link (includes ?cid= Owner Mode — send only to this candidate)">🔗 Owner Screener</button>
+            <button type="button" class="btn-pill" id="mergeBtn_${domId}" data-scout-id="${safeIdAttr}" onclick="openMergeModal(this.dataset.scoutId)">🔀 Merge</button>
             <button class="btn-pill danger${isArmed ? " armed" : ""}" id="delBtn_${domId}" data-scout-id="${safeIdAttr}" onclick="handleDoubleTapDelete(this.dataset.scoutId)">${isArmed ? "⚠️ Confirm Wipe (4s)" : "🗑️ Wipe"}</button>
           </div>
         </div>
@@ -2891,6 +2990,353 @@ async function submitCalibration() {
     btn.innerText = originalText;
   }
 }
+// ==========================================
+// 📡 PHASE 5C-3: INDEXEDDB OFFLINE CAPTURE QUEUE
+// ==========================================
+const WOV_OFFLINE_DB = "wov_scout_offline_db";
+const WOV_OFFLINE_STORE = "pending_captures";
+let isRetryingOfflineQueue = false;
+
+function isOfflineTransportError_(err) {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
+  if (!err) return false;
+  if (err.name === "TypeError") return true;
+  const msg = String(err.message || err).toLowerCase();
+  return /failed to fetch|networkerror|load failed|network request failed|network error/.test(msg);
+}
+
+function openOfflineDb_() {
+  return new Promise((resolve) => {
+    if (typeof indexedDB === "undefined") { resolve(null); return; }
+    try {
+      const req = indexedDB.open(WOV_OFFLINE_DB, 1);
+      req.onupgradeneeded = function(e) {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(WOV_OFFLINE_STORE)) {
+          db.createObjectStore(WOV_OFFLINE_STORE, { keyPath: "id", autoIncrement: true });
+        }
+      };
+      req.onsuccess = function(e) { resolve(e.target.result); };
+      req.onerror = function() { resolve(null); };
+    } catch (eIdb) {
+      resolve(null);
+    }
+  });
+}
+
+async function savePendingCaptureToIdb_(payload, label) {
+  const db = await openOfflineDb_();
+  if (!db) return false;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(WOV_OFFLINE_STORE, "readwrite");
+      const store = tx.objectStore(WOV_OFFLINE_STORE);
+      store.add({
+        queuedAt: Date.now(),
+        displayLabel: String(label || "Capture").trim(),
+        payload: payload
+      });
+      tx.oncomplete = function() { db.close(); resolve(true); };
+      tx.onerror = function() { db.close(); resolve(false); };
+    } catch (ePut) {
+      try { db.close(); } catch (eC) {}
+      resolve(false);
+    }
+  });
+}
+
+async function getAllPendingCapturesFromIdb_() {
+  const db = await openOfflineDb_();
+  if (!db) return [];
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(WOV_OFFLINE_STORE, "readonly");
+      const store = tx.objectStore(WOV_OFFLINE_STORE);
+      const req = store.getAll();
+      req.onsuccess = function() {
+        const list = Array.isArray(req.result) ? req.result : [];
+        list.sort((a, b) => (a.queuedAt || 0) - (b.queuedAt || 0));
+        db.close();
+        resolve(list);
+      };
+      req.onerror = function() { db.close(); resolve([]); };
+    } catch (eGet) {
+      try { db.close(); } catch (eC) {}
+      resolve([]);
+    }
+  });
+}
+
+async function deletePendingCaptureFromIdb_(recordId) {
+  const db = await openOfflineDb_();
+  if (!db) return;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(WOV_OFFLINE_STORE, "readwrite");
+      tx.objectStore(WOV_OFFLINE_STORE).delete(recordId);
+      tx.oncomplete = function() { db.close(); resolve(); };
+      tx.onerror = function() { db.close(); resolve(); };
+    } catch (eDel) {
+      try { db.close(); } catch (eC) {}
+      resolve();
+    }
+  });
+}
+
+async function refreshOfflineQueueBanner() {
+  const banner = document.getElementById("offlineQueueBanner");
+  if (!banner) return;
+  const items = await getAllPendingCapturesFromIdb_();
+  if (!items.length) {
+    banner.style.display = "none";
+    return;
+  }
+  const titleEl = document.getElementById("offlineQueueTitle");
+  const subEl = document.getElementById("offlineQueueSub");
+  if (titleEl) {
+    titleEl.innerText = `📡 ${items.length} Pending Offline Capture${items.length > 1 ? "s" : ""}`;
+  }
+  if (subEl) {
+    const latest = items[items.length - 1];
+    subEl.innerText = `Latest queued: ${latest.displayLabel || "Field Capture"} — tap Retry when back online.`;
+  }
+  banner.style.display = "flex";
+}
+
+async function retryOfflineQueue() {
+  if (isRetryingOfflineQueue) return;
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    showToast("Still offline — reconnect before retrying.");
+    return;
+  }
+
+  const items = await getAllPendingCapturesFromIdb_();
+  if (!items.length) {
+    await refreshOfflineQueueBanner();
+    return;
+  }
+
+  const retryBtn = document.getElementById("btnRetryOfflineQueue");
+  const clearBtn = document.getElementById("btnClearOfflineQueue");
+  isRetryingOfflineQueue = true;
+  if (retryBtn) { retryBtn.disabled = true; retryBtn.innerText = `⏳ Uploading (1/${items.length})...`; }
+  if (clearBtn) clearBtn.disabled = true;
+
+  let sentCount = 0;
+  let lastSuccessRes = null;
+
+  try {
+    for (let i = 0; i < items.length; i++) {
+      if (retryBtn) retryBtn.innerText = `⏳ Uploading (${i + 1}/${items.length})...`;
+      const item = items[i];
+      if (!item || !item.payload) {
+        if (item && item.id != null) await deletePendingCaptureFromIdb_(item.id);
+        continue;
+      }
+      const res = await postScoutApi(item.payload);
+      if (!res || !res.ok) {
+        throw new Error((res && res.error) || "Server rejected queued capture.");
+      }
+      await deletePendingCaptureFromIdb_(item.id);
+      sentCount++;
+      lastSuccessRes = res;
+    }
+
+    if (lastSuccessRes && typeof renderCandidateProfile === "function") {
+      renderCandidateProfile(lastSuccessRes);
+    }
+    if (sentCount > 0 && typeof showToast === "function") {
+      showToast(`✅ Uploaded ${sentCount} pending capture${sentCount > 1 ? "s" : ""}!`);
+    }
+  } catch (err) {
+    alert("⚠️ Offline queue retry paused: " + (err && err.message ? err.message : err));
+  } finally {
+    isRetryingOfflineQueue = false;
+    if (retryBtn) { retryBtn.disabled = false; retryBtn.innerText = "🔄 Retry Pending Upload"; }
+    if (clearBtn) clearBtn.disabled = false;
+    await refreshOfflineQueueBanner();
+  }
+}
+
+async function clearOfflineQueue() {
+  const items = await getAllPendingCapturesFromIdb_();
+  if (!items.length) {
+    await refreshOfflineQueueBanner();
+    return;
+  }
+  if (!confirm(`Discard ${items.length} pending offline capture(s)? This cannot be undone.`)) return;
+  for (let i = 0; i < items.length; i++) {
+    if (items[i] && items[i].id != null) {
+      await deletePendingCaptureFromIdb_(items[i].id);
+    }
+  }
+  await refreshOfflineQueueBanner();
+  if (typeof showToast === "function") showToast("Offline queue cleared.");
+}
+
+// ==========================================
+// 🔗 PHASE 5C-3: PIPELINE DUPLICATE MERGE UI
+// ==========================================
+window._mergePrimaryScoutId = "";
+
+function openMergeModal(primaryScoutId) {
+  const primary = findCandidateByScoutId(primaryScoutId);
+  if (!primary) return;
+
+  window._mergePrimaryScoutId = primary.scoutId;
+  const nameEl = document.getElementById("mergePrimaryName");
+  const idEl = document.getElementById("mergePrimaryId");
+  const selectEl = document.getElementById("mergeDuplicateSelect");
+  const manualEl = document.getElementById("mergeManualId");
+  const confirmBtn = document.getElementById("btnConfirmMerge");
+
+  if (nameEl) nameEl.innerText = primary.fullName || "Unknown Contact";
+  if (idEl) idEl.innerText = `[${primary.scoutId}]`;
+  if (manualEl) manualEl.value = "";
+  if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.innerText = "🔗 Confirm Merge"; }
+
+  if (selectEl) {
+    const eligible = (Array.isArray(cachedCandidates) ? cachedCandidates : []).filter(c => {
+      if (!c || !c.scoutId || c.scoutId === primary.scoutId) return false;
+      const st = String(c.engagementStage || c.nurtureStatus || "").trim().toUpperCase();
+      return st !== "PROMOTED";
+    });
+    selectEl.innerHTML = "";
+    if (!eligible.length) {
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.innerText = "— No loaded non-PROMOTED duplicates —";
+      selectEl.appendChild(opt);
+    } else {
+      const defOpt = document.createElement("option");
+      defOpt.value = "";
+      defOpt.innerText = "— Choose duplicate record to merge —";
+      selectEl.appendChild(defOpt);
+      eligible.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.scoutId;
+        opt.innerText = `${c.fullName || "Unknown"} (${c.primaryHandle || c.contactEmail || c.scoutId}) [${c.scoutId}]`;
+        selectEl.appendChild(opt);
+      });
+    }
+  }
+
+  const modal = document.getElementById("mergeModal");
+  if (modal) modal.style.display = "flex";
+}
+
+function closeMergeModal() {
+  const modal = document.getElementById("mergeModal");
+  if (modal) modal.style.display = "none";
+  window._mergePrimaryScoutId = "";
+}
+
+async function executeProfileMerge() {
+  const btn = document.getElementById("btnConfirmMerge");
+  if (!btn || btn.disabled) return;
+
+  const primaryId = String(window._mergePrimaryScoutId || "").trim();
+  const manualId = String(document.getElementById("mergeManualId")?.value || "").trim();
+  const selectedId = String(document.getElementById("mergeDuplicateSelect")?.value || "").trim();
+  const duplicateId = manualId || selectedId;
+
+  if (!primaryId || primaryId.indexOf("SCT_") !== 0) {
+    alert("Missing primary Scout ID.");
+    return;
+  }
+  if (!duplicateId || duplicateId.indexOf("SCT_") !== 0) {
+    alert("Please select a duplicate profile or enter a valid SCT_* Scout ID.");
+    return;
+  }
+  if (duplicateId === primaryId) {
+    alert("Cannot merge a profile into itself.");
+    return;
+  }
+
+  const primaryCand = findCandidateByScoutId(primaryId);
+  const dupCand = findCandidateByScoutId(duplicateId);
+  const primaryLabel = primaryCand ? (primaryCand.fullName || primaryId) : primaryId;
+  const dupLabel = dupCand ? `${dupCand.fullName || "Unknown"} (${duplicateId})` : duplicateId;
+
+  if (!confirm(`Merge ${dupLabel} into ${primaryLabel}?\n\nChronicles, vectors, probes, images, and Drive files will move into ${primaryLabel}, and ${duplicateId} will be deleted.`)) {
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerText = "⏳ Merging...";
+
+  try {
+    const res = await postScoutApi({
+      action: "mergeScoutRecords",
+      primaryScoutId: primaryId,
+      duplicateScoutId: duplicateId
+    });
+    if (!res || !res.ok) {
+      throw new Error((res && res.error) || "Merge failed.");
+    }
+
+    if (Array.isArray(cachedCandidates)) {
+      const dupIdx = cachedCandidates.findIndex(c => c && c.scoutId === duplicateId);
+      if (dupIdx !== -1) {
+        cachedCandidates.splice(dupIdx, 1);
+        pipelineNextOffset = Math.max(0, pipelineNextOffset - 1);
+      }
+      pipelineTotalCount = Math.max(0, pipelineTotalCount - 1);
+
+      const prof = (res.profile && res.profile.ok) ? res.profile : null;
+      const pIdx = cachedCandidates.findIndex(c => c && c.scoutId === primaryId);
+      if (pIdx !== -1 && prof) {
+        cachedCandidates[pIdx].fullName = prof.name || cachedCandidates[pIdx].fullName;
+        cachedCandidates[pIdx].primaryHandle = prof.handle ?? cachedCandidates[pIdx].primaryHandle;
+        cachedCandidates[pIdx].contactEmail = prof.email ?? cachedCandidates[pIdx].contactEmail;
+        cachedCandidates[pIdx].phoneNumber = prof.phone ?? cachedCandidates[pIdx].phoneNumber;
+        cachedCandidates[pIdx].livingDossier = prof.dossier || cachedCandidates[pIdx].livingDossier;
+        cachedCandidates[pIdx].reconDossier = prof.dossier || cachedCandidates[pIdx].reconDossier;
+        if (prof.potentialScore != null) {
+          cachedCandidates[pIdx].potentialScore = prof.potentialScore;
+          cachedCandidates[pIdx].affinityScore = prof.potentialScore;
+        }
+        if (prof.tier) {
+          cachedCandidates[pIdx].entityTier = prof.tier;
+          cachedCandidates[pIdx].talentTier = prof.tier;
+        }
+        if (prof.engagementStage) {
+          cachedCandidates[pIdx].engagementStage = prof.engagementStage;
+          cachedCandidates[pIdx].nurtureStatus = prof.engagementStage;
+        }
+        if (prof.drafts) {
+          cachedCandidates[pIdx].draftWhatsapp = prof.drafts.whatsapp || "";
+          cachedCandidates[pIdx].draftSocialDm = prof.drafts.instagram_dm || "";
+          cachedCandidates[pIdx].draftInstagram = prof.drafts.instagram_dm || "";
+          cachedCandidates[pIdx].draftFormalLetter = prof.drafts.email || "";
+          cachedCandidates[pIdx].draftEmail = prof.drafts.email || "";
+        }
+        if (prof.gatewayUrl) cachedCandidates[pIdx].gatewayUrl = prof.gatewayUrl;
+        if (prof.screenerOwnerUrl !== undefined) cachedCandidates[pIdx].screenerOwnerUrl = prof.screenerOwnerUrl;
+        if (prof.vaultAssetUrl) cachedCandidates[pIdx].vaultAssetUrl = prof.vaultAssetUrl;
+        if (Array.isArray(prof.vectors)) cachedCandidates[pIdx].detectedVectors = prof.vectors;
+        if (Array.isArray(prof.chronicle)) cachedCandidates[pIdx].eventChronicle = prof.chronicle;
+        if (Array.isArray(prof.probes)) cachedCandidates[pIdx].activeProbes = prof.probes;
+        if (Array.isArray(prof.imageUrls)) cachedCandidates[pIdx].discoveredImages = prof.imageUrls;
+      }
+
+      if (typeof applyPipelineFilters === "function") {
+        applyPipelineFilters();
+      }
+    }
+
+    closeMergeModal();
+    if (typeof showToast === "function") {
+      showToast(`🔗 Merged into ${primaryLabel} (${res.movedFilesCount || 0} Drive file(s) moved).`);
+    }
+  } catch (err) {
+    alert("⚠️ Merge notice: " + (err && err.message ? err.message : err));
+  } finally {
+    btn.disabled = false;
+    btn.innerText = "🔗 Confirm Merge";
+  }
+}
+  
 </script>
 </body>
 </html>
