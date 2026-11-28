@@ -1607,13 +1607,86 @@
   // ==========================================
   let activeMediaStream = null;
   let activeAudioObjectUrl = null;
+  let activeWavRecorder = null;
   let isAudioBusy = false; // Prevents race conditions during permission or encoding
   let audioMaxTimer = null;
+
+  function teardownWavNodes_() {
+    if (!activeWavRecorder) return;
+    const w = activeWavRecorder;
+    w.stopped = true;
+    try { if (w.processor) { w.processor.onaudioprocess = null; w.processor.disconnect(); } } catch (eP) {}
+    try { if (w.source) w.source.disconnect(); } catch (eS) {}
+    try { if (w.zeroGain) w.zeroGain.disconnect(); } catch (eG) {}
+    try { if (w.ctx && w.ctx.state !== "closed") w.ctx.close(); } catch (eC) {}
+    activeWavRecorder = null;
+    if (mediaRecorder && typeof mediaRecorder.stop !== "function") mediaRecorder = null;
+  }
+
+  function encodeWav16kBlob_(chunks, inputSampleRate) {
+    let totalLen = 0;
+    for (let i = 0; i < chunks.length; i++) totalLen += chunks[i].length;
+    if (totalLen === 0) return { blob: new Blob([], { type: "audio/wav" }), durationSec: 0 };
+
+    const merged = new Float32Array(totalLen);
+    let offset = 0;
+    for (let i = 0; i < chunks.length; i++) {
+      merged.set(chunks[i], offset);
+      offset += chunks[i].length;
+    }
+
+    const inRate = Number(inputSampleRate) || 44100;
+    const outRate = 8000;
+    const ratio = inRate / outRate;
+    const outLen = Math.max(1, Math.floor(totalLen / ratio));
+    const dataBytes = outLen * 2;
+    const buffer = new ArrayBuffer(44 + dataBytes);
+    const view = new DataView(buffer);
+
+    const writeStr = function(pos, str) {
+      for (let i = 0; i < str.length; i++) view.setUint8(pos + i, str.charCodeAt(i));
+    };
+    writeStr(0, "RIFF");
+    view.setUint32(4, 36 + dataBytes, true);
+    writeStr(8, "WAVE");
+    writeStr(12, "fmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); // PCM
+    view.setUint16(22, 1, true); // Mono
+    view.setUint32(24, outRate, true);
+    view.setUint32(28, outRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeStr(36, "data");
+    view.setUint32(40, dataBytes, true);
+
+    let writePos = 44;
+    for (let i = 0; i < outLen; i++) {
+      const srcStart = Math.floor(i * ratio);
+      const srcEnd = Math.min(totalLen, Math.max(srcStart + 1, Math.floor((i + 1) * ratio)));
+      let sum = 0;
+      for (let j = srcStart; j < srcEnd; j++) sum += merged[j];
+      const sample = sum / (srcEnd - srcStart);
+      const clamped = Math.max(-1, Math.min(1, sample));
+      view.setInt16(writePos, clamped < 0 ? clamped * 0x8000 : clamped * 0x7FFF, true);
+      writePos += 2;
+    }
+
+    return {
+      blob: new Blob([buffer], { type: "audio/wav" }),
+      durationSec: Math.max(1, Math.round(outLen / outRate))
+    };
+  }
 
   function clearAudioAttachmentUI() {
     if (audioMaxTimer) {
       clearTimeout(audioMaxTimer);
       audioMaxTimer = null;
+    }
+    teardownWavNodes_();
+    if (activeMediaStream) {
+      activeMediaStream.getTracks().forEach(t => t.stop());
+      activeMediaStream = null;
     }
     const micBtn = document.getElementById("micBtn");
     if (micBtn) {
@@ -1645,15 +1718,98 @@
     }
   }
 
-  async function toggleAudioRecording() {
+  async function finalizeRecordedBlob_(recordedBlob, resolvedMime, durationLabel) {
     const micBtn = document.getElementById("micBtn");
     const analyzeBtn = document.getElementById("btnAnalyze");
     const preview = document.getElementById("audioPreview");
     const statusEl = document.getElementById("captureStatus");
+
+    if (!recordedBlob || recordedBlob.size === 0) {
+      isAudioBusy = false;
+      clearAudioAttachmentUI();
+      if (analyzeBtn) analyzeBtn.disabled = false;
+      if (statusEl) statusEl.innerText = "Recording too short — try again";
+      return;
+    }
+    if (recordedBlob.size > 10 * 1024 * 1024) {
+      isAudioBusy = false;
+      clearAudioAttachmentUI();
+      if (analyzeBtn) analyzeBtn.disabled = false;
+      if (statusEl) statusEl.innerText = "Recording too large — keep under 10m";
+      alert("Voice memo exceeds the 10 MB limit. Please record a shorter note (under 10 minutes).");
+      return;
+    }
+
+    mediaMimeType = String(resolvedMime || "audio/wav").split(";")[0].trim();
+
+    if (preview) {
+      if (activeAudioObjectUrl) URL.revokeObjectURL(activeAudioObjectUrl);
+      activeAudioObjectUrl = URL.createObjectURL(recordedBlob);
+      preview.src = activeAudioObjectUrl;
+      preview.style.display = "block";
+      preview.load();
+    }
+
+    try {
+      mediaAssetBase64 = await new Promise(function(resolve, reject) {
+        const reader = new FileReader();
+        reader.onloadend = function() { resolve(reader.result); };
+        reader.onerror = function() { reject(reader.error || new Error("FileReader failed.")); };
+        reader.readAsDataURL(recordedBlob);
+      });
+
+      if (micBtn) {
+        micBtn.disabled = false;
+        micBtn.classList.add("active");
+        micBtn.innerText = "✅ Voice Memo Attached";
+      }
+      if (statusEl) {
+        statusEl.innerText = "Voice memo ready (" + Math.round(recordedBlob.size / 1024) + " KB" + (durationLabel ? " · " + durationLabel + "s" : "") + ")";
+      }
+    } catch (eConv) {
+      mediaAssetBase64 = null;
+      clearAudioAttachmentUI();
+      alert("Audio encoding error: " + eConv.message);
+    } finally {
+      isAudioBusy = false;
+      if (analyzeBtn) analyzeBtn.disabled = false;
+    }
+  }
+
+  async function toggleAudioRecording() {
+    const micBtn = document.getElementById("micBtn");
+    const analyzeBtn = document.getElementById("btnAnalyze");
+    const statusEl = document.getElementById("captureStatus");
     if (!micBtn) return;
 
-    // 1. If currently recording, STOP and finalize
-    if (mediaRecorder && mediaRecorder.state === "recording") {
+    // 1A. Stop active PCM/WAV recording
+    if (activeWavRecorder && !activeWavRecorder.stopped) {
+      if (audioMaxTimer) { clearTimeout(audioMaxTimer); audioMaxTimer = null; }
+      isAudioBusy = true;
+      micBtn.classList.remove("recording");
+      micBtn.innerText = "⏳ Encoding Audio...";
+      micBtn.disabled = true;
+      if (analyzeBtn) analyzeBtn.disabled = true;
+
+      const capturedChunks = activeWavRecorder.pcmChunks;
+      const capturedRate = activeWavRecorder.sampleRate;
+      teardownWavNodes_();
+      if (activeMediaStream) {
+        activeMediaStream.getTracks().forEach(t => t.stop());
+        activeMediaStream = null;
+      }
+
+      const wavOut = encodeWav16kBlob_(capturedChunks, capturedRate);
+      if (!capturedChunks.length || wavOut.blob.size <= 44) {
+        await finalizeRecordedBlob_(new Blob([]), "audio/wav", 0);
+        return;
+      }
+      await finalizeRecordedBlob_(wavOut.blob, "audio/wav", wavOut.durationSec);
+      return;
+    }
+
+    // 1B. Stop fallback MediaRecorder if active
+    if (mediaRecorder && mediaRecorder.state === "recording" && typeof mediaRecorder.stop === "function") {
       if (audioMaxTimer) { clearTimeout(audioMaxTimer); audioMaxTimer = null; }
       isAudioBusy = true;
       micBtn.classList.remove("recording");
@@ -1667,7 +1823,8 @@
     // Prevent double-tap while permission prompt or encoding is in progress
     if (isAudioBusy) return;
 
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === "undefined") {
+    const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || (!AudioCtxClass && typeof MediaRecorder === "undefined")) {
       alert("Audio recording is not supported in this browser/context (HTTPS required).");
       return;
     }
@@ -1677,9 +1834,6 @@
     micBtn.disabled = true;
 
     try {
-      activeMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      audioChunks = [];
-
       // Mutual exclusion: Clear photo or prior audio before starting fresh recording
       mediaAssetBase64 = null;
       mediaMimeType = "image/jpeg";
@@ -1687,125 +1841,90 @@
       clearAudioAttachmentUI();
       micBtn.disabled = true;
 
-      // Detect browser-supported container (WebM/Opus for Chrome/Firefox, MP4/AAC for Safari/iOS)
-      const candidateTypes = [
-        "audio/webm;codecs=opus",
-        "audio/webm",
-        "audio/mp4",
-        "audio/aac"
-      ];
-      let selectedMime = "";
-      if (typeof MediaRecorder.isTypeSupported === "function") {
-        selectedMime = candidateTypes.find(t => MediaRecorder.isTypeSupported(t)) || "";
-      }
+      activeMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      mediaRecorder = selectedMime
-        ? new MediaRecorder(activeMediaStream, { mimeType: selectedMime })
-        : new MediaRecorder(activeMediaStream);
+      if (AudioCtxClass) {
+        const ctx = new AudioCtxClass();
+        if (ctx.state === "suspended") await ctx.resume();
+        const source = ctx.createMediaStreamSource(activeMediaStream);
+        const processor = ctx.createScriptProcessor(4096, 1, 1);
+        const zeroGain = ctx.createGain();
+        zeroGain.gain.value = 0;
 
-      mediaRecorder.ondataavailable = function(e) {
-        if (e.data && e.data.size > 0) audioChunks.push(e.data);
-      };
+        const pcmChunks = [];
+        activeWavRecorder = {
+          ctx: ctx,
+          source: source,
+          processor: processor,
+          zeroGain: zeroGain,
+          pcmChunks: pcmChunks,
+          sampleRate: ctx.sampleRate || 44100,
+          stopped: false
+        };
+        mediaRecorder = { state: "recording" };
 
-      mediaRecorder.onerror = function(e) {
-        if (activeMediaStream) {
-          activeMediaStream.getTracks().forEach(t => t.stop());
-          activeMediaStream = null;
+        processor.onaudioprocess = function(ev) {
+          if (!activeWavRecorder || activeWavRecorder.stopped) return;
+          const ch = ev.inputBuffer.getChannelData(0);
+          pcmChunks.push(new Float32Array(ch));
+        };
+
+        source.connect(processor);
+        processor.connect(zeroGain);
+        zeroGain.connect(ctx.destination);
+      } else {
+        audioChunks = [];
+        const candidateTypes = ["audio/mp4", "audio/aac", "audio/webm;codecs=opus", "audio/webm"];
+        let selectedMime = "";
+        if (typeof MediaRecorder.isTypeSupported === "function") {
+          selectedMime = candidateTypes.find(t => MediaRecorder.isTypeSupported(t)) || "";
         }
-        isAudioBusy = false;
-        clearAudioAttachmentUI();
-        if (analyzeBtn) analyzeBtn.disabled = false;
-        if (statusEl) statusEl.innerText = "Recording failed";
-        alert("Audio recording error: " + (e?.error?.message || "Hardware stream interrupted."));
-      };
+        mediaRecorder = selectedMime
+          ? new MediaRecorder(activeMediaStream, { mimeType: selectedMime })
+          : new MediaRecorder(activeMediaStream);
 
-      mediaRecorder.onstop = async function() {
-        // Release hardware microphone tracks immediately
-        if (activeMediaStream) {
-          activeMediaStream.getTracks().forEach(t => t.stop());
-          activeMediaStream = null;
-        }
-
-        // Preserve accurate MIME (prevents forcing audio/webm onto Safari audio/mp4)
-        const resolvedMime = mediaRecorder.mimeType
-          || (audioChunks[0] && audioChunks[0].type)
-          || selectedMime
-          || "audio/mp4";
-
-        const recordedBlob = new Blob(audioChunks, { type: resolvedMime });
-
-        // Zero-byte & 8 MB payload guard
-      if (!audioChunks.length || recordedBlob.size === 0) {
-        isAudioBusy = false;
-        clearAudioAttachmentUI();
-        if (analyzeBtn) analyzeBtn.disabled = false;
-        if (statusEl) statusEl.innerText = "Recording too short — try again";
-        return;
-      }
-      if (recordedBlob.size > 8 * 1024 * 1024) {
-        isAudioBusy = false;
-        clearAudioAttachmentUI();
-        if (analyzeBtn) analyzeBtn.disabled = false;
-        if (statusEl) statusEl.innerText = "Recording too large — keep under 60s";
-        alert("Voice memo exceeds the 8 MB limit. Please record a shorter note (under 60 seconds).");
-        return;
-      }
-
-        // Clean MIME for backend payload (strips parameter suffixes like ;codecs=...)
-        mediaMimeType = resolvedMime.split(";")[0].trim();
-
-        // Activate playback preview & revoke prior object URL
-        if (preview) {
-          if (activeAudioObjectUrl) URL.revokeObjectURL(activeAudioObjectUrl);
-          activeAudioObjectUrl = URL.createObjectURL(recordedBlob);
-          preview.src = activeAudioObjectUrl;
-          preview.style.display = "block";
-          preview.load();
-        }
-
-        // Synchronous-style Base64 conversion before unlocking Analyze button
-        try {
-          mediaAssetBase64 = await new Promise(function(resolve, reject) {
-            const reader = new FileReader();
-            reader.onloadend = function() { resolve(reader.result); };
-            reader.onerror = function() { reject(reader.error || new Error("FileReader failed.")); };
-            reader.readAsDataURL(recordedBlob);
-          });
-
-          micBtn.disabled = false;
-          micBtn.classList.add("active");
-          micBtn.innerText = "✅ Voice Memo Attached";
-          if (statusEl) statusEl.innerText = "Voice memo ready (" + Math.round(recordedBlob.size / 1024) + " KB)";
-        } catch (eConv) {
-          mediaAssetBase64 = null;
-          clearAudioAttachmentUI();
-          alert("Audio encoding error: " + eConv.message);
-        } finally {
+        mediaRecorder.ondataavailable = function(e) {
+          if (e.data && e.data.size > 0) audioChunks.push(e.data);
+        };
+        mediaRecorder.onerror = function(e) {
+          if (activeMediaStream) {
+            activeMediaStream.getTracks().forEach(t => t.stop());
+            activeMediaStream = null;
+          }
           isAudioBusy = false;
+          clearAudioAttachmentUI();
           if (analyzeBtn) analyzeBtn.disabled = false;
-        }
-      };
+          if (statusEl) statusEl.innerText = "Recording failed";
+          alert("Audio recording error: " + (e?.error?.message || "Hardware stream interrupted."));
+        };
+        mediaRecorder.onstop = async function() {
+          if (activeMediaStream) {
+            activeMediaStream.getTracks().forEach(t => t.stop());
+            activeMediaStream = null;
+          }
+          const resolvedMime = mediaRecorder.mimeType || (audioChunks[0] && audioChunks[0].type) || selectedMime || "audio/mp4";
+          const recordedBlob = new Blob(audioChunks, { type: resolvedMime });
+          await finalizeRecordedBlob_(recordedBlob, resolvedMime, "");
+        };
+        mediaRecorder.start();
+      }
 
-      mediaRecorder.start();
-    if (audioMaxTimer) clearTimeout(audioMaxTimer);
-    audioMaxTimer = setTimeout(() => {
-      if (mediaRecorder && mediaRecorder.state === "recording") {
-        if (typeof showToast === "function") showToast("⏱️ 60s voice note limit reached — finalizing.");
-        toggleAudioRecording();
-      }
-    }, 60000);
-    isAudioBusy = false;
-    micBtn.disabled = false;
-    micBtn.classList.add("recording");
-    micBtn.innerText = "⏹️ Stop Recording...";
-    if (statusEl) statusEl.innerText = "Recording voice memo (max 60s)...";
-    } catch (err) {
-      if (activeMediaStream) {
-        activeMediaStream.getTracks().forEach(t => t.stop());
-        activeMediaStream = null;
-      }
+      if (audioMaxTimer) clearTimeout(audioMaxTimer);
+      audioMaxTimer = setTimeout(() => {
+        if ((activeWavRecorder && !activeWavRecorder.stopped) || (mediaRecorder && mediaRecorder.state === "recording")) {
+          if (typeof showToast === "function") showToast("⏱️ 10-minute voice note limit reached — finalizing.");
+          toggleAudioRecording();
+        }
+      }, 600000);
+
       isAudioBusy = false;
+      micBtn.disabled = false;
+      micBtn.classList.add("recording");
+      micBtn.innerText = "⏹️ Stop Recording...";
+      if (statusEl) statusEl.innerText = "Recording voice memo (max 10m)...";
+    } catch (err) {
       clearAudioAttachmentUI();
+      isAudioBusy = false;
       if (analyzeBtn) analyzeBtn.disabled = false;
       alert("Microphone access notice: " + err.message);
     }
